@@ -32,8 +32,8 @@ class Selection(unittest.TestCase):
     def test_foundation_actual_export_boundaries(self):
         before = lock(); after = copy.deepcopy(before)
         after['nodes']['f']['locked']['rev'] = 'c' * 40
-        for paths, expected in [(['modules/aspects/base/browser.nix'], {'home-manager'}),
-            (['modules/aspects/base/brew-packages.json'], {'home-manager', 'homebrew'}),
+        for paths, expected in [(['modules/aspects/base/browser.nix'], m.ALL),
+            (['modules/providers/homebrew/_assets/brew-packages.json'], m.ALL),
             (['scripts/home.py'], m.ALL), (['lib/new-export.nix'], m.ALL), (None, m.ALL)]:
             with self.subTest(paths=paths):
                 self.assertEqual(set(m.select(['flake.lock'], before, after, paths)['suites']), expected)

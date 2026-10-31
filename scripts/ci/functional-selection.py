@@ -7,10 +7,6 @@ import re
 import subprocess
 
 ALL = {'home-manager', 'homebrew', 'nix-lifecycle'}
-HM_FOUNDATION = {'modules/aspects/base/browser.nix', 'modules/aspects/base/desktop.nix',
-    'modules/aspects/base/home.nix', 'modules/aspects/base/shell.nix'}
-BREW_FOUNDATION = {'modules/aspects/base/homebrew.nix', 'modules/aspects/base/brew-packages.json',
-    'modules/finite-brew-bootstrap', 'modules/finite-brew-migration-status'}
 
 def git(repo, *args):
     return subprocess.check_output(['git', '-C', str(repo), *args], timeout=30)
@@ -66,21 +62,11 @@ def select(paths, before, after, foundation_paths=None, full=False):
                     for v in (versions['before'].get(path, {}), versions['after'].get(path, {})))
                 if not known_source:
                     add(ALL, 'Foundation source identity changed/unknown')
-                elif foundation_paths is None:
-                    add(ALL, 'Foundation source delta unavailable/opaque')
                 else:
-                    for source in foundation_paths:
-                        if source in HM_FOUNDATION:
-                            add({'home-manager'}, 'Foundation HM export: ' + source)
-                        elif source in BREW_FOUNDATION:
-                            add({'home-manager', 'homebrew'}, 'Foundation brew/activation boundary: ' + source)
-                        elif source == 'flake.lock':
-                            # Finite's expanded lock resolves transitive exported versions below.
-                            continue
-                        elif source.startswith(('docs/', 'tests/')) or source in ('README.md', 'CHANGELOG.md', 'LICENSE'):
-                            continue
-                        else:
-                            add(ALL, 'Foundation shared/unknown export: ' + source)
+                    # A filename diff cannot prove Nix export behavior. Until an
+                    # evaluated export comparison is authenticated, fail closed.
+                    add(ALL, 'Foundation exported behavior is opaque; source delta: '
+                        + (', '.join(foundation_paths) if foundation_paths is not None else 'unavailable'))
             elif repo == 'home-manager' or path.split('/')[-1] == 'home-manager':
                 def known_hm(value):
                     return ((value.get('type') == 'github' and value.get('owner') == 'nix-community'
@@ -115,7 +101,8 @@ def select(paths, before, after, foundation_paths=None, full=False):
         add(ALL, 'malformed/incomplete input graph; fail closed')
     return {'schema': 1, 'kind': 'finite-functional-selection-shadow', 'advisory': True,
         'authorizesPublication': False, 'bootability': 'always-independent', 'manualFullSuite': full,
-        'suites': sorted(suites), 'reasons': reasons, 'resolvedInputs': versions}
+        'suites': sorted(suites), 'reasons': reasons, 'resolvedInputs': versions,
+        'foundationSourcePaths': foundation_paths}
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

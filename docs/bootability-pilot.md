@@ -119,25 +119,25 @@ suite has a reason in the report.
 | Resolved Home Manager input version | HM; does not itself select Homebrew |
 | Determinate Nix runtime lock | HM and Nix lifecycle; HM runs on this runtime |
 | Finite HM scaffold, template, scripts/home | HM; exported home initialization behavior |
-| Foundation reviewed browser/desktop/home/shell modules | HM when exact source delta is available |
-| Foundation brew policy/bootstrap/migration helpers | HM and Homebrew; HM activation checks brew providers |
+| Foundation source revision, including HM module files | All until evaluated exported behavior is proven; filenames alone cannot prove HM-only scope |
+| Foundation brew policy/bootstrap/migration helpers | All conservatively; HM and Homebrew share activation, and source-path evidence does not close startup dependencies |
 | Foundation shared scripts, library, flake/module composition or unknown files | All; can change bootstrap and multiple exports |
 | nixpkgs versions | All conservatively; evaluated HM and shared brew helper dependencies can change |
 | Shared first-boot/services, base-image recipes/locks, unknown changes | All applicable suites; shared runtime impact |
 | Documentation/test-only paths | No new functional execution; protected contract jobs still run |
 | Any opaque Foundation source delta or incomplete input graph | All; no false-negative skip |
 
-The exact Foundation delta can be supplied with `--foundation-repository` pointing
+The exact Foundation source-path delta can be supplied with `--foundation-repository` pointing
 to a checkout containing both locked revisions; the tool uses immutable Git
 objects and never that checkout's working files. It validates closure-labs source
 identity before inspection. The initial hosted workflow deliberately does not
-fetch Foundation source: a changed Foundation revision therefore selects all
-until that delta is available. The real consumer copies Foundation into the image,
+fetch Foundation source: a changed Foundation revision therefore selects all. Even with an exact source
+delta, this first pilot retains all suites until evaluated export behavior is
+authenticated; source filenames are useful review evidence, not proof of isolation. The real consumer copies Foundation into the image,
 uses `lib.mkConsumerTemplate`/`mkHomeConfiguration`, then delegates `home-init` to
 Foundation's `scripts/home.py`; Foundation also exports brew policy and bootstrap.
-It is unsafe to classify an arbitrary Foundation bump as HM-only. These narrow
-path mappings are advisory hypotheses, not a proof of Nix evaluation closure.
-Before using them to skip real suites, compare evaluated exported behavior and
+It is unsafe to classify an arbitrary Foundation bump as HM-only. The Finite HM path mappings are advisory hypotheses, not a proof of Nix evaluation
+closure. Before using any advisory mapping to skip real suites, compare evaluated exported behavior and
 validate the protected corpus against representative Foundation/nixpkgs/HM
 updates; an opaque mismatch must select all and block any skip.
 
