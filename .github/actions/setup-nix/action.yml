@@ -2,8 +2,11 @@ name: Set up Nix and Finite cache
 description: Install Nix with GitHub access and accept the repository's centralized cache configuration
 
 inputs:
+  job-profile:
+    description: Explicit workload role; checks retains the checks snapshot and main-only writer
+    required: true
   cache-profile:
-    description: Full checks snapshot or source downloads only (auto chooses by job)
+    description: Full checks snapshot or source downloads only (auto follows job-profile)
     required: false
     default: auto
   cache-mode:
@@ -21,6 +24,16 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Validate explicit setup profile
+      shell: bash
+      env:
+        NIX_SETUP_PROFILE: ${{ inputs.job-profile }}
+      run: |
+        case "$NIX_SETUP_PROFILE" in
+          controller|checks|image|vm) ;;
+          *) echo "::error::job-profile must be controller, checks, image or vm" >&2; exit 2 ;;
+        esac
+
     - name: Start source check setup observation
       shell: bash
       run: python3 scripts/ci/nix_observation.py setup-start
@@ -71,7 +84,7 @@ runs:
         (inputs.cache-mode == 'baseline' ||
          (inputs.cache-mode == '' && env.FINITE_OPTIMIZED_CACHES != 'true') ||
          inputs.cache-profile == 'checks' ||
-         (inputs.cache-profile == 'auto' && github.job == 'checks'))
+         (inputs.cache-profile == 'auto' && inputs.job-profile == 'checks'))
       shell: bash
       run: python3 scripts/ci/cache-sqlite.py
 
@@ -84,7 +97,7 @@ runs:
         (inputs.cache-mode == 'baseline' ||
          (inputs.cache-mode == '' && env.FINITE_OPTIMIZED_CACHES != 'true') ||
          inputs.cache-profile == 'checks' ||
-         (inputs.cache-profile == 'auto' && github.job == 'checks'))
+         (inputs.cache-profile == 'auto' && inputs.job-profile == 'checks'))
       uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
       with:
         # Tool generations change with dependencies, rather than every source commit.
@@ -96,7 +109,7 @@ runs:
           nix-store-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock') }}-
           nix-store-v2-${{ runner.os }}-${{ runner.arch }}-
           nix-store-v1-${{ runner.os }}-${{ runner.arch }}-
-        save: ${{ github.job == 'checks' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+        save: ${{ inputs.job-profile == 'checks' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
         paths: |
           ~/.cache/nix/tarball-cache-v2
           ~/.cache/nix/gitv3
@@ -109,7 +122,7 @@ runs:
       if: >-
         inputs.cache-mode == 'optimized' &&
         inputs.cache-profile != 'checks' &&
-        !(inputs.cache-profile == 'auto' && github.job == 'checks')
+        !(inputs.cache-profile == 'auto' && inputs.job-profile == 'checks')
       uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
       with:
         primary-key: nix-sources-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'devenv.lock') }}

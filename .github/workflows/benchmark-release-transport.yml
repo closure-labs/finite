@@ -47,6 +47,7 @@ jobs:
           skip-if-available: "80G"
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           cache-mode: none
       - name: Authenticate and stage original two-profile products
         env:
@@ -138,6 +139,7 @@ jobs:
           skip-if-available: "80G"
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           cache-mode: none
       - name: Verify complete transport and clean local products
         env:

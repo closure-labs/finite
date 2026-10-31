@@ -106,9 +106,10 @@ class Configuration(unittest.TestCase):
         def selected(name, mode, profile, job, enabled):
             expression = conditions[name].replace('inputs.cache-mode', 'inputs.cache_mode')
             expression = expression.replace('inputs.cache-profile', 'inputs.cache_profile')
+            expression = expression.replace('inputs.job-profile', 'inputs.job_profile')
             expression = expression.replace('&&', ' and ').replace('||', ' or ').replace('!(', 'not (')
             return bool(eval(expression, {'__builtins__': {}}, {
-                'inputs': SimpleNamespace(cache_mode=mode, cache_profile=profile),
+                'inputs': SimpleNamespace(cache_mode=mode, cache_profile=profile, job_profile='checks' if job == 'checks' else 'controller'),
                 'github': SimpleNamespace(job=job),
                 'env': SimpleNamespace(FINITE_OPTIMIZED_CACHES=enabled)}))
         # Defaults preserve checks and avoid unnecessary restore work in small
@@ -133,6 +134,72 @@ class Configuration(unittest.TestCase):
                 self.assertEqual(selected('Restore Nix source downloads only', mode, profile, job, enabled), sources)
                 self.assertEqual(selected('Bound SQLite CLI waits for cache restore and post-job save',
                                           mode, profile, job, enabled), store)
+
+
+class SetupProfiles(unittest.TestCase):
+    def action(self):
+        return yaml.safe_load((ROOT / '.github/actions/setup-nix/action.yml').read_text())
+
+    def evaluate(self, expression, role, mode, cache_profile, enabled, **github):
+        expression = expression.removeprefix('${{').removesuffix('}}').strip()
+        for key in ('job-profile', 'cache-mode', 'cache-profile'):
+            expression = expression.replace('inputs.' + key, 'inputs.' + key.replace('-', '_'))
+        expression = expression.replace('&&', ' and ').replace('||', ' or ').replace('!(', 'not (')
+        return bool(eval(expression, {'__builtins__': {}}, {
+            'inputs': SimpleNamespace(job_profile=role, cache_mode=mode, cache_profile=cache_profile),
+            'github': SimpleNamespace(**github),
+            'env': SimpleNamespace(FINITE_OPTIMIZED_CACHES=enabled)}))
+
+    def test_restore_truth_table_preserves_every_existing_role_policy(self):
+        steps = self.action()['runs']['steps']
+        conditions = {s['id']: s['if'] for s in steps if s.get('id') in ('store-cache', 'source-cache')}
+        for role in ('controller', 'checks', 'image', 'vm'):
+            for mode in ('', 'baseline', 'optimized', 'none'):
+                for cache in ('auto', 'checks', 'sources'):
+                    for optimized in ('true', 'false'):
+                        # The old expression inferred only this one fact from
+                        # a job name. Current callers now declare it explicitly.
+                        full = cache == 'checks' or (cache == 'auto' and role == 'checks')
+                        expected_store = mode != 'none' and (mode == 'baseline' or
+                            (mode == '' and optimized != 'true') or full)
+                        expected_sources = mode == 'optimized' and not full
+                        for key, expected in (('store-cache', expected_store), ('source-cache', expected_sources)):
+                            with self.subTest(role=role, mode=mode, cache=cache, optimized=optimized, restore=key):
+                                self.assertEqual(self.evaluate(conditions[key], role, mode, cache, optimized), expected)
+
+    def test_all_workflow_calls_declare_roles_and_only_checks_can_write_snapshot(self):
+        calls = []
+        for path in (ROOT / '.github/workflows').glob('*.yml'):
+            for job_id, job in yaml.safe_load(path.read_text()).get('jobs', {}).items():
+                for step in job.get('steps', []):
+                    if step.get('uses') != '$/.github/actions/setup-nix':
+                        continue
+                    role = step.get('with', {}).get('job-profile')
+                    self.assertIn(role, ('controller', 'checks', 'image', 'vm'), (path.name, job_id))
+                    calls.append((path.name, job_id, role))
+        self.assertTrue(calls)
+        self.assertEqual([(p, j) for p, j, role in calls if role == 'checks'], [('build.yml', 'checks')])
+        source = (ROOT / '.github/actions/setup-nix/action.yml').read_text()
+        self.assertNotIn('github.job', source, 'Renaming a job must not change its cache policy')
+        self.assertIs(self.action()['inputs']['job-profile']['required'], True)
+        store = next(s for s in self.action()['runs']['steps'] if s.get('id') == 'store-cache')
+        for role in ('controller', 'checks', 'image', 'vm'):
+            for ref in ('refs/heads/main', 'refs/pull/1/merge'):
+                for event in ('push', 'schedule', 'workflow_dispatch', 'pull_request', 'merge_group'):
+                    for repository in ('closure-labs/finite', 'other/finite'):
+                        expected = role == 'checks' and ref == 'refs/heads/main' and repository == 'closure-labs/finite' and event in ('push', 'schedule', 'workflow_dispatch')
+                        self.assertEqual(self.evaluate(store['with']['save'], role, '', 'auto', 'true',
+                            ref=ref, event_name=event, repository=repository), expected)
+
+    def test_profile_validation_precedes_setup_and_rejects_missing_or_unknown_role(self):
+        steps = self.action()['runs']['steps']
+        first = steps[0]
+        self.assertEqual(first['name'], 'Validate explicit setup profile')
+        self.assertEqual(first['env'], {'NIX_SETUP_PROFILE': '${{ inputs.job-profile }}'})
+        for role in ('controller', 'checks', 'image', 'vm', '', 'auto', 'sources', 'checks\nOTHER=value'):
+            result = subprocess.run(['bash', '-euo', 'pipefail', '-c', first['run']],
+                env={**os.environ, 'NIX_SETUP_PROFILE': role}, text=True, capture_output=True)
+            self.assertEqual(result.returncode == 0, role in ('controller', 'checks', 'image', 'vm'))
 
 
 @unittest.skipUnless(CLI, 'The Nix contract check supplies sqlite3')

@@ -88,6 +88,7 @@ jobs:
       - uses: $/.github/actions/setup-nix
         if: ${{ !inputs.validation_only }}
         with:
+          job-profile: controller
           cache-mode: none
       - name: Validate qualification execution context
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
@@ -166,6 +167,7 @@ jobs:
           timeout 20s python3 scripts/ci/vm-host.py --output ".bluebuild/$PROFILE-$PHASE-vm-host.json"
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: vm
           cache-mode: ${{ steps.benchmark.outputs.cache-mode || 'none' }}
           cache-profile: checks
       - name: Validate qualification execution context
@@ -274,6 +276,7 @@ jobs:
       - uses: $/.github/actions/setup-nix
         if: ${{ !inputs.validation_only }}
         with:
+          job-profile: controller
           cache-mode: none
       - name: Validate qualification execution context
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"

@@ -91,6 +91,8 @@ jobs:
           FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
         run: python3 scripts/ci/validation-preflight.py
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
       - name: Stop obsolete publication before image setup
         if: inputs.publish
         env:

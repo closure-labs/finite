@@ -68,6 +68,7 @@ jobs:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: image
           cache-mode: none
       - name: Realize pinned native scanner tools
         run: | # zizmor: ignore[github-env]
@@ -157,6 +158,7 @@ jobs:
         run: python3 scripts/ci/benchmark-security-reuse.py mark-start .bluebuild/security-setup-start.json
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: image
           cache-mode: none
       - name: Make room for native inventory
         uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
@@ -222,6 +224,7 @@ jobs:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           cache-mode: none
       - name: Collect small reports and complete-job timestamps
         env:
