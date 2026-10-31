@@ -21,9 +21,11 @@ Finite already admits the native `build.yml` PR execution by immutable
 repository, workflow, branch and current head. Keeping the scan inside that
 execution covers ordinary contributors and Dependabot without extending the
 execution-approval allowlist. Existing author, reviewer and execution-approval
-requirements still apply. The scanner uses only `contents: read`, no candidate
-scripts or local actions, no persisted checkout credentials, secrets, write or
-OIDC grants. Governance already covers both the workflow and gate implementation.
+requirements still apply. Gitleaks executes no candidate scripts or local actions,
+and receives no persisted checkout credentials, secrets, write or OIDC grants.
+The job additionally grants `actions: read` only for protected-base payload
+authentication; its API token is not passed to Gitleaks. Governance already covers
+both the workflow and gate implementation.
 
 The gate consumes GitHub's same-run `needs.repository-secrets.result`, rather
 than searching for another run by name. An unrelated workflow, historical job,
