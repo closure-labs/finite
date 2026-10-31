@@ -117,7 +117,7 @@ class CacheBenchmark(unittest.TestCase):
         self.assertEqual(job['strategy']['matrix'], {'mode': list(benchmark.MODES), 'tool': list(benchmark.TOOLS),
                          'repetition': [1, 2, 3]})
         setup = next(step for step in job['steps'] if step.get('uses') == '$/.github/actions/setup-nix')
-        self.assertEqual(setup['with'], {'cache-mode': '${{ matrix.mode }}', 'cache-profile': 'sources'})
+        self.assertEqual(setup['with'], {'cache-mode': '${{ matrix.mode }}', 'cache-profile': 'sources', 'job-profile': 'controller'})
         self.assertEqual(workflow['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertEqual(workflow['jobs']['summarize']['needs'], 'benchmark')
         downloads = next(step for step in workflow['jobs']['summarize']['steps'] if step.get('env', {}).get('REPORT_PATTERN'))

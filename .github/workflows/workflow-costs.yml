@@ -38,6 +38,7 @@ jobs:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           cache-mode: none
       - name: Resolve the existing read-only audit App
         env:

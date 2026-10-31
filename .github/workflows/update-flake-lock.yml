@@ -36,6 +36,8 @@ jobs:
 
       - name: Set up Nix and Cachix
         uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
 
       - name: Prepare trusted updater tools before changing locks
         id: updater-tools

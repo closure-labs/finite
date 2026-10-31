@@ -42,6 +42,7 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha }}
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           cache-profile: sources
           cache-mode: optimized
       - name: Realize current check proofs without credentials

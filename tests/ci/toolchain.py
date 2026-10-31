@@ -209,7 +209,7 @@ class Toolchain(unittest.TestCase):
         })
         self.assertNotEqual(cache['with'].get('nix'), 'false')
         self.assertIn('gc-max-store-size-linux', cache['with'])
-        self.assertEqual(cache['with']['save'], "${{ github.job == 'checks' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}")
+        self.assertEqual(cache['with']['save'], "${{ inputs.job-profile == 'checks' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}")
         self.assertIn("hashFiles('flake.lock'", cache['with']['primary-key'])
         self.assertIn('nix-checks-v3-', cache['with']['primary-key'])
         self.assertIn("inputs.cache-mode == 'baseline'", cache['with']['primary-key'])

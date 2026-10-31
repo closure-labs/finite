@@ -76,6 +76,7 @@ jobs:
           skip-if-available: "80G"
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: image
           cache-mode: none
       - name: Realize pinned native scanner tools
         run: | # zizmor: ignore[github-env]

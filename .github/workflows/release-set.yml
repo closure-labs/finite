@@ -49,6 +49,8 @@ jobs:
         with:
           skip-if-available: "80G"
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
         if: steps.readiness.outputs.ready == 'true'
       - name: Collect both qualified images and fresh scan evidence
         if: steps.readiness.outputs.ready == 'true'
