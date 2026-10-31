@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare selected allowlisted closures before exposing a write token."""
+"""Publish bounded current CI check results; retain credential-free historical diagnostics."""
 import argparse
 import importlib.util
 import json
@@ -20,7 +20,7 @@ CREDENTIALS = native.CREDENTIALS
 
 def preparation_env():
     """Even push-time metadata checks must not inherit the writer credential."""
-    return {key: value for key, value in os.environ.items() if key not in CREDENTIALS}
+    return native.clean_env()
 
 
 def boundary(env=os.environ):
@@ -160,8 +160,8 @@ def batched_tools():
     return roots
 
 
-def realize_roots(include_proofs=False, batch=True):
-    """Credential-free realization shared by publishing and the hosted benchmark."""
+def diagnostic_roots(include_proofs=False, batch=True):
+    """Historical credential-free diagnostic only; never selects publication roots."""
     if any(os.environ.get(key) for key in CREDENTIALS):
         raise ValueError('Do not expose credentials during realization')
     roots = []
@@ -184,11 +184,11 @@ def realize_roots(include_proofs=False, batch=True):
         for tool in TOOLS:
             path = output(['nix', 'build', '--file', 'lib/ci-tools.nix', tool, '--no-link', '--print-out-paths'])
             roots.append({'kind': 'tool', 'name': tool, 'path': path, 'bytes': closure_size(path)})
-    validate_roots(roots)
+    validate_diagnostic_roots(roots)
     return roots
 
 
-def validate_roots(roots):
+def validate_diagnostic_roots(roots):
     if not isinstance(roots, list) or not 0 < len(roots) <= 128:
         raise ValueError('Invalid cache root count')
     seen = set()
@@ -207,43 +207,66 @@ def validate_roots(roots):
         seen.add((kind, name))
 
 
-def prepare(destination, include_proofs=False):
+def realize_roots():
+    if any(os.environ.get(key) for key in CREDENTIALS):
+        raise ValueError('Do not expose credentials during realization')
+    identities = native.proof_identities()
+    checks = Path(output(['nix', 'build', '--accept-flake-config', '--no-update-lock-file',
+        '--no-write-lock-file', '--no-link', '--print-out-paths', '.#ci-checks']))
+    if {entry.name for entry in checks.iterdir()} != set(identities):
+        raise ValueError('Aggregate contains unknown or missing check outputs')
+    roots = []
+    for name, identity in sorted(identities.items()):
+        entry = checks / name
+        if not entry.is_symlink() or str(entry.resolve(strict=True)) != identity['outputPath']:
+            raise ValueError('Aggregate check output differs from its evaluated identity')
+        roots.append({'kind': 'check-result', 'name': name, **identity})
+    closure = native.proof_closure([root['outputPath'] for root in roots], identities)
+    return roots, closure
+
+
+def validate_roots(roots):
+    identities = native.proof_identities()
+    expected = [{'kind': 'check-result', 'name': name, **identity} for name, identity in sorted(identities.items())]
+    if roots != expected:
+        raise ValueError('Publication roots differ from current named check outputs')
+    return [root['outputPath'] for root in roots]
+
+
+def prepare(destination):
     boundary()
-    roots = realize_roots(include_proofs=include_proofs)
-    destination.write_text(json.dumps({'schema': 1, 'revision': os.environ['CACHE_SOURCE_REVISION'],
-                                      'cache': 'finite-os', 'roots': roots}, indent=2) + '\n')
+    roots, closure = realize_roots()
+    destination.write_text(json.dumps({'schema': 2, 'revision': os.environ['CACHE_SOURCE_REVISION'],
+        'cache': 'finite-os', 'roots': roots, 'closure': closure}, indent=2) + '\n')
 
 
 def push(manifest):
     boundary()
     if not os.environ.get('FINITE_CACHIX_TOKEN'):
         raise ValueError('Cachix writer credential is unavailable')
-    if manifest.is_symlink() or manifest.stat().st_size > MIB:
+    if manifest.is_symlink() or not manifest.is_file() or manifest.stat().st_size > MIB:
         raise ValueError('Invalid cache manifest')
-    record = json.loads(manifest.read_text())
-    if (record.get('schema') != 1 or record.get('revision') != os.environ['CACHE_SOURCE_REVISION']
+    record = native.decode(manifest.read_text())
+    if (not isinstance(record, dict) or set(record) != {'schema', 'revision', 'cache', 'roots', 'closure'}
+            or record.get('schema') != 2 or record.get('revision') != os.environ['CACHE_SOURCE_REVISION']
             or record.get('cache') != 'finite-os'):
         raise ValueError('Cache manifest identifies another source or destination')
-    roots = record.get('roots')
-    validate_roots(roots)
-    sizes = closure_sizes([root['path'] for root in roots])
-    if any(sizes[root['path']] != root['bytes'] for root in roots):
-        raise ValueError('Cache closure size changed after preparation')
-    native.publish(sorted(sizes), provider='env')
+    paths = validate_roots(record['roots'])
+    if (json.dumps(native.proof_closure(paths), sort_keys=True, allow_nan=False)
+            != json.dumps(record['closure'], sort_keys=True, allow_nan=False)):
+        raise ValueError('Proof closure changed after preparation')
+    native.publish(paths, provider='env')
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('mode', choices=('prepare', 'push'))
     parser.add_argument('manifest', type=Path)
-    parser.add_argument('--include-proofs', action='store_true', help='Also realize and seed all successful check proofs')
     args = parser.parse_args()
     if args.mode == 'push':
-        if args.include_proofs:
-            parser.error('--include-proofs selects prepare roots only')
         push(args.manifest)
     else:
-        prepare(args.manifest, include_proofs=args.include_proofs)
+        prepare(args.manifest)
 
 
 if __name__ == '__main__':
