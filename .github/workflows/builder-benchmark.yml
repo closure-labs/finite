@@ -13,10 +13,13 @@ concurrency:
   group: matched-builder-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 env:
-  FINITE_OPTIMIZED_CACHES: "false"
-  FINITE_CACHIX_WRITER: "false"
-  FINITE_REUSE_INVENTORY: "false"
-  FINITE_QUALIFICATION_REUSE: "false"
+  FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
+  FINITE_CACHIX_WRITER: ${{ vars.FINITE_CACHIX_WRITER }}
+  FINITE_REUSE_INVENTORY: ${{ vars.FINITE_REUSE_INVENTORY }}
+  FINITE_GRYPE_DB_CACHE: ${{ vars.FINITE_GRYPE_DB_CACHE }}
+  FINITE_QUALIFICATION_REUSE: ${{ vars.FINITE_QUALIFICATION_REUSE }}
+  FINITE_QUALIFIED_ISO_PRESERVATION: ${{ vars.FINITE_QUALIFIED_ISO_PRESERVATION }}
+  FINITE_QUALIFIED_ISO_CHANNELS: ${{ vars.FINITE_QUALIFIED_ISO_CHANNELS }}
 
 jobs:
   contracts:
@@ -34,6 +37,7 @@ jobs:
   paired:
     needs: contracts
     if: >-
+      github.event.action != 'synchronize' &&
       github.repository == 'closure-labs/finite' &&
       github.event.pull_request.head.repo.full_name == 'closure-labs/finite' &&
       github.event.pull_request.head.repo.fork == false &&
@@ -50,6 +54,10 @@ jobs:
     env:
       PROFILE: ${{ matrix.profile }}
       REPETITION: ${{ matrix.repetition }}
+      FINITE_OPTIMIZED_CACHES: "false"
+      FINITE_CACHIX_WRITER: "false"
+      FINITE_REUSE_INVENTORY: "false"
+      FINITE_QUALIFICATION_REUSE: "false"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

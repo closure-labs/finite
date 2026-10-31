@@ -32,6 +32,15 @@ ordinary required PR CI are additional. There are sixteen build trials and eight
 fresh VM validations. No production keys, registry pushes, promotions, hardware
 tests or rollback tests are used.
 
+The full cohort runs only when this internal PR is opened or explicitly
+reopened. Later pushes run contracts and ordinary CI without purchasing another
+cohort. This prevents an evidence/documentation/bootstrap correction from
+silently duplicating the measured workload. Reopening requires a newly approved
+run budget. The first corrected cohort at `1343248c9eaaa0406b34046e6a5ddf522b84aecd`
+was already launched before this budget latch was added. A subsequent CI-only
+bootstrap correction retains the same job-level options and `cache-mode: none`;
+it does not change either Containerfile, build command, payload or VM harness.
+
 Within each job both methods use the same physical runner and fixed
 Buildx v0.38.1 / digest-pinned BuildKit v0.33.1. Repetition one runs BlueBuild
 first; repetition two reverses order. Each method receives an empty private
