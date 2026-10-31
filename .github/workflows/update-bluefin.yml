@@ -36,6 +36,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
       - name: Resolve stable linux/amd64 digests
         id: resolve
         run: nix develop --file lib/ci-tools.nix shell --command python3 scripts/ci/bluefin-upstream.py update
@@ -59,6 +61,7 @@ jobs:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: controller
           merge-queue-token: ${{ secrets.MERGE_QUEUE_PAT }}
           require-merge-queue-token: "true"
       - name: Apply the observed immutable digests
@@ -110,6 +113,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
       - name: Dispatch recovery when published channels lag approved digests
         env:
           GH_TOKEN: ${{ github.token }}

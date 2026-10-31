@@ -86,6 +86,8 @@ jobs:
               output.write('needed=' + str(value['needed']).lower() + '\n')
           PYTHON
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: controller
         if: steps.callback.outputs.needed == 'true'
       - name: Resolve declared review App credentials
         if: steps.callback.outputs.needed == 'true'

@@ -141,6 +141,7 @@ jobs:
           timeout 20s python3 scripts/ci/vm-host.py --output .bluebuild/pilot-vm-host.json
       - uses: $/.github/actions/setup-nix
         with:
+          job-profile: vm
           cache-mode: none
           cache-profile: checks
       - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
