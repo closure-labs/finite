@@ -13,6 +13,10 @@ on:
       - .github/workflows/repository-secret-history.yml
       - scripts/ci/history_finding_ids.py
       - tests/ci/history-finding-ids.py
+      - scripts/ci/history_identifiers.py
+      - scripts/ci/history_frozen_refs.py
+      - tests/ci/history-identifiers.py
+      - .github/security/**
       - scripts/ci/history_snapshot.py
       - scripts/ci/history_scan_summary.py
       - tests/ci/history-scan-summary.py
@@ -30,6 +34,10 @@ on:
       - .github/workflows/repository-secret-history.yml
       - scripts/ci/history_finding_ids.py
       - tests/ci/history-finding-ids.py
+      - scripts/ci/history_identifiers.py
+      - scripts/ci/history_frozen_refs.py
+      - tests/ci/history-identifiers.py
+      - .github/security/**
       - scripts/ci/history_snapshot.py
       - scripts/ci/history_scan_summary.py
       - tests/ci/history-scan-summary.py
@@ -60,3 +68,4 @@ jobs:
           python3 tests/ci/gitleaks-workflow.py
           python3 tests/ci/history-scan-summary.py
           python3 tests/ci/history-finding-ids.py
+          python3 tests/ci/history-identifiers.py

@@ -172,6 +172,7 @@ class RangeTests(unittest.TestCase):
         script = next(s['run'] for s in history['jobs']['history']['steps']
                       if s.get('name') == 'Audit all fetched branch tag and pull-request history')
         shutil.copytree(ROOT / 'scripts/ci', self.repo / 'scripts/ci')
+        shutil.copytree(ROOT / '.github/security', self.repo / '.github/security')
         result = subprocess.run(['bash', '-c', script], cwd=self.repo,
                                 env=dict(self.env, RUNNER_TEMP=str(self.runtime), GITHUB_SHA=deleted, GITHUB_RUN_ID='7', GITHUB_RUN_ATTEMPT='1'), capture_output=True, text=True)
         self.assertEqual(result.returncode, 2)
