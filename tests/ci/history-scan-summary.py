@@ -87,8 +87,13 @@ class Summary(unittest.TestCase):
                          'useDefault = true', '--ignore-gitleaks-allow', '--redact=100', '--exit-code=2',
                          'umask 077', 'trap', '--report-path="$report"', 'history_scan_summary.py'):
             self.assertIn(expected, run)
-        for forbidden in ('upload-artifact', 'continue-on-error', '--baseline', 'allowlists'):
+        for forbidden in ('continue-on-error', '--baseline', 'allowlists'):
             self.assertNotIn(forbidden, yaml.safe_dump(job))
+        uploads = [s for s in job['steps'] if 'upload-artifact@' in s.get('uses', '')]
+        self.assertEqual(len(uploads), 1)
+        self.assertEqual(uploads[0]['with']['path'], '${{ runner.temp }}/finite-history-evidence/')
+        self.assertNotIn('report', uploads[0]['with']['path'])
+        self.assertIn('history_snapshot.py --candidate . --check', run)
         self.assertIn('>/dev/null 2>&1', run)
         engine = (ROOT / '.github/workflows/finding-id-fixtures.yml').read_text()
         self.assertIn('python3 tests/ci/history-scan-summary.py', engine)

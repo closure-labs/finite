@@ -94,6 +94,7 @@ in {
     python3 tests/ci/selection.py
     python3 tests/ci/gitleaks-workflow.py
     python3 tests/ci/history-scan-summary.py
+    python3 tests/ci/history-finding-ids.py
     python3 tests/ci/active-variants.py
     python3 tests/ci/release-selection.py
     python3 tests/ci/release-request.py

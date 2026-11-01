@@ -18,7 +18,7 @@ def unique(pairs):
     return result
 
 
-def summarize(status, report):
+def summarize(status, report, candidate=None):
     result = {'schema': 1, 'verdict': 'scanner-error', 'findingCount': None,
               'genericApiKeyCount': None, 'otherRuleFindingCount': None,
               'distinctRuleCount': None, 'distinctCommitCount': None, 'distinctPathCount': None}
@@ -51,6 +51,11 @@ def summarize(status, report):
     result.update(verdict='findings' if findings else 'clean', findingCount=len(findings),
                   genericApiKeyCount=generic, otherRuleFindingCount=len(findings) - generic,
                   distinctRuleCount=len(rules), distinctCommitCount=len(commits), distinctPathCount=len(paths))
+    if candidate is not None:
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from history_snapshot import provenance_counts
+        result['provenanceCounts'] = provenance_counts(candidate, findings)
     return result
 
 
@@ -58,13 +63,19 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--status', type=int, required=True)
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--candidate', type=Path)
+    parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     try:
-        result = summarize(args.status, args.report)
-    except (OSError, ValueError, TypeError, RecursionError):
+        result = summarize(args.status, args.report, args.candidate)
+    except Exception:
         # Never print parser exceptions: report bytes and paths are untrusted.
         result = {'schema': 1, 'verdict': 'invalid-report', 'findingCount': None}
-    print(json.dumps(result, sort_keys=True))
+    rendered = json.dumps(result, sort_keys=True)
+    if args.output:
+        args.output.write_text(rendered + '\n')
+        args.output.chmod(0o600)
+    print(rendered)
     return {'clean': 0, 'findings': 2, 'timeout': 124}.get(result['verdict'], 1)
 
 

@@ -171,10 +171,12 @@ class RangeTests(unittest.TestCase):
         history = yaml.safe_load((ROOT / '.github/workflows/repository-secret-history.yml').read_text())
         script = next(s['run'] for s in history['jobs']['history']['steps']
                       if s.get('name') == 'Audit all fetched branch tag and pull-request history')
+        shutil.copytree(ROOT / 'scripts/ci', self.repo / 'scripts/ci')
         result = subprocess.run(['bash', '-c', script], cwd=self.repo,
-                                env=dict(self.env, RUNNER_TEMP=str(self.runtime)), capture_output=True, text=True)
+                                env=dict(self.env, RUNNER_TEMP=str(self.runtime), GITHUB_SHA=deleted, GITHUB_RUN_ID='7', GITHUB_RUN_ATTEMPT='1'), capture_output=True, text=True)
         self.assertEqual(result.returncode, 2)
         self.assertNotIn(token, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout)['verdict'], 'findings')
 
     def real_engine(self):
         binary = self.runtime / 'gitleaks/gitleaks'
@@ -401,7 +403,7 @@ class NativeGateTests(unittest.TestCase):
         self.assertEqual(history['jobs']['history']['steps'][0]['run'], 'test "$GITHUB_REF" = refs/heads/main')
         for jobs in (job, history['jobs']['history']):
             text = yaml.safe_dump(jobs)
-            for forbidden in ('secrets.', 'token:', 'continue-on-error:', 'upload-artifact', 'checks: write',
+            for forbidden in ('secrets.', 'token:', 'continue-on-error:', 'checks: write',
                               'id-token:', '--baseline', '--max-target-megabytes', 'uses: $/', 'uses: ./'):
                 self.assertNotIn(forbidden, text)
             self.assertIn('551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb', text)
@@ -409,9 +411,14 @@ class NativeGateTests(unittest.TestCase):
             self.assertIn('useDefault = true', run)
             self.assertNotIn('allowlists', run)
             self.assertIn('--ignore-gitleaks-allow', run)
-            expected = 'verified-finding-ids' if jobs is job else 'empty'
+            expected = 'verified-finding-ids' if jobs is job else 'verified-history-ids'
             self.assertIn('--gitleaks-ignore-path "$RUNNER_TEMP/' + expected + '.gitleaksignore"', run)
             self.assertIn('>/dev/null 2>&1', run)
+        self.assertNotIn('upload-artifact', yaml.safe_dump(job))
+        uploads = [step for step in history['jobs']['history']['steps'] if 'upload-artifact@' in step.get('uses', '')]
+        self.assertEqual(len(uploads), 1)
+        self.assertEqual(uploads[0]['with']['path'], '${{ runner.temp }}/finite-history-evidence/')
+        self.assertNotIn('report', uploads[0]['with']['path'])
         incoming = scan_script()
         self.assertIn('python3 -I -', incoming)
         self.assertIn('blob(BASE, path)', incoming)
