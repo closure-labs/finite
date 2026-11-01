@@ -11,6 +11,9 @@ on:
       - scripts/ci/security_decisions.py
       - tests/ci/gitleaks-workflow.py
       - .github/workflows/repository-secret-history.yml
+      - scripts/ci/history_finding_ids.py
+      - tests/ci/history-finding-ids.py
+      - scripts/ci/history_snapshot.py
       - scripts/ci/history_scan_summary.py
       - tests/ci/history-scan-summary.py
   push:
@@ -25,6 +28,9 @@ on:
       - scripts/ci/security_decisions.py
       - tests/ci/gitleaks-workflow.py
       - .github/workflows/repository-secret-history.yml
+      - scripts/ci/history_finding_ids.py
+      - tests/ci/history-finding-ids.py
+      - scripts/ci/history_snapshot.py
       - scripts/ci/history_scan_summary.py
       - tests/ci/history-scan-summary.py
 permissions:
@@ -53,3 +59,4 @@ jobs:
           export PATH="$RUNNER_TEMP/gitleaks:$PATH"
           python3 tests/ci/gitleaks-workflow.py
           python3 tests/ci/history-scan-summary.py
+          python3 tests/ci/history-finding-ids.py
