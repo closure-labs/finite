@@ -1459,5 +1459,28 @@ class IsoRetention(unittest.TestCase):
             self.assertEqual(mutation.call_count, 2)
             self.assertTrue(all(c.args[0][3] == 'DELETE' for c in mutation.call_args_list))
 
+
+class QualificationClock(unittest.TestCase):
+    def test_offsets_across_dst_fold_represent_the_same_utc_instant(self):
+        now = datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc)
+        for stamp in ('2026-11-01T06:30:00Z', '2026-11-01T01:30:00-05:00',
+                      '2026-11-01T02:30:00-04:00'):
+            self.assertEqual(q.collected_time({'fresh': {'completedAt': stamp}}, now), now)
+
+    def test_exact_freshness_boundaries_and_clock_disagreement_remain_fail_closed(self):
+        now = datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc)
+        for age in (timedelta(0), timedelta(hours=24)):
+            stamp = (now - age).isoformat()
+            self.assertEqual(q.collected_time({'fresh': {'completedAt': stamp}}, now), now - age)
+        for age, reason in ((timedelta(microseconds=-1), 'future'),
+                            (timedelta(hours=-1), 'future'),
+                            (timedelta(hours=24, microseconds=1), 'expired')):
+            with self.assertRaisesRegex(ValueError, 'reason=' + reason) as error:
+                q.collected_time({'fresh': {'completedAt': (now - age).isoformat()}}, now)
+            self.assertIn('source=github-job', str(error.exception))
+            self.assertIn('observedAt=2026-11-01T06:30:00+00:00', str(error.exception))
+        with self.assertRaisesRegex(ValueError, 'missing-timezone'):
+            q.collected_time({'fresh': {'completedAt': '2026-11-01T06:30:00'}}, now)
+
 if __name__ == '__main__':
     unittest.main()

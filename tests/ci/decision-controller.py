@@ -239,6 +239,20 @@ class Controller(unittest.TestCase):
                 mod.propose(proposal())
             api.assert_not_called()
 
+    def test_producer_clock_diagnostics_preserve_future_and_ordering_rejection(self):
+        from datetime import datetime, timezone
+        now = datetime(2026, 11, 1, 6, 30, tzinfo=timezone.utc)
+        run = dict(RUN, created_at='2026-11-01T01:00:00-05:00', updated_at='2026-11-01T01:30:00-05:00')
+        with mock.patch.object(mod, 'api', return_value=run):
+            self.assertEqual(mod.producer_window(ORIGIN, now=now)[1], now)
+        for updated, reason in [('2026-11-01T07:30:00Z', 'future-update'),
+                                ('2026-11-01T05:30:00Z', 'reversed-window')]:
+            with mock.patch.object(mod, 'api', return_value=dict(run, updated_at=updated)), \
+                    self.assertRaisesRegex(ValueError, 'reason=' + reason) as error:
+                mod.producer_window(ORIGIN, now=now)
+            self.assertIn('source=github-run', str(error.exception))
+            self.assertIn('observedAt=2026-11-01T06:30:00+00:00', str(error.exception))
+
     def test_historical_scan_clock_binds_to_github_upload(self):
         with mock.patch.object(mod, 'api', return_value=RUN):
             window = mod.producer_window(ORIGIN)
