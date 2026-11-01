@@ -158,9 +158,9 @@ class BlueBuildContracts(unittest.TestCase):
         production = publication['jobs']['qualification']['with']
         self.assertIs(production.get('validation_only', False), False)
         self.assertEqual(production.get('installer_benchmark', ''), '')
-        self.assertEqual(qualification['jobs']['aggregate']['needs'], ['prepare', 'phase'])
-        self.assertIn("needs.phase.result == 'success'", qualification['jobs']['aggregate']['if'])
-        self.assertIn("needs.prepare.outputs.reused == 'true'", qualification['jobs']['aggregate']['if'])
+        self.assertEqual(qualification['jobs']['functional']['needs'], ['prepare', 'phase'])
+        self.assertIn("needs.phase.result == 'success'", qualification['jobs']['functional']['if'])
+        self.assertIn("needs.prepare.outputs.reused == 'true'", qualification['jobs']['functional']['if'])
         self.assertEqual(promotion['env']['FINITE_QUALIFICATION_MODE'], 'enforce')
         self.assertEqual(build['env']['FINITE_QUALIFICATION_MODE'], 'enforce')
         gate = workflow['jobs']['gate']

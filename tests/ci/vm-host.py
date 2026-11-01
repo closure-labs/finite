@@ -93,7 +93,7 @@ class Evidence(unittest.TestCase):
         self.assertLess(probe, setup)
         self.assertNotIn('continue-on-error', steps[probe])
         self.assertIn('timeout 20s', steps[probe]['run'])
-        for job, name in [('phase', 'Save phase evidence'), ('aggregate', 'Save qualification evidence')]:
+        for job, name in [('phase', 'Save phase evidence'), ('functional', 'Save qualification evidence')]:
             upload = next(step for step in jobs[job]['steps'] if step.get('name') == name)
             self.assertEqual(upload['if'], 'always()')
             self.assertIn('.bluebuild/*-vm-host.json', upload['with']['path'].splitlines())

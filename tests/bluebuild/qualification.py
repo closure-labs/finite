@@ -70,6 +70,9 @@ class Qualification(unittest.TestCase):
         if not fresh:
             value['target'] = self.candidate
         (base / 'acceptance.json').write_text(json.dumps(value))
+        for operation in (['initialize'] if fresh else ['initialize', 'updated']):
+            (base / ('functional-' + operation + '.json')).write_text(json.dumps(
+                {'schema': 1, 'operation': operation, 'exitCode': 0}))
         iso = self.directory / ('iso-candidate' if fresh else 'iso-predecessor')
         iso.mkdir()
         (iso / (self.profile + '.iso')).write_bytes(b'pristine fixture ISO' if fresh else b'predecessor ISO')
@@ -80,6 +83,32 @@ class Qualification(unittest.TestCase):
         (iso / 'SHA256SUMS').write_text(q.sha(iso / iso_name) + '  ' + iso_name + '\n'
             + q.sha(iso / 'installation.json') + '  installation.json\n')
         q.bind_phase(self.directory, phase)
+
+    def test_functional_receipts_are_required_despite_successful_os_acceptance(self):
+        path = self.directory / 'vm-fresh/functional-initialize.json'
+        good = path.read_text()
+        cases = [None, '{', '{}', json.dumps({'schema': 1, 'operation': 'initialize', 'exitCode': 7}),
+                 json.dumps({'schema': 1, 'operation': 'updated', 'exitCode': 0}),
+                 json.dumps({'schema': 1, 'operation': 'initialize', 'exitCode': False})]
+        for value in cases:
+            with self.subTest(value=value):
+                path.unlink(missing_ok=True)
+                if value is not None: path.write_text(value)
+                with self.assertRaises((ValueError, OSError)): self.aggregate()
+        path.write_text(good)
+        self.assertTrue(self.aggregate()['accepted'])
+
+    def test_upgrade_requires_both_functional_operations_from_upgrade_guest(self):
+        self.write_phase('upgrade')
+        for operation in ('initialize', 'updated'):
+            path = self.directory / ('vm-upgrade/functional-' + operation + '.json')
+            good = path.read_text()
+            path.unlink()
+            with self.assertRaises((ValueError, OSError)): self.aggregate(self.previous)
+            path.write_text(json.dumps({'schema': 1, 'operation': operation, 'exitCode': 1}))
+            with self.assertRaisesRegex(ValueError, 'functional check'): self.aggregate(self.previous)
+            path.write_text(good)
+        self.assertTrue(self.aggregate(self.previous)['accepted'])
 
     def aggregate(self, previous=''):
         return q.aggregate(self.directory, self.profile, self.candidate, previous, self.source, self.build, self.revision)
@@ -1103,21 +1132,35 @@ class ExecutionGate(unittest.TestCase):
             self.assertEqual(diagnostic['installerCompression']['presetSha256'],original_sha(ROOT/'files/installer/lorax-zstd.conf'))
             with patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION='unknown'),self.assertRaises(ValueError):q.context()
 
+    def test_functional_job_is_required_and_preserves_native_producer_contract(self):
+        workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
+        functional = workflow['jobs']['functional']
+        self.assertEqual(functional['needs'], ['prepare', 'phase'])
+        self.assertEqual(functional['name'], 'aggregate')
+        self.assertIn("needs.phase.result == 'success'", functional['if'])
+        self.assertNotIn('continue-on-error', functional)
+        step = next(step for step in functional['steps'] if 'collect-qualification.py' in step.get('run', ''))
+        self.assertNotIn('continue-on-error', step)
+        self.assertIn('qualification-context.py aggregate', step['run'])
+        self.assertEqual(workflow['jobs']['phase']['env']['FINITE_SEPARATE_FUNCTIONAL'], True)
+        call = workflow.get('on', workflow.get(True))['workflow_call']
+        self.assertEqual(call['outputs']['evidence']['value'], '${{ jobs.functional.outputs.evidence }}')
+
     def test_workflow_diagnostic_artifacts_and_cache_gates_are_distinct(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
         call = workflow.get('on', workflow.get(True))['workflow_call']
         self.assertFalse(call['inputs']['validation_only']['default'])
         self.assertEqual(call['inputs']['installer_compression']['default'],'default')
-        for name in ('prepare','phase','aggregate'):
+        for name in ('prepare','phase','functional'):
             self.assertEqual(workflow['jobs'][name]['env']['FINITE_INSTALLER_COMPRESSION'],'${{ inputs.installer_compression }}')
-        for name in ('prepare','aggregate'):
+        for name in ('prepare','functional'):
             setup = next(step for step in workflow['jobs'][name]['steps'] if step.get('uses') == '$/.github/actions/setup-nix')
             self.assertEqual(setup['if'], '${{ !inputs.validation_only }}')
         phase_steps = workflow['jobs']['phase']['steps']
         gate_index = next(i for i,step in enumerate(phase_steps) if step.get('id') == 'benchmark')
         setup_index = next(i for i,step in enumerate(phase_steps) if step.get('uses') == '$/.github/actions/setup-nix')
         self.assertLess(gate_index,setup_index)
-        retention = next(step for step in workflow['jobs']['aggregate']['steps'] if step.get('name') == 'Save qualification evidence')
+        retention = next(step for step in workflow['jobs']['functional']['steps'] if step.get('name') == 'Save qualification evidence')
         self.assertEqual(retention['with']['retention-days'], '${{ inputs.validation_only && 14 || 90 }}')
         prepare = workflow['jobs']['prepare']
         self.assertIn('benchmark-image-tools.yml', prepare['if'])
@@ -1130,8 +1173,9 @@ class ExecutionGate(unittest.TestCase):
         self.assertEqual(phase['strategy']['fail-fast'], "${{ inputs.validation_only && inputs.installer_benchmark != '' }}")
         preserved = next(step for step in phase['steps'] if step.get('name') == 'Preserve pristine qualified candidate ISO for the pilot')
         self.assertIn('!inputs.validation_only', preserved['if'])
+        self.assertIn("steps.acceptance.outputs.functional_passed == 'true'", preserved['if'])
         self.assertIn("contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))", preserved['if'])
-        for job, prefix in [('phase', 'qualification-diagnostic-phase'), ('aggregate', 'qualification-diagnostic')]:
+        for job, prefix in [('phase', 'qualification-diagnostic-phase'), ('functional', 'qualification-diagnostic')]:
             upload = next(step for step in workflow['jobs'][job]['steps']
                           if step.get('name') == ('Save phase evidence' if job == 'phase' else 'Save qualification evidence'))
             self.assertIn(prefix, upload['with']['name'])
@@ -1239,7 +1283,7 @@ class StageTelemetry(unittest.TestCase):
     def test_outcome_retains_distinct_phase_timings_in_both_artifact_paths(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
         step = next(s for s in workflow['jobs']['phase']['steps'] if s.get('name') == 'Record phase outcome')
-        for job, name in [('phase', 'Save phase evidence'), ('aggregate', 'Save qualification evidence')]:
+        for job, name in [('phase', 'Save phase evidence'), ('functional', 'Save qualification evidence')]:
             upload = next(s for s in workflow['jobs'][job]['steps'] if s.get('name') == name)
             self.assertIn('.bluebuild/*-stages.jsonl', upload['with']['path'].splitlines())
         with tempfile.TemporaryDirectory() as temporary:

@@ -154,6 +154,13 @@ def aggregate(directory, profile, candidate, previous, source, build_identity, r
             raise ValueError('VM phase has no complete qualification context')
         if (value.get('validationOnly') is True) != (os.environ.get('FINITE_VALIDATION_ONLY') == 'true'):
             raise ValueError('VM phase diagnostic mode differs from aggregation mode')
+        # Same authenticated phase artifact and guest lifecycle as OS acceptance.
+        operations = ['initialize', 'updated'] if phase == 'upgrade' else ['initialize']
+        for operation in operations:
+            receipt = json.loads(desktop.read(directory / ('vm-' + phase) / ('functional-' + operation + '.json')))
+            if (receipt != {'schema': 1, 'operation': operation, 'exitCode': 0}
+                    or type(receipt.get('schema')) is not int or type(receipt.get('exitCode')) is not int):
+                raise ValueError('Required VM functional check did not pass: ' + phase + '/' + operation)
         contexts.append(current)
     if any(current != contexts[0] for current in contexts):
         raise ValueError('Qualification runners used different firmware, tools or tests')
