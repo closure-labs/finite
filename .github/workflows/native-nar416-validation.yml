@@ -1,0 +1,57 @@
+name: Bounded native NAR416 backport validation
+on:
+  push:
+    branches: [codex/native-nar416-validation]
+    paths:
+      - .github/workflows/native-nar416-validation.yml
+      - experiments/native-nar416/**
+permissions:
+  contents: read
+concurrency:
+  group: finite-native-nar416-validation
+  cancel-in-progress: false
+jobs:
+  native:
+    if: github.repository == 'closure-labs/finite' && github.actor == 'cl-decider[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: DeterminateSystems/nix-src
+          ref: 240bbbcb10d3fc4bce957fafc1000b85ffb004d0
+          path: native-nix
+          persist-credentials: false
+      - name: Verify exact source and patches
+        run: python3 experiments/native-nar416/validate.py prepare
+      - name: Install existing pinned bootstrap Nix
+        uses: DeterminateSystems/determinate-nix-action@f296148a827001a9a82d3685b53210c06e5d3b67 # v3.24.0
+        env:
+          ACTIONS_ID_TOKEN_REQUEST_URL: ""
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ""
+        with:
+          extra-conf: |
+            max-jobs = 2
+            cores = 2
+            eval-cores = 1
+            connect-timeout = 15
+            stalled-download-timeout = 60
+            download-attempts = 3
+      - name: Build only patched native CLI without installation
+        timeout-minutes: 50
+        run: python3 experiments/native-nar416/validate.py build
+      - name: Verify loaded source and run native regressions
+        timeout-minutes: 5
+        run: python3 experiments/native-nar416/validate.py test
+      - name: Preserve metadata and regression results only
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-nar416-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .native-nar416/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
