@@ -16,9 +16,9 @@ OUT = ROOT / '.native-nar416'
 REV = '240bbbcb10d3fc4bce957fafc1000b85ffb004d0'
 CORE = 'src/libstore/filetransfer.cc'
 PATCHES = {'core.patch': 'bc7911d28e6d760b0487a04d8a6be9be20af5c912254c16bda1e797610fd6148',
-           'tests.patch': 'c715ca6a8f5cbfbab5578df150daf2c4efa550c46afffc706b8001bbe4f62e47'}
-ORIGINAL = '306a27e63a3bfa8aff8d3f787c7d3d0f0df6a8110c56e909ff2c0e104f62a2f2'
-PATCHED = '520eaa72dc470487a400a03b3d1ee39e8f7978ea2f124138191acfad2aa96d61'
+           'tests.patch': '656784033b008b786221abbcf35f67de0bfaf9616a0ecf08da0d8ebe315edcf1'}
+ORIGINAL = '92865d00ce339532f7e15ed952479e1985500e02446c1497dd0523699aa0753d'
+PATCHED = '0f7106c425f195a69f31a602670231b14fc0fa2c0b31bc89506004764e276432'
 
 
 def digest(path):
@@ -38,6 +38,8 @@ def save(value):
 def prepare():
     assert capture(['git', '-C', str(SOURCE), 'rev-parse', 'HEAD']) == REV
     assert not capture(['git', '-C', str(SOURCE), 'status', '--porcelain'])
+    assert capture(['git', 'hash-object', str(SOURCE / CORE)]) == 'a25ee6218aaf876491b2404530a697534a3a2164'
+    assert capture(['git', 'hash-object', str(SOURCE/'tests/filetransfer-retry-backoff/test_retry_backoff.py')]) == 'ce8140d908b37b1b0965f652063132d3882b3e62'
     assert digest(SOURCE / CORE) == ORIGINAL
     for name, expected in PATCHES.items():
         assert digest(FILES / name) == expected
@@ -54,7 +56,7 @@ def prepare():
           'experimentScripts': {name: digest(FILES/name) for name in ('validate.py', 'regressions.py')},
           'experimentRevision': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_RUN_ID'],
           'attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'runnerImage': os.environ.get('ImageVersion'),
-          'cpuCount': os.cpu_count(), 'jobCapMinutes': 60, 'distributionChanged': False})
+          'cpuCount': os.cpu_count(), 'jobCapMinutes': 59, 'distributionChanged': False})
 
 
 def build(record):
