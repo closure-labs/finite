@@ -150,7 +150,7 @@ class MetadataOperation:
         return get_json(endpoint, deadline=self.deadline)
 
     def pages(self, endpoint, collection, max_pages=20):
-        if collection not in ('artifacts', 'jobs', 'actions_caches'):
+        if collection not in ('artifacts', 'jobs', 'actions_caches', 'workflow_runs'):
             raise ValueError('Unsupported GitHub metadata collection')
         if type(max_pages) is not int or not 0 < max_pages <= 20:
             raise ValueError('Invalid GitHub metadata page limit')

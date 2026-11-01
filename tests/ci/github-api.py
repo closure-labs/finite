@@ -353,7 +353,7 @@ class MetadataDiscovery(unittest.TestCase):
         self.assertTrue(all(c.kwargs['timeout'] <= 30 for c in run.call_args_list))
 
     def test_jobs_and_caches_share_complete_listing_policy(self):
-        for key in ('jobs', 'actions_caches'):
+        for key in ('jobs', 'actions_caches', 'workflow_runs'):
             with self.subTest(collection=key), patch.object(api, 'get_json', return_value={'total_count': 0, key: []}) as get:
                 self.assertEqual(api.get_metadata(self.endpoint, collection=key), [{'total_count': 0, key: []}])
             self.assertEqual(get.call_count, 1)

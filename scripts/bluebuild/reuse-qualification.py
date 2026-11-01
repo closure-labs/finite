@@ -268,36 +268,106 @@ def reuse(profile, output, *, prepare_tools=False):
     raise Unavailable('No fresh exact qualification artifact found')
 
 
+def retention_time(value):
+    if not isinstance(value, str):
+        raise ValueError('ISO retention timestamp is missing')
+    stamp = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    if stamp.tzinfo is None:
+        raise ValueError('ISO retention timestamp has no timezone')
+    return stamp
+
+
 @bounded_metadata
-def prune_iso(profile, apply=False):
-    """Keep at most two successful ISO generations per profile in the pilot."""
+def plan_iso_retention(profiles, now=None):
+    """Plan bounded cleanup; never infer absence from an incomplete listing.
+
+    ISO uploads expire after seven days. Query successful native main runs in
+    that creation window and their complete artifact lists, not every artifact
+    in the repository. A rerun of an older run can upload a fresh ISO outside
+    this window. Leave it (and artifacts of older attempts) untouched. Each
+    deletion therefore requires two distinct, strictly newer authenticated
+    generations: unobserved artifacts cannot invalidate those witnesses.
+    This is conservative cleanup, not a global inventory or an exact-two cap.
+    """
     if (os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != REPOSITORY
             or os.environ.get('GITHUB_REF') != 'refs/heads/main'):
         raise ValueError('ISO retention requires the hosted main workflow')
-    prefix = 'finite-qualified-iso-' + profile + '-'
-    artifacts = [item for page in github('actions/artifacts?per_page=100', True) for item in page['artifacts']
-                 if item.get('name', '').startswith(prefix) and item.get('expired') is False]
-    successful = []
-    current = int(os.environ['GITHUB_RUN_ID'])
-    for artifact in sorted(artifacts, key=lambda item: item['created_at'], reverse=True):
-        match = re.fullmatch(re.escape(prefix) + r'([1-9][0-9]*)-([1-9][0-9]*)', artifact['name'])
-        if not match:
-            continue
-        run_id, attempt = map(int, match.groups())
-        if run_id == current:
-            successful.append(artifact)
-            continue
-        run = github(f'actions/runs/{run_id}')
-        if (run.get('conclusion') == 'success' and run.get('head_branch') == 'main'
-                and run.get('path') == '.github/workflows/build.yml'
-                and run.get('head_repository', {}).get('full_name') == REPOSITORY):
-            successful.append(artifact)
-    for artifact in successful[2:]:
+    profiles = tuple(profiles)
+    if len(set(profiles)) != len(profiles) or any(p not in ('finite', 'finite-dev') for p in profiles):
+        raise ValueError('Invalid ISO retention profiles')
+    if not profiles:
+        return []
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        raise ValueError('ISO retention clock has no timezone')
+    cutoff = (now - timedelta(days=7)).replace(microsecond=0)
+    since = cutoff.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    pages = get_metadata('repos/' + REPOSITORY + '/actions/workflows/build.yml/runs'
+                         + '?branch=main&status=success&created=%3E%3D' + since + '&per_page=100',
+                         collection='workflow_runs')
+    candidates = {profile: [] for profile in profiles}
+    for page in pages:
+        for run in page['workflow_runs']:
+            if (type(run.get('id')) is not int or type(run.get('run_attempt')) is not int
+                    or run['run_attempt'] < 1 or run.get('status') != 'completed'
+                    or run.get('conclusion') != 'success' or run.get('head_branch') != 'main'
+                    or run.get('event') not in ('push', 'workflow_dispatch', 'schedule')
+                    or run.get('path') != '.github/workflows/build.yml'
+                    or run.get('repository', {}).get('full_name') != REPOSITORY
+                    or run.get('head_repository', {}).get('full_name') != REPOSITORY
+                    or not re.fullmatch('[0-9a-f]{40}', run.get('head_sha', ''))
+                    or not cutoff <= retention_time(run.get('created_at')) <= now):
+                raise ValueError('ISO retention producer differs from the scoped successful main query')
+            artifacts = github(f'actions/runs/{run["id"]}/artifacts?per_page=100', True)
+            seen = set()
+            for artifact_page in artifacts:
+                for artifact in artifact_page['artifacts']:
+                    name = artifact.get('name', '')
+                    if not name.startswith('finite-qualified-iso-'):
+                        continue
+                    match = re.fullmatch(r'finite-qualified-iso-(finite|finite-dev)-([1-9][0-9]*)-([1-9][0-9]*)', name)
+                    if not match or int(match[2]) != run['id']:
+                        raise ValueError('ISO retention artifact name has an invalid run binding')
+                    profile = match[1]
+                    if int(match[3]) > run['run_attempt']:
+                        raise ValueError('ISO retention artifact refers to a future attempt')
+                    if profile not in profiles or int(match[3]) < run['run_attempt']:
+                        # Earlier attempts have no authenticated success verdict.
+                        continue
+                    binding = artifact.get('workflow_run', {})
+                    if (type(artifact.get('id')) is not int or artifact['id'] <= 0
+                            or artifact['name'] in seen or binding.get('id') != run['id']
+                            or binding.get('head_sha') != run['head_sha']
+                            or binding.get('head_branch') != 'main'
+                            or type(artifact.get('expired')) is not bool):
+                        raise ValueError('ISO retention artifact has ambiguous or inconsistent provenance')
+                    seen.add(artifact['name'])
+                    created = retention_time(artifact.get('created_at'))
+                    if created < retention_time(run['created_at']) or created > now:
+                        raise ValueError('ISO retention artifact timestamp differs from its producer')
+                    if not artifact['expired']:
+                        candidates[profile].append((created, artifact))
+    deletions = []
+    for values in candidates.values():
+        for created, artifact in values:
+            if sum(other > created for other, _ in values) >= 2:
+                deletions.append(artifact)
+    if len({a['id'] for a in deletions}) != len(deletions):
+        raise ValueError('ISO retention deletion IDs are ambiguous')
+    return deletions
+
+
+def apply_iso_retention(artifacts, apply=False):
+    """Execute only after every selected profile has a complete plan."""
+    for artifact in artifacts:
         print(('Deleting ' if apply else 'Would delete ') + artifact['name'])
-        if not apply:
-            continue
-        subprocess.run(['gh', 'api', '--method', 'DELETE', f'repos/{REPOSITORY}/actions/artifacts/{artifact["id"]}'],
-                       check=True, timeout=90)
+        if apply:
+            subprocess.run(['gh', 'api', '--method', 'DELETE', f'repos/{REPOSITORY}/actions/artifacts/{artifact["id"]}'],
+                           check=True, timeout=90)
+
+
+def prune_iso(profile, apply=False):
+    apply_iso_retention(plan_iso_retention((profile,)), apply=apply)
 
 
 def main():

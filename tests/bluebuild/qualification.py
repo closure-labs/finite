@@ -1150,24 +1150,29 @@ class IsoScope(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'No preserved qualified ISO'):
             release.require_iso_fallback('finite-dev', '', self.env())
 
-    def test_retention_prunes_only_selected_profiles_and_false_flag_is_noop(self):
+    def test_retention_plans_all_selected_profiles_before_execution(self):
         with patch.object(sys, 'argv', ['prune-qualified-isos.py', '--apply']), \
-                patch.object(retention.module, 'prune_iso') as prune:
-            with patch.dict(os.environ, self.env()):
+                patch.object(retention.module, 'plan_iso_retention', return_value=[]) as plan, \
+                patch.object(retention.module, 'apply_iso_retention') as execute:
+            for selector, enabled, expected in [('finite', 'true', ('finite',)),
+                    ('finite, finite-dev', 'true', ('finite', 'finite-dev')),
+                    ('all', 'true', ('finite', 'finite-dev')), ('finite', 'false', ())]:
+                with self.subTest(selector=selector, enabled=enabled), \
+                        patch.dict(os.environ, self.env(selector, enabled=enabled)):
+                    plan.reset_mock()
+                    execute.reset_mock()
+                    retention.main()
+                    if expected:
+                        plan.assert_called_with(expected)
+                        execute.assert_called_with([], apply=True)
+                    else:
+                        plan.assert_not_called()
+                        execute.assert_not_called()
+            execute.reset_mock()
+            plan.side_effect = r.GitHubReadError('second profile incomplete')
+            with patch.dict(os.environ, self.env('all')), self.assertRaises(r.GitHubReadError):
                 retention.main()
-            prune.assert_called_once_with('finite', apply=True)
-            prune.reset_mock()
-            with patch.dict(os.environ, self.env('finite, finite-dev')):
-                retention.main()
-            self.assertEqual(prune.call_args_list, [unittest.mock.call('finite', apply=True),
-                                                   unittest.mock.call('finite-dev', apply=True)])
-            prune.reset_mock()
-            with patch.dict(os.environ, self.env(enabled='false')):
-                retention.main()
-            prune.assert_not_called()
-            with patch.dict(os.environ, self.env('all')):
-                retention.main()
-            self.assertEqual(prune.call_count, 2)
+            execute.assert_not_called()
 
     def predecessor_guard(self, profile, selector, diagnostic, status=0):
         source = (ROOT / 'scripts/bluebuild/qualify.sh').read_text()
@@ -1318,6 +1323,141 @@ trap 'kill "$pid" "$log_pid" 2>/dev/null || true; wait "$pid" "$log_pid" 2>/dev/
         self.assertFalse((state / 'attempts').exists())
         self.assertFalse((state / 'sleeps').exists())
 
+
+
+class IsoRetention(unittest.TestCase):
+    def setUp(self):
+        self.now = datetime(2026, 11, 1, 6, tzinfo=timezone.utc)
+        self.env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': r.REPOSITORY,
+                    'GITHUB_REF': 'refs/heads/main', 'GITHUB_RUN_ID': '999'}
+        self.runs = []
+        self.artifacts = {}
+        for number in range(1, 5):
+            created = (self.now - timedelta(hours=number)).isoformat()
+            run = {'id': number, 'run_attempt': 1, 'status': 'completed', 'conclusion': 'success',
+                   'head_branch': 'main', 'event': 'push', 'path': '.github/workflows/build.yml',
+                   'repository': {'full_name': r.REPOSITORY},
+                   'head_repository': {'full_name': r.REPOSITORY}, 'head_sha': str(number) * 40,
+                   'created_at': created}
+            self.runs.append(run)
+            self.artifacts[number] = [{'id': number * 10 + n, 'name': f'finite-qualified-iso-{profile}-{number}-1',
+                'created_at': created, 'expired': False,
+                'workflow_run': {'id': number, 'head_sha': run['head_sha'], 'head_branch': 'main'}}
+                for n, profile in enumerate(('finite', 'finite-dev'))]
+        self.requests = []
+
+    def reply(self, endpoint, **kwargs):
+        self.requests.append(endpoint)
+        self.assertNotIn('/actions/artifacts?', endpoint)
+        if '/workflows/build.yml/runs?' in endpoint:
+            self.assertIn('branch=main&status=success&created=%3E%3D2026-10-25T06%3A00%3A00Z', endpoint)
+            return {'total_count': len(self.runs), 'workflow_runs': self.runs}
+        number = int(endpoint.split('/runs/')[1].split('/')[0])
+        return {'total_count': len(self.artifacts[number]), 'artifacts': self.artifacts[number]}
+
+    def plan(self, profiles=('finite', 'finite-dev')):
+        import github_api
+        with patch.dict(os.environ, self.env), patch.object(github_api, 'get_json', side_effect=self.reply), \
+                patch.object(r.subprocess, 'run') as mutation:
+            result = r.plan_iso_retention(profiles, self.now)
+            mutation.assert_not_called()
+            return result
+
+    def test_valid_receipts_keep_two_per_profile_without_repository_inventory(self):
+        # Repository-wide cardinality is irrelevant: no such endpoint is read.
+        self.assertEqual([a['id'] for a in self.plan()], [30, 40, 31, 41])
+        self.assertEqual(len(self.requests), 5)
+
+    def test_older_attempts_expired_artifacts_and_timestamp_ties_are_not_witnesses(self):
+        self.runs[0]['run_attempt'] = 2
+        self.artifacts[2][0]['expired'] = True
+        self.assertEqual(self.plan(('finite',)), [])
+        self.setUp()
+        self.artifacts[1][0]['created_at'] = self.artifacts[2][0]['created_at'] = self.now.isoformat()
+        self.assertEqual([a['id'] for a in self.plan(('finite',))], [30, 40])
+        self.artifacts[3][0]['created_at'] = self.now.isoformat()
+        self.assertEqual([a['id'] for a in self.plan(('finite',))], [40])
+
+    def test_unseen_old_run_reruns_cannot_make_a_candidate_top_two(self):
+        # An unqueried old run can upload a new ISO, which remains untouched.
+        # It cannot remove either of the two newer observed witnesses.
+        selected = self.plan(('finite',))
+        for candidate in selected:
+            self.assertGreaterEqual(sum(a[0]['created_at'] > candidate['created_at']
+                                        for a in self.artifacts.values()), 2)
+
+    def test_wrong_provenance_and_malformed_metadata_fail_before_any_write(self):
+        cases = [('head_sha', 'f' * 40), ('head_branch', 'other'), ('id', 999)]
+        for key, value in cases:
+            with self.subTest(binding=key):
+                original = copy.deepcopy(self.artifacts)
+                self.artifacts[4][1]['workflow_run'][key] = value
+                with self.assertRaises(ValueError): self.plan()
+                self.artifacts = original
+        for field, value in [('status', 'in_progress'), ('conclusion', 'failure'),
+                ('event', 'pull_request'), ('path', '.github/workflows/other.yml'),
+                ('created_at', '2026-01-01T00:00:00Z')]:
+            with self.subTest(run=field):
+                original = copy.deepcopy(self.runs)
+                self.runs[3][field] = value
+                with self.assertRaises(ValueError): self.plan()
+                self.runs = original
+        self.artifacts[4].append(dict(self.artifacts[4][1], id=999))
+        with self.assertRaises(ValueError): self.plan()
+
+    def test_run_pagination_boundaries_count_drift_and_page_exhaustion_fail_closed(self):
+        import github_api
+        for count in (100, 101):
+            runs = [dict(self.runs[0], id=n) for n in range(1, count + 1)]
+            def read(endpoint, **kwargs):
+                if '/workflows/' in endpoint:
+                    page = int(endpoint.rsplit('page=', 1)[1])
+                    return {'total_count': count, 'workflow_runs': runs[(page-1)*100:page*100]}
+                return {'total_count': 0, 'artifacts': []}
+            with patch.dict(os.environ, self.env), patch.object(github_api, 'get_json', side_effect=read):
+                self.assertEqual(r.plan_iso_retention(('finite',), self.now), [])
+        for mode in ('exhaustion', 'count drift', 'duplicate', 'truncated'):
+            def bad(endpoint, **kwargs):
+                page = int(endpoint.rsplit('page=', 1)[1])
+                records = [dict(self.runs[0], id=(page-1)*100+n) for n in range(1, 101)]
+                if mode == 'duplicate' and page == 2: records[0]['id'] = 1
+                if mode == 'truncated': records = records[:1]
+                return {'total_count': 2001 + (page == 2 and mode == 'count drift'), 'workflow_runs': records}
+            with self.subTest(mode=mode), patch.dict(os.environ, self.env), \
+                    patch.object(github_api, 'get_json', side_effect=bad), \
+                    patch.object(r.subprocess, 'run') as mutation, self.assertRaises(r.GitHubReadError):
+                r.prune_iso('finite', apply=True)
+            mutation.assert_not_called()
+
+    def test_artifact_listing_incompleteness_or_deadline_blocks_entire_plan(self):
+        import github_api
+        for error in (r.GitHubReadError('GitHub metadata discovery deadline exhausted'),
+                      r.GitHubReadError('GitHub metadata page limit exhausted')):
+            original = self.reply
+            def read(endpoint, **kwargs):
+                if '/runs/4/artifacts?' in endpoint:
+                    raise error
+                return original(endpoint, **kwargs)
+            with patch.dict(os.environ, self.env), patch.object(github_api, 'get_json', side_effect=read), \
+                    patch.object(r.subprocess, 'run') as mutation, self.assertRaises(r.GitHubReadError):
+                r.apply_iso_retention(r.plan_iso_retention(('finite',), self.now), apply=True)
+            mutation.assert_not_called()
+
+    def test_retention_boundary_and_future_attempt_fail_closed(self):
+        self.runs[3]['created_at'] = (self.now - timedelta(days=7)).isoformat()
+        self.assertEqual([a['id'] for a in self.plan(('finite',))], [30, 40])
+        self.artifacts[4][0]['name'] = 'finite-qualified-iso-finite-4-2'
+        with self.assertRaisesRegex(ValueError, 'future attempt'):
+            self.plan()
+
+    def test_dry_run_never_writes_and_apply_uses_only_the_complete_plan(self):
+        plan = self.plan(('finite',))
+        with patch.object(r.subprocess, 'run') as mutation:
+            r.apply_iso_retention(plan)
+            mutation.assert_not_called()
+            r.apply_iso_retention(plan, apply=True)
+            self.assertEqual(mutation.call_count, 2)
+            self.assertTrue(all(c.args[0][3] == 'DELETE' for c in mutation.call_args_list))
 
 if __name__ == '__main__':
     unittest.main()
