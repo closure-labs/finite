@@ -19,6 +19,8 @@ if [[ $pilot == true ]]; then
 fi
 phase_name="${3:-manual}"
 [[ $phase_name =~ ^(manual|fresh|upgrade)$ ]]
+separate_functional=${FINITE_SEPARATE_FUNCTIONAL:-false}
+[[ $separate_functional == true || $separate_functional == false ]]
 local_validation=${FINITE_LOCAL_VM_VALIDATION:-false}
 [[ $local_validation == true || $local_validation == false ]]
 evidence="$PWD/.bluebuild/vm-$phase_name"
@@ -475,101 +477,48 @@ if [[ $pilot == true ]]; then
   poweroff_vm
   exit 0
 fi
-activation_started=$(monotonic_seconds)
-ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST' 2>&1 | python3 scripts/bluebuild/guest-timings.py "$state/guest-timings.json" --log "$state/home-init.log.gz" --secret "$secrets/luks-key"
+# OS startup has no dependency realization. Keep it independent of Home Manager.
+ssh "${ssh_args[@]}" bash -s -- "$profile" <<'OS_STARTUP'
 set -euo pipefail
-guest_now() {
-  local uptime unused
-  read -r uptime unused </proc/uptime
-  printf '%s\n' "${uptime%.*}"
-}
-guest_stage=
-guest_started=0
-guest_finish() {
-  local status=$1
-  if [[ -n $guest_stage ]]; then
-    printf 'FINITE_GUEST_STAGE %s %s %s\n' "$guest_stage" "$(($(guest_now) - guest_started))" "$status"
-    guest_stage=
-  fi
-}
-guest_begin() {
-  guest_finish 0
-  guest_stage=$1
-  guest_started=$(guest_now)
-}
-trap 'guest_finish "$?"' EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
-guest_begin startup-checks
 echo 'Checking profile, SELinux and Nix daemon startup'
 [[ $(cat /usr/share/finite/build-profile) == "$1" ]]
 [[ $(getenforce) == Enforcing ]]
 mountpoint /nix
 /nix/var/nix/profiles/default/bin/nix store ping --store daemon
 printf 'persistent-nix-state\n' | sudo tee /var/home/nix/finite-acceptance >/dev/null
-jq -n --arg foundation "$(jq -r .foundation /usr/share/finite/profile.json)" \
-  '{schema:3,foundation:$foundation,hardware:"generic-x86_64",packages:[],roles:[],capabilities:[],identity:{}}' >"$HOME/profile.json"
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
-export FINITE_NIX_COMMAND=/nix/var/nix/profiles/default/bin/nix
-# Budget from the guest's CPUs/RAM, not the host runner. Preserve inherited config.
-export NIX_CONFIG="${NIX_CONFIG:-}
-$(python3 /var/lib/finite-vm/nix-resources.py --config)"
-python3 /var/lib/finite-vm/nix-resources.py --verify --nix "$FINITE_NIX_COMMAND"
-guest_begin homebrew-setup
-echo 'Checking the desktop user and shared Homebrew initialization'
-[[ $(id -u) == 1000 && $(id -g) == 1000 ]]
-sudo systemctl start brew-setup.service
-stat -c '%u:%g %a %n' /home/linuxbrew/.linuxbrew /home/linuxbrew/.linuxbrew/Homebrew
-[[ -w /home/linuxbrew/.linuxbrew/Homebrew && -w /home/linuxbrew/.linuxbrew/Cellar ]]
-guest_begin predecessor-preparation
-if [[ $2 == upgrade ]]; then
-  bash /var/lib/finite-vm/prepare-predecessor-home
-fi
-guest_begin home-init
-echo 'Building and activating the base Home Manager environment'
-FOUNDATION_TIMINGS=1 /usr/libexec/finite/home-init --profile "$HOME/profile.json" </dev/null 2>&1
-GUEST
-# A diagnostic storage failure is distinct from the guest process exit. The
-# pipeline above preserves a nonzero SSH status; only successful guests reach
-# this fail-closed evidence check, after all guest output has been drained.
-python3 - "$state/home-init-log.json" <<'CAPTURE'
-import json
-import sys
-with open(sys.argv[1]) as stream:
-    receipt = json.load(stream)
-if receipt.get('captureComplete') is not True:
-    raise SystemExit('VM diagnostic evidence incomplete; guest exit status is recorded separately')
-CAPTURE
-# Initializers and their children must not consume commands from bash -s stdin.
-# Establish the fixture over a separate SSH request, then prove it exists before
-# changing deployments so an uncreated marker cannot masquerade as data loss.
-begin_stage persistence-customization
-ssh "${ssh_args[@]}" python3 - >"$state/initialized-home.json" <<'HOME_INITIALIZED'
-import hashlib
-import json
-from pathlib import Path
-
-configuration = Path.home() / '.config/home-manager'
-customization = configuration / 'customize.nix'
-for name in ('flake.nix', 'flake.lock', 'profile.json', 'customize.nix'):
-    if not (configuration / name).is_file():
-        raise ValueError('Home initialization did not produce the required configuration file: ' + name)
-if Path('/var/home/nix/finite-acceptance').read_text().rstrip('\n') != 'persistent-nix-state':
-    raise ValueError('Nix persistence fixture was not initialized')
-with customization.open('a') as output:
-    output.write('\n# VM acceptance customization\n')
-content = customization.read_bytes()
-if b'VM acceptance customization' not in content:
-    raise ValueError('Home customization fixture was not initialized')
-print(json.dumps({'schema': 1, 'status': 'pass', 'checks': {'nixState': True, 'homeCustomization': True},
-                  'customizationSha256': hashlib.sha256(content).hexdigest()}))
-HOME_INITIALIZED
-end_stage 0
-# Historical combined initialization interval, retained for comparison.
-record_duration home-activation "$(($(monotonic_seconds) - activation_started))"
+OS_STARTUP
+functional_status=0
+run_functional() {
+  local operation=$1 status=0
+  # An external shell retains set -e even though the caller records its status.
+  bash scripts/bluebuild/vm-functional.sh "$operation" "$state" "$profile" "$phase_name" \
+    "$secrets/luks-key" "${ssh_args[@]}" || status=$?
+  if [[ $status != 0 ]]; then functional_status=1; fi
+  jq -n --arg operation "$operation" --argjson status "$status" \
+    '{schema:1,operation:$operation,exitCode:$status}' >"$state/functional-$operation.json"
+}
+finish_functional() {
+  # ISO preservation must wait for this guest's functional success as well.
+  if [[ -n ${GITHUB_OUTPUT:-} ]]; then
+    if [[ $functional_status == 0 ]]; then
+      echo 'functional_passed=true' >>"$GITHUB_OUTPUT"
+    else
+      echo 'functional_passed=false' >>"$GITHUB_OUTPUT"
+    fi
+  fi
+  # Standalone/experimental callers retain the combined failure contract.
+  # Only qualification's separate required functional gate may defer this verdict.
+  if [[ $functional_status != 0 && $separate_functional != true ]]; then
+    echo 'Required VM functional checks failed' >&2
+    exit 1
+  fi
+}
+activation_started=$(monotonic_seconds)
+run_functional initialize
+record_duration home-activation "$(($(monotonic_seconds) - activation_started))" "$functional_status"
 if [[ -z $target ]]; then
   poweroff_vm
+  finish_functional
   jq -n --arg source "$source" --arg profile "$profile" \
     --argjson secure "${FINITE_SECURE_BOOT:-false}" \
     --argjson validation "$local_validation" \
@@ -628,31 +577,13 @@ updated_digest=$(jq -er '.status.booted.image.imageDigest' "$state/updated.json"
 jq -e --arg installed "$updated_digest" --arg index "${target##*@}" \
   '$installed == $index or any(.manifests[]?; .digest == $installed)' \
   "$state/target-manifest.json" >/dev/null
-ssh "${ssh_args[@]}" python3 - >"$state/updated-home.json" <<'HOME_PERSISTENCE'
-import json
-from pathlib import Path
-import sys
-
-checks = {}
-errors = []
-for name, path, expected, exact in (
-    ('nixState', Path('/var/home/nix/finite-acceptance'), 'persistent-nix-state', True),
-    ('homeCustomization', Path.home() / '.config/home-manager/customize.nix', 'VM acceptance customization', False),
-):
-    try:
-        content = path.read_text()
-        matched = content.rstrip('\n') == expected if exact else expected in content
-        checks[name] = matched
-        if not matched:
-            errors.append(f'{name}: persisted marker changed at {path}')
-    except OSError as error:
-        checks[name] = False
-        errors.append(f'{name}: cannot read {path}: {error.strerror}')
-print(json.dumps({'schema': 1, 'status': 'pass' if all(checks.values()) else 'fail', 'checks': checks, 'errors': errors}))
-for error in errors:
-    print('Post-upgrade persistence check failed: ' + error, file=sys.stderr)
-raise SystemExit(bool(errors))
-HOME_PERSISTENCE
+# A failed initialization still leaves the independent OS persistence assertion
+# mandatory. Actual Home Manager customization is checked separately below.
+ssh "${ssh_args[@]}" bash -s <<'OS_PERSISTENCE'
+set -euo pipefail
+[[ $(cat /var/home/nix/finite-acceptance) == persistent-nix-state ]]
+OS_PERSISTENCE
+run_functional updated
 ssh "${ssh_args[@]}" /nix/var/nix/profiles/default/bin/nix store ping --store daemon \
   >"$state/updated-nix-persistence.log" 2>&1 || {
   cat "$state/updated-nix-persistence.log" >&2
@@ -670,6 +601,7 @@ jq -e --arg tag "$installation_tag" '.status.booted.image.image.image == $tag' \
 ssh "${ssh_args[@]}" sudo journalctl -b -u finite-nix-seed -u finite-nix-selinux -u nix-daemon \
   >"$state/nix-journal.log"
 poweroff_vm
+finish_functional
 jq -n --arg source "$source" --arg channel "$channel" --arg profile "$qualification_profile" \
   --arg sourceProfile "$profile" \
   --arg target "$target" --argjson secure "${FINITE_SECURE_BOOT:-false}" \

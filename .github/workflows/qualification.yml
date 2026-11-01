@@ -40,7 +40,7 @@ on:
         default: false
     outputs:
       evidence:
-        value: ${{ jobs.aggregate.outputs.evidence }}
+        value: ${{ jobs.functional.outputs.evidence }}
 # Bootstrap public options; setup-nix resolves them through SecretSpec.
 env:
   FINITE_OPTIMIZED_CACHES: ${{ vars.FINITE_OPTIMIZED_CACHES }}
@@ -134,6 +134,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
+      # Defer only functional verdicts to the REQUIRED functional aggregate job.
+      FINITE_SEPARATE_FUNCTIONAL: true
       FINITE_BENCHMARK_PHASE: ${{ matrix.phase }}
       FINITE_NIX_OBSERVATION: ${{ inputs.validation_only && inputs.installer_benchmark != '' }}
       PROFILE: ${{ inputs.profile }}
@@ -233,7 +235,8 @@ jobs:
           retention-days: 7
       - name: Preserve pristine qualified candidate ISO for the pilot
         if: >-
-          success() && !inputs.validation_only && matrix.phase == 'fresh' &&
+          success() && steps.acceptance.outputs.functional_passed == 'true' &&
+          !inputs.validation_only && matrix.phase == 'fresh' &&
           env.FINITE_QUALIFIED_ISO_PRESERVATION == 'true' &&
           contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -248,7 +251,10 @@ jobs:
           compression-level: 0
           retention-days: 7
 
-  aggregate:
+  functional:
+    # Native producer name is a provenance wire contract used by historical
+    # ISO recovery and release readers. Keep it stable while making ownership explicit.
+    name: aggregate
     needs: [prepare, phase]
     if: always() && needs.prepare.result == 'success' && (needs.phase.result == 'success' || needs.prepare.outputs.reused == 'true')
     runs-on: ubuntu-24.04

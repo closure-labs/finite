@@ -18,7 +18,7 @@ spec.loader.exec_module(upgrade)
 
 class Upgrade(unittest.TestCase):
     def test_home_initializer_cannot_consume_following_remote_script_commands(self):
-        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        source = (ROOT / 'scripts/bluebuild/vm-functional.sh').read_text()
         command = next(line for line in source.splitlines() if '/usr/libexec/finite/home-init --profile' in line)
         with tempfile.TemporaryDirectory() as temporary:
             home = Path(temporary)
@@ -73,7 +73,7 @@ class Upgrade(unittest.TestCase):
         timing_spec = importlib.util.spec_from_file_location('guest_timing', ROOT / 'scripts/bluebuild/guest-timings.py')
         timing = importlib.util.module_from_spec(timing_spec)
         timing_spec.loader.exec_module(timing)
-        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        source = (ROOT / 'scripts/bluebuild/vm-functional.sh').read_text()
         self.assertEqual(source.count('/usr/libexec/finite/home-init --profile'), 1)
         self.assertIn('export NIX_CONFIG="${NIX_CONFIG:-}', source)
         guest = source.split("<<'GUEST' 2>&1 | python3 scripts/bluebuild/guest-timings.py", 1)[1].split('\n', 1)[1].split('\nGUEST', 1)[0]
@@ -90,7 +90,7 @@ class Upgrade(unittest.TestCase):
             self.assertNotIn('homebrew-setup', [r['stage'] for r in rows])
 
     def test_marker_is_verified_after_initialization_before_upgrade(self):
-        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        source = (ROOT / 'scripts/bluebuild/vm-functional.sh').read_text()
         probe = source.split("<<'HOME_INITIALIZED'\n", 1)[1].split('\nHOME_INITIALIZED', 1)[0]
         with tempfile.TemporaryDirectory() as temporary:
             home = Path(temporary)
@@ -118,7 +118,7 @@ class Upgrade(unittest.TestCase):
             self.assertFalse(customization.exists())
 
     def test_post_upgrade_persistence_receipt_identifies_failures(self):
-        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        source = (ROOT / 'scripts/bluebuild/vm-functional.sh').read_text()
         probe = source.split("<<'HOME_PERSISTENCE'\n", 1)[1].split('\nHOME_PERSISTENCE', 1)[0]
         with tempfile.TemporaryDirectory() as temporary:
             home = Path(temporary)
@@ -144,6 +144,42 @@ class Upgrade(unittest.TestCase):
                     self.assertNotIn('fixture-sensitive-data', result.stdout + result.stderr)
                     if mode != 'pass':
                         self.assertIn('Post-upgrade persistence check failed:', result.stderr)
+
+    def test_functional_failure_is_recorded_without_stopping_os_lifecycle(self):
+        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        functions = source.split('functional_status=0\n', 1)[1].split('activation_started=', 1)[0]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            helper = root / 'scripts/bluebuild/vm-functional.sh'
+            helper.parent.mkdir(parents=True)
+            # Prove a nested command failure cannot be swallowed by the caller's ||.
+            helper.write_text('set -euo pipefail\nfalse\nprintf unreachable\n')
+            script = 'set -euo pipefail\nstate=$PWD; secrets=$PWD; profile=finite; phase_name=upgrade; ssh_args=(); functional_status=0\n'
+            script += functions + '\nrun_functional initialize\nprintf continued >os-lifecycle\nfinish_functional\n'
+            for separate in ('false', 'true'):
+                result = subprocess.run(['bash', '-c', 'separate_functional=' + separate + '\n' + script], cwd=root,
+                                        capture_output=True, text=True, env={**os.environ, 'GITHUB_OUTPUT': str(root / ('output-' + separate))})
+                self.assertEqual((root / ('output-' + separate)).read_text(), 'functional_passed=false\n')
+                self.assertEqual(result.returncode, 1 if separate == 'false' else 0)
+                self.assertEqual((root / 'os-lifecycle').read_text(), 'continued')
+                self.assertEqual(json.loads((root / 'functional-initialize.json').read_text()),
+                                 {'schema': 1, 'operation': 'initialize', 'exitCode': 1})
+                self.assertNotIn('unreachable', result.stdout)
+
+    def test_functional_helper_preserves_pipeline_failure_with_real_capture(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'luks-key').write_text('synthetic-key')
+            fake = root / 'ssh'
+            fake.write_text('#!/usr/bin/env bash\nprintf "FINITE_GUEST_STAGE home-init 1 7\\n"\nexit 7\n')
+            fake.chmod(0o700)
+            result = subprocess.run(['bash', 'scripts/bluebuild/vm-functional.sh', 'initialize', str(root),
+                                     'finite', 'fresh', str(root / 'luks-key')], cwd=ROOT,
+                                    env={**os.environ, 'PATH': str(root) + ':' + os.environ['PATH']},
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 7)
+            self.assertFalse((root / 'initialized-home.json').exists())
+            self.assertTrue(json.loads((root / 'home-init-log.json').read_text())['captureComplete'])
 
     def exercise(self, mode):
         with tempfile.TemporaryDirectory() as directory:
