@@ -171,7 +171,7 @@ class Upgrade(unittest.TestCase):
             root = Path(temporary)
             (root / 'luks-key').write_text('synthetic-key')
             fake = root / 'ssh'
-            fake.write_text('#!/usr/bin/env bash\nprintf "FINITE_GUEST_STAGE home-init 1 7\\n"\nexit 7\n')
+            fake.write_text('#!' + sys.executable + '\nimport sys\nprint("FINITE_GUEST_STAGE home-init 1 7")\nsys.exit(7)\n')
             fake.chmod(0o700)
             result = subprocess.run(['bash', 'scripts/bluebuild/vm-functional.sh', 'initialize', str(root),
                                      'finite', 'fresh', str(root / 'luks-key')], cwd=ROOT,
