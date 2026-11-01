@@ -188,6 +188,72 @@ wrong paths, untrusted-ref blob substitutions, removed packets and symlinks.
 Wrong source, shallow history, resource exhaustion and stale-output failures are
 also exercised. No repository-wide local all-ref scan or image build is required.
 
+## Reviewed exact-identifier follow-up
+
+The follow-up policy is limited to the 719 findings of baseline run
+[41338989009](https://github.com/closure-labs/finite/actions/runs/41338989009):
+593 recomputed IDs in one previously byte-authenticated packet, 120 parsed
+public-key hashes/fingerprints, four public Git identifiers and two source-file
+checksums. Its standard Gitleaks fingerprint file is linked by SHA-256 to a
+reviewed proof catalog containing exact Git blob, whole-blob, line and identifier
+hashes and immutable public-source bindings. The catalog stores fingerprint
+digests instead of duplicating native fingerprint strings. No matched values,
+key payloads or report snippets are added to the policy files.
+
+The catalog is loaded only from the workflow's own reviewed main tooling, never
+from a subject/historical checkout. The packet's raw blob is bound to the earlier
+native payload-authentication receipt and the existing full packet/identity parser;
+this does not accept its vulnerabilities or grant live publication authority.
+Public-key and public-Git evidence was also preserved for offline review; old
+native payload authentication was not silently rerun or replaced by a label.
+
+A first, complete upstream scan uses only the original canonical-main-ID policy.
+Before any additional exception is given to Gitleaks, the verifier rejects
+multiple findings sharing an eligible fingerprint, non-regular or different blobs,
+changed line/identifier hashes, multiple-value or multiline source, and mismatched
+redacted match text. Every approved line contains one proven identifier. The
+native match must restore to a unique exact substring of that line. Pinned
+upstream column accounting includes the preceding newline after a fragment's
+first line; the verifier corroborates its two defined column cases only after
+checking exact source bytes. No arbitrary position or time tolerance is used.
+
+Only then does a second complete upstream scan receive the validated standard
+fingerprints. That scan determines the final verdict. Other rules, another path
+or line, copied identifiers and all changed commits remain outside these exact
+fingerprints. Unknowns remain findings. Any ambiguity or validation error clears
+stale output and fails closed; there is no report-filtering substitute for the
+native final scan. The existing 20-minute job cap applies to both passes together.
+The existing report, document, exception and ref budgets still apply.
+
+## Same-recorded-ref validation
+
+Manual dispatch offers the fixed `baseline-41338989009-1` snapshot (the default)
+or `current`; scheduled audits retain current full fetched history. The fixed
+snapshot's checked-in ref/config manifest must match the byte-authenticated native
+artifact digest. The preparation helper fetches only its explicit object IDs into
+a new isolated subject repository, restores exactly its 393 refs and detached
+subject HEAD, and verifies completeness. No moving branch/tag/PR enumeration,
+shallow truncation, historical checkout execution, alternate source or fallback
+to current history is permitted. Missing objects or mismatched refs fail closed.
+
+Before the first scan, its original canonical-ID ignore digest must also equal
+the recorded baseline. Scanner archive, version, default configuration and log
+flags remain identical. The first pass must reproduce every reviewed fingerprint
+for frozen validation; additional unknown matches are retained for the final scan.
+The artifact separates subject revision from reviewed tooling revision and records
+the reference manifest digest. `verification.json` contains fixed counts and hashes
+for the first pass, catalog and final standard ignore file; `summary.json` contains
+the native final verdict. Both raw reports are deleted on exit and neither is
+uploaded. Only the metadata evidence directory is preserved.
+
+Validation uses pinned real-engine synthetic histories for same-line multiple
+matches, provider rules, copied IDs, changed commits, forged/duplicate/multiline
+reports, wrong byte/line/value bindings, stale output and shared packet validation.
+Local frozen-ref fixtures prove exact reconstruction, no historical-file checkout,
+missing-object failure and original-ignore mismatch. Full frozen validation occurs
+only through the guarded reviewed-main workflow; it is not an extra moving-ref
+repository scan or a production dispatch.
+
 ## Explicit historical tradeoff
 
 The separate daily/manual `Audit repository secret history` workflow fetches

@@ -33,7 +33,7 @@ def refs(candidate):
     return result
 
 
-def snapshot(candidate, source, config, ignores, run, attempt):
+def snapshot(candidate, source, config, ignores, run, attempt, tooling=None):
     if (not SHA.fullmatch(source) or packets.git(candidate, 'rev-parse', 'HEAD').decode().strip() != source
             or packets.git(candidate, 'rev-parse', '--is-shallow-repository').strip() != b'false'
             or config.read_bytes() != CONFIG or not re.fullmatch('[1-9][0-9]{0,19}', run)
@@ -43,7 +43,7 @@ def snapshot(candidate, source, config, ignores, run, attempt):
     if len(raw) > 32 * 1024**2:
         raise ValueError('Exception metadata exceeds bound')
     return {'schema': 1, 'repository': 'closure-labs/finite', 'sourceRevision': source,
-            'runId': run, 'runAttempt': attempt, 'refs': refs(candidate),
+            'runId': run, 'runAttempt': attempt, 'toolingRevision': tooling or source, 'refs': refs(candidate),
             'scanner': {'version': '8.30.1', 'officialArchiveSha256': ARCHIVE_SHA256,
                         'config': CONFIG.decode(), 'configSha256': hashlib.sha256(CONFIG).hexdigest(),
                         'logOptions': OPTIONS, 'defaultRules': True, 'inlineAllows': False,
@@ -95,6 +95,8 @@ def main():
     parser.add_argument('--candidate', type=Path, required=True)
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--check', action='store_true')
+    parser.add_argument('--source')
+    parser.add_argument('--frozen', action='store_true')
     parser.add_argument('--config', type=Path)
     parser.add_argument('--ignores', type=Path)
     args = parser.parse_args()
@@ -105,8 +107,13 @@ def main():
         value = packets.decision_controller.decision_packets.decode_json(raw)
         check(args.candidate, value)
     else:
-        value = snapshot(args.candidate, os.environ['GITHUB_SHA'], args.config, args.ignores,
-                         os.environ['GITHUB_RUN_ID'], os.environ['GITHUB_RUN_ATTEMPT'])
+        value = snapshot(args.candidate, args.source or os.environ['GITHUB_SHA'], args.config, args.ignores,
+                         os.environ['GITHUB_RUN_ID'], os.environ['GITHUB_RUN_ATTEMPT'], os.environ['GITHUB_SHA'])
+        if args.frozen:
+            import history_frozen_refs
+            history_frozen_refs.check_inputs(args.candidate, args.ignores)
+            value['referenceBaseline'] = {'runId': '41338989009', 'runAttempt': '1',
+                                          'manifestSha256': history_frozen_refs.BASELINE_DIGEST}
         rendered = json.dumps(value, indent=2) + '\n'
         if len(rendered.encode()) > 8 * 1024**2:
             raise ValueError('Ref manifest exceeds bound')
