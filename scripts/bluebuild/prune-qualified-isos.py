@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Expire pilot ISO archives beyond two successful generations per profile."""
+"""Conservatively expire pilot ISOs with two newer successful generations."""
 import argparse
 import importlib.util
 from pathlib import Path
@@ -18,9 +18,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--apply', action='store_true', help='Delete artifacts after trusted-main validation')
     args = parser.parse_args()
-    for profile in ('finite', 'finite-dev'):
-        if ci_options.iso_preservation_enabled(profile):
-            module.prune_iso(profile, apply=args.apply)
+    profiles = tuple(profile for profile in ('finite', 'finite-dev')
+                     if ci_options.iso_preservation_enabled(profile))
+    if not profiles:
+        return
+    plan = module.plan_iso_retention(profiles)
+    module.apply_iso_retention(plan, apply=args.apply)
 
 
 if __name__ == '__main__':
