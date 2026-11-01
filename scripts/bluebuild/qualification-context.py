@@ -112,6 +112,29 @@ def bind_phase(directory, phase):
     acceptance.write_text(json.dumps(value, indent=2) + '\n')
 
 
+def collected_time(phases, now=None):
+    """Keep the 24-hour gate strict and identify clock disagreement explicitly."""
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        raise ValueError('Qualification observation time requires timezone')
+    now = now.astimezone(timezone.utc)
+    completions = []
+    for phase, origin in phases.items():
+        value = datetime.fromisoformat(origin['completedAt'].replace('Z', '+00:00'))
+        if value.tzinfo is None:
+            raise ValueError('Collected qualification phase is expired or from the future: reason=missing-timezone')
+        value = value.astimezone(timezone.utc)
+        age = now - value
+        if age < timedelta(0) or age > timedelta(hours=24):
+            reason = 'future' if age < timedelta(0) else 'expired'
+            raise ValueError('Collected qualification phase is expired or from the future: '
+                             + f'reason={reason}; phase={phase}; source=github-job; '
+                             + f'completedAt={value.isoformat()}; observedAt={now.isoformat()}; '
+                             + f'ageSeconds={age.total_seconds():.6f}; limitSeconds=86400')
+        completions.append(value)
+    return min(completions)
+
+
 def aggregate(directory, profile, candidate, previous, source, build_identity, revision):
     phases = ['fresh', 'upgrade'] if previous else ['fresh']
     contexts = []
@@ -171,12 +194,7 @@ def aggregate(directory, profile, candidate, previous, source, build_identity, r
                         or not isinstance(origin.get('artifactDigest'), str)
                         or not re.fullmatch(r'sha256:[0-9a-f]{64}', origin['artifactDigest'])):
                     raise ValueError('Invalid collected phase origin')
-            completions = [datetime.fromisoformat(origin['completedAt'].replace('Z', '+00:00'))
-                           for origin in origins['phases'].values()]
-            now = datetime.now(timezone.utc)
-            if any(value.tzinfo is None or value > now or now - value > timedelta(hours=24) for value in completions):
-                raise ValueError('Collected qualification phase is expired or from the future')
-            acceptance['qualifiedAt'] = min(completions).isoformat()
+            acceptance['qualifiedAt'] = collected_time(origins['phases']).isoformat()
             acceptance['qualificationPhaseOrigins'] = origins['phases']
             acceptance['qualifiedIsoOrigin'] = {key: origins['phases']['fresh'][key]
                                                  for key in ('run', 'attempt', 'revision')}

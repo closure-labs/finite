@@ -146,7 +146,7 @@ def producer(run_id, allowed=None):
             'runAttempt': run['run_attempt'], 'headSha': run['head_sha'], 'artifacts': []}
 
 
-def producer_window(origin):
+def producer_window(origin, *, now=None):
     run = api(f'repos/{REPOSITORY}/actions/runs/{origin["runId"]}')
     if (run.get('id') != origin['runId'] or run.get('run_attempt') != origin['runAttempt']
             or run.get('head_sha') != origin['headSha'] or run.get('status') != 'completed'):
@@ -159,8 +159,16 @@ def producer_window(origin):
             raise ValueError('Producer timestamp requires timezone')
         return parsed.astimezone(timezone.utc)
     start, end = timestamp(run.get('created_at')), timestamp(run.get('updated_at'))
-    if start > end or end > datetime.now(timezone.utc):
-        raise ValueError('Invalid authoritative producer time window')
+    now = now or datetime.now(timezone.utc)
+    if now.tzinfo is None:
+        raise ValueError('Producer observation time requires timezone')
+    now = now.astimezone(timezone.utc)
+    if start > end or end > now:
+        reason = 'reversed-window' if start > end else 'future-update'
+        raise ValueError('Invalid authoritative producer time window: '
+                         + f'reason={reason}; source=github-run; createdAt={start.isoformat()}; '
+                         + f'updatedAt={end.isoformat()}; observedAt={now.isoformat()}; '
+                         + f'futureSeconds={(end - now).total_seconds():.6f}')
     return start, end
 
 
