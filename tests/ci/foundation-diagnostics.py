@@ -134,7 +134,7 @@ class BoundedGuestLogs(unittest.TestCase):
         self.assertEqual(gzip.decompress(raw.getvalue()), b'first safe line\n')
         self.assertEqual(capture.error, 'compressed-byte-budget')
         self.assertLessEqual(len(raw.getvalue()), 100)
-        script = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        script = (ROOT / 'scripts/bluebuild/vm-functional.sh').read_text()
         check = script.split("<<'CAPTURE'\n", 1)[1].split('\nCAPTURE', 1)[0]
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
