@@ -4,7 +4,12 @@
 }: let
   upstream = inputs.native-nix;
   pkgs = import upstream.inputs.nixpkgs {inherit system;};
-  patch = ../patches/nix/completed-resume-416.patch;
+  # Project this one file: a whole-checkout store reference would rebuild Nix
+  # after unrelated source changes even when the patch bytes are unchanged.
+  patch = builtins.path {
+    path = ../patches/nix/completed-resume-416.patch;
+    name = "completed-resume-416.patch";
+  };
   components = (upstream.lib.makeComponents {inherit pkgs;}).overrideScope (
     _: previous: {
       nix-store = previous.nix-store.overrideAttrs (old: {

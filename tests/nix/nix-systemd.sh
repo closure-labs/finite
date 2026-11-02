@@ -69,6 +69,8 @@ for unit in user@.service display-manager.service; do
     "${test_root}/usr/lib/systemd/system/${unit}"
   grep -qFx 'Requires=nix.mount' "${unit_source}/${unit}.d/50-finite-nix.conf"
   grep -qFx 'After=nix.mount' "${unit_source}/${unit}.d/50-finite-nix.conf"
+  grep -qFx 'Requires=finite-nix-runtime.service' "${unit_source}/${unit}.d/50-finite-nix.conf"
+  grep -qFx 'After=finite-nix-runtime.service' "${unit_source}/${unit}.d/50-finite-nix.conf"
 done
 install -m 0755 "${true_command}" "${test_root}/usr/bin/true"
 install -d "${test_root}/usr/lib/systemd/system/multi-user.target.wants"
