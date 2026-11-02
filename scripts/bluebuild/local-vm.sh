@@ -6,7 +6,12 @@ profile=${1:?profile required}
 export PROFILE="$profile"
 unset CANDIDATE_DIGEST
 [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite ]]
-[[ ${GITHUB_EVENT_NAME:-} == pull_request || ${GITHUB_EVENT_NAME:-} == merge_group ]]
+manual_validation=false
+if [[ ${GITHUB_EVENT_NAME:-} == workflow_dispatch && ${FORCE_QUALIFICATION:-false} == true ]]; then
+  [[ ${GITHUB_REF:-} == refs/heads/* ]]
+  manual_validation=true
+fi
+[[ ${GITHUB_EVENT_NAME:-} == pull_request || ${GITHUB_EVENT_NAME:-} == merge_group || $manual_validation == true ]]
 [[ ${GITHUB_REF:-} != refs/heads/main ]]
 [[ ${GITHUB_SHA:-} =~ ^[0-9a-f]{40}$ ]]
 work=$(mktemp -d /tmp/finite-local-vm.XXXXXXXX)
@@ -55,7 +60,7 @@ FINITE_LOCAL_VM_VALIDATION=true FINITE_SECURE_BOOT=true \
   python3 scripts/bluebuild/measure.py local-vm-acceptance \
     bash scripts/bluebuild/vm-acceptance.sh "$ISO_OUTPUT_DIR" '' fresh
 mv .bluebuild/vm-local .bluebuild/vm-local-fresh
-if [[ $GITHUB_EVENT_NAME == pull_request && $profile == finite && $(python3 scripts/ci/native-nix-selection.py) == true ]]; then
+if [[ $manual_validation == true && $profile == finite && $(python3 scripts/ci/native-nix-selection.py) == true ]]; then
   # Reuse this exact candidate ISO; change only the installed persistent Nix
   # fixture. The predecessor is read by immutable digest and authenticated
   # with the existing public key; no registry alias or signing policy changes.

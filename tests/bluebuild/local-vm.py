@@ -62,11 +62,27 @@ elif name == 'cosign':
 
 class LocalVM(unittest.TestCase):
     def test_export_is_local_and_vm_receipt_is_diagnostic_only(self):
-        for event_name in ('pull_request', 'merge_group'):
+        for event_name in ('pull_request', 'merge_group', 'workflow_dispatch'):
             with self.subTest(event=event_name):
                 self.exercise(event_name)
+        self.exercise('workflow_dispatch', profile='finite-dev')
 
-    def exercise(self, event_name):
+    def test_manual_validation_boundary(self):
+        preamble = (ROOT / 'scripts/bluebuild/local-vm.sh').read_text().split('work=$(mktemp', 1)[0]
+        for event in ('pull_request', 'merge_group', 'workflow_dispatch', 'push'):
+            for force in ('false', 'true'):
+                for ref in ('refs/heads/main', 'refs/heads/test-validation'):
+                    with self.subTest(event=event, force=force, ref=ref):
+                        env = {**os.environ, 'GITHUB_ACTIONS': 'true',
+                               'GITHUB_REPOSITORY': 'closure-labs/finite', 'GITHUB_SHA': 'a' * 40,
+                               'GITHUB_EVENT_NAME': event, 'FORCE_QUALIFICATION': force, 'GITHUB_REF': ref}
+                        result = subprocess.run(['bash', '-c', preamble, 'fixture', 'finite'],
+                                                env=env, capture_output=True)
+                        expected = ref != 'refs/heads/main' and (event in ('pull_request', 'merge_group')
+                                    or event == 'workflow_dispatch' and force == 'true')
+                        self.assertEqual(result.returncode == 0, expected)
+
+    def exercise(self, event_name, profile='finite'):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / 'bin').mkdir()
@@ -98,12 +114,13 @@ fi
             (root / 'sources').mkdir()
             (root / 'sources/bluebuild-installer.json').write_text('{"cliAlias":"installer-fixture"}')
             (root / '.bluebuild').mkdir()
-            (root / '.bluebuild/finite-image-ref.txt').write_text('a' * 12)
+            (root / f'.bluebuild/{profile}-image-ref.txt').write_text('a' * 12)
             env = {**os.environ, 'PATH': str(root / 'bin') + ':' + os.environ['PATH'],
                    'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
                    'GITHUB_EVENT_NAME': event_name, 'GITHUB_REF': 'refs/pull/5/merge' if event_name == 'pull_request' else 'refs/heads/gh-readonly-queue/main/pr-5-aaaaaaa',
+                   'FORCE_QUALIFICATION': 'true' if event_name == 'workflow_dispatch' else 'false',
                    'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '5', 'GITHUB_RUN_ATTEMPT': '1'}
-            result = subprocess.run(['bash', 'scripts/bluebuild/local-vm.sh', 'finite'], cwd=root,
+            result = subprocess.run(['bash', 'scripts/bluebuild/local-vm.sh', profile], cwd=root,
                                     env=env, capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             document = json.loads((root / 'result.json').read_text())
@@ -111,18 +128,19 @@ fi
             self.assertTrue(document['image'].startswith('local-image@sha256:'))
             self.assertEqual(document['sourceRevision'], 'a' * 40)
             self.assertFalse(list((root / '.bluebuild').glob('*.iso')))
-            timings = [json.loads(line) for line in (root / '.bluebuild/finite-timings.jsonl').read_text().splitlines()]
+            timings = [json.loads(line) for line in (root / f'.bluebuild/{profile}-timings.jsonl').read_text().splitlines()]
             expected = ['local-vm-oci-export', 'local-vm-installer-prepare', 'local-vm-iso-build', 'local-vm-acceptance']
-            if event_name == 'pull_request': expected.append('local-vm-persistent-nix')
+            persistent = event_name == 'workflow_dispatch' and profile == 'finite'
+            if persistent: expected.append('local-vm-persistent-nix')
             self.assertEqual([entry['stage'] for entry in timings], expected)
             self.assertTrue((root/'.bluebuild/vm-local-fresh').is_dir())
-            self.assertEqual((root/'.bluebuild/vm-local-persistent-nix').is_dir(), event_name == 'pull_request')
+            self.assertEqual((root/'.bluebuild/vm-local-persistent-nix').is_dir(), persistent)
             for entry in timings:
                 self.assertEqual(entry['repository'], 'closure-labs/finite')
                 self.assertEqual(entry['runId'], '5')
                 self.assertEqual(entry['runAttempt'], '1')
                 self.assertEqual(entry['revision'], 'a' * 40)
-                self.assertEqual(entry['profile'], 'finite')
+                self.assertEqual(entry['profile'], profile)
                 self.assertEqual(entry['status'], 0)
                 self.assertFalse(entry['authorizesPublication'])
             self.assertIsNone(timings[0]['candidateDigest'])

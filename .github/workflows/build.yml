@@ -479,7 +479,8 @@ jobs:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
       publish: false
-      vm_validation: ${{ needs.impact.outputs.vm == 'true' }}
+      vm_validation: ${{ needs.impact.outputs.vm == 'true' || inputs.qualify }}
+      force_qualification: ${{ inputs.qualify || false }}
       diagnostic_security: ${{ inputs.diagnostic_security || false }}
 
   publish:

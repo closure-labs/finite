@@ -122,6 +122,12 @@ class Premerge(unittest.TestCase):
         receipt = {'localValidation': True, 'sourceRevision': 'a' * 40, 'profile': 'finite',
                    'image': 'local-image@sha256:' + 'b' * 64, 'installationTag': 'localhost/finite-validation:v1-1'}
         self.assertEqual(validate_context(receipt, env), receipt)
+        manual = {**env, 'GITHUB_EVENT_NAME': 'workflow_dispatch',
+                  'GITHUB_REF': 'refs/heads/guest-validation', 'FORCE_QUALIFICATION': 'true'}
+        self.assertEqual(validate_context(receipt, manual), receipt)
+        for changes in ({'FORCE_QUALIFICATION': 'false'}, {'GITHUB_REF': 'refs/heads/main'},
+                        {'GITHUB_REF': 'refs/tags/test'}, {'GITHUB_REPOSITORY': 'fork/finite'}):
+            with self.assertRaises(ValueError): validate_context(receipt, {**manual, **changes})
         for changes in ({'GITHUB_REF': 'refs/heads/main'}, {'GITHUB_EVENT_NAME': 'push'},
                         {'FINITE_LOCAL_VM_VALIDATION': 'false'}, {'GITHUB_REPOSITORY': 'fork/finite'}):
             with self.assertRaises(ValueError): validate_context(receipt, {**env, **changes})
@@ -134,7 +140,8 @@ class Premerge(unittest.TestCase):
         images = build['jobs']['images']
         self.assertIn("github.event_name != 'pull_request'", images['if'])
         self.assertNotIn("github.event_name != 'merge_group'", images['if'])
-        self.assertEqual(images['with']['vm_validation'], "${{ needs.impact.outputs.vm == 'true' }}")
+        self.assertEqual(images['with']['force_qualification'], '${{ inputs.qualify || false }}')
+        self.assertEqual(images['with']['vm_validation'], "${{ needs.impact.outputs.vm == 'true' || inputs.qualify }}")
         self.assertFalse(images['with']['publish'])
         self.assertNotIn('secrets', images)
         self.assertEqual(images['permissions'], {'contents': 'read', 'pull-requests': 'read', 'packages': 'read'})

@@ -24,18 +24,18 @@ def action_allowed(action, selected):
             or any(fnmatch.fnmatchcase(action, pattern) for pattern in selected['patterns_allowed']))
 
 
-def image_timeout(value, event, profile, vm_validation, publish):
+def image_timeout(value, event, profile, vm_validation, publish, force=False):
     """Interpret only the reviewed bounded profile expression, never eval YAML."""
-    if event not in ('pull_request', 'merge_group', 'push') or profile not in ('finite', 'finite-dev') or type(vm_validation) is not bool or type(publish) is not bool:
+    if event not in ('pull_request', 'merge_group', 'push', 'workflow_dispatch') or profile not in ('finite', 'finite-dev') or type(vm_validation) is not bool or type(publish) is not bool or type(force) is not bool:
         raise ValueError('Unknown image execution context')
     if type(value) is int and value > 0:
         return value
     if not isinstance(value, str):
         raise ValueError('Invalid image deadline')
-    match = re.fullmatch(r"\$\{\{ github\.event_name == 'pull_request' && inputs\.vm_validation && !inputs\.publish && inputs\.profile == 'finite' && ([1-9][0-9]*) \|\| ([1-9][0-9]*) \}\}", value)
+    match = re.fullmatch(r"\$\{\{ github\.event_name == 'workflow_dispatch' && inputs\.force_qualification && inputs\.vm_validation && !inputs\.publish && inputs\.profile == 'finite' && ([1-9][0-9]*) \|\| ([1-9][0-9]*) \}\}", value)
     if not match:
         raise ValueError('Unreviewed image deadline expression')
-    return int(match[1] if event == 'pull_request' and vm_validation and not publish and profile == 'finite' else match[2])
+    return int(match[1] if event == 'workflow_dispatch' and force and vm_validation and not publish and profile == 'finite' else match[2])
 
 
 class DeliveryPolicy(unittest.TestCase):
@@ -95,13 +95,14 @@ class DeliveryPolicy(unittest.TestCase):
 
     def test_profile_deadlines_preserve_approved_caps(self):
         limit = workflow('image')['jobs']['build']['timeout-minutes']
-        for event in ('pull_request', 'merge_group', 'push'):
+        for event in ('pull_request', 'merge_group', 'push', 'workflow_dispatch'):
             for profile in ('finite', 'finite-dev'):
                 for vm in (False, True):
                     for publish in (False, True):
                         with self.subTest(event=event, profile=profile, vm=vm, publish=publish):
-                            expected = 150 if event == 'pull_request' and profile == 'finite' and vm and not publish else 120
-                            self.assertEqual(image_timeout(limit, event, profile, vm, publish), expected)
+                            for force in (False, True):
+                                expected = 150 if event == 'workflow_dispatch' and force and profile == 'finite' and vm and not publish else 120
+                                self.assertEqual(image_timeout(limit, event, profile, vm, publish, force), expected)
 
     def test_unknown_deadlines_fail_closed(self):
         for value in (True, 0, -1, '150', '${{ 150 || 0 }}', '${{ inputs.other && 150 || 120 }}'):

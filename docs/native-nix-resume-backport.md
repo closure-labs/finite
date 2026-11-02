@@ -34,14 +34,14 @@ and libnixstore to the image's expected hashes.
 
 ## Required hosted validation
 
-Normal PR validation boots both profile images with the existing Secure Boot,
+Merge-queue validation and explicit unpublished branch validation boot both profile images with the existing Secure Boot,
 encrypted-root, SELinux and required Home Manager/Homebrew checks. The signed
 NAR functional fixture tests ordinary and complete-body/416 substitution,
 unsigned and unknown-key rejection, and corrupted data rejection. It uses
 ephemeral fixture keys and per-command trust in disposable guests only; no
 private key or persistent trust setting is retained in artifacts.
 
-For relevant Nix changes, the finite job reuses that exact candidate ISO for a
+With `qualify=true` on an unpublished branch dispatch, the finite job reuses that exact candidate ISO for a
 second installation. It preloads the immutable Nix seed from a digest-pinned,
 signature-verified published predecessor. First boot must replace that old
 client, preserve its Nix state/certificates, and run the fixed daemon. A second
@@ -51,8 +51,9 @@ migration coverage, not a signed OS update/deployment or a kernel-transition
 claim. The finite-dev profile receives normal fresh coverage, not a separate
 persisted-state cohort.
 
-The finite PR image job is capped at 150 minutes, finite-dev at its existing
-120 minutes. The extra preserved-state cohort runs on PRs; merge-queue jobs
+The explicit finite validation image job is capped at 150 minutes, finite-dev at
+its existing 120 minutes. Ordinary PRs run source checks only. The extra
+preserved-state cohort runs only on the explicit branch dispatch; merge-queue jobs
 retain the existing fresh validation and 120-minute cap, fitting the unchanged
-240-minute queue deadline. ISO creation is not repeated for the second PR VM.
+240-minute queue deadline. ISO creation is not repeated for the second validation VM.
 No production signing/promotion action is part of this draft validation.
