@@ -32,27 +32,53 @@ profile formats fail closed. Nixd uses the same default profile to spawn the
 daemon. Guest checks independently bind both the client and running daemon ELF
 and libnixstore to the image's expected hashes.
 
-## Required hosted validation
+## Validation and normal pipeline
 
-Normal PR validation boots both profile images with the existing Secure Boot,
-encrypted-root, SELinux and required Home Manager/Homebrew checks. The signed
-NAR functional fixture tests ordinary and complete-body/416 substitution,
-unsigned and unknown-key rejection, and corrupted data rejection. It uses
-ephemeral fixture keys and per-command trust in disposable guests only; no
-private key or persistent trust setting is retained in artifacts.
+Ordinary PR updates retain the full source/runtime checks. The protected merge
+queue performs selected fresh-image VM validation, including Secure Boot,
+encrypted root, SELinux and required Home Manager/Homebrew checks. The signed
+NAR fixture covers ordinary and complete-body/416 substitution, unsigned and
+unknown-key rejection, and corrupted data rejection. Its keys are ephemeral,
+with per-command trust in disposable guests only.
 
-For relevant Nix changes, the finite job reuses that exact candidate ISO for a
-second installation. It preloads the immutable Nix seed from a digest-pinned,
-signature-verified published predecessor. First boot must replace that old
-client, preserve its Nix state/certificates, and run the fixed daemon. A second
-boot must retain the same fixed runtime before functional checks run. Metadata
-records the predecessor digest and seed archive hash. This is persisted-Nix
-migration coverage, not a signed OS update/deployment or a kernel-transition
-claim. The finite-dev profile receives normal fresh coverage, not a separate
-persisted-state cohort.
+The focused integration preserves these entry points and the existing queue
+time limit. It does not add the isolated branch's manual-dispatch routing or
+force another persisted-state VM into the queue. The existing PR-local
+predecessor fixture receives its inert, never-started container command fix.
 
-The finite PR image job is capped at 150 minutes, finite-dev at its existing
-120 minutes. The extra preserved-state cohort runs on PRs; merge-queue jobs
-retain the existing fresh validation and 120-minute cap, fitting the unchanged
-240-minute queue deadline. ISO creation is not repeated for the second PR VM.
-No production signing/promotion action is part of this draft validation.
+Verified hosted evidence is retained separately:
+
+- [Finite fresh installation and preserved-Nix migration](https://github.com/closure-labs/finite/actions/runs/41408057981):
+  the digest-pinned, signature-verified predecessor client was replaced, its
+  state remained after reboot, and client/daemon hashes and SELinux types matched.
+  Both cohorts passed all five signed-NAR controls using the same candidate ISO.
+- [Finite-dev host-space validation](https://github.com/closure-labs/finite/actions/runs/41431341112):
+  source checks, fresh installation, signed-NAR controls and functional
+  initialization passed. Native runtime hashes matched the finite evidence.
+
+These are isolated guest validations, not signed production OS-upgrade,
+deployment or kernel-transition proof. Production signing and promotion remain
+subject to the existing independent gates. An updated PR head requires fresh
+human review; retained results do not replace that authority.
+
+## Host-space handling
+
+Local validation removes only its owned OCI export after successful ISO
+construction and checksum recording. It preserves the ISO and manifests for
+subsequent VM use. Before functional initialization, it reclaims only unused
+cache from this job's completed, named `bluebuild` builder using native Buildx
+free-space targeting. It then checks actual free host bytes and requires
+30,000,000,000 bytes after the guest disk has been installed.
+
+Successful finite initialization grew host-backed VM state by up to 19.1 GB;
+the threshold leaves about 10.9 GB of margin without claiming a universal
+future workload bound. An unsuccessful prune, unavailable measurement or
+insufficient space fails before initialization. Guest disks, Docker images,
+Nix stores and production publication cache policy are preserved.
+
+The finite-dev validation reported 9.068 GB reclaimed, measured about 34.48 GB
+free before initialization and retained about 15.31 GB afterward. These are
+resource measurements, not an end-to-end performance comparison. Disk snapshots
+remain bounded, and initializer capture retains its 256 MiB compressed limit.
+Evidence-storage errors stay fail-closed while draining guest output so a
+diagnostic failure does not conceal the guest verdict.

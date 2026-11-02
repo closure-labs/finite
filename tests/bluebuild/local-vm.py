@@ -20,7 +20,8 @@ if name == 'docker':
     if args[0] == 'pull':
         assert args[1] == 'ghcr.io/closure-labs/finite@sha256:' + 'c'*64
     elif args[0] == 'create':
-        assert '--network=none' in args
+        assert args == ['create', '--network=none', '--entrypoint', '/bin/sh',
+                        'ghcr.io/closure-labs/finite@sha256:' + 'c'*64, '-c', ':']
         print('fixture-container')
     elif args[0] == 'cp':
         assert args[1] == 'fixture-container:/usr/lib/finite/determinate-nix-seed'
@@ -42,6 +43,7 @@ if name == 'docker':
         assert 'IMAGE_SIGNED=false' in args
         assert any(arg.startswith('IMAGE_SRC=oci-archive:') for arg in args)
         output = next(arg.split(':')[0] for arg in args if arg.endswith(':/build-container-installer/build'))
+        assert pathlib.Path(output).parent.joinpath('candidate.tar').read_bytes() == b'owned export'
         pathlib.Path(output, 'finite.iso').write_bytes(b'local installer')
     assert '--push' not in args
 elif name == 'skopeo':
@@ -50,6 +52,7 @@ elif name == 'skopeo':
         assert args[-2].startswith('docker-daemon:localhost/finite-validation:')
         assert args[-1].startswith('oci-archive:')
         assert not any(arg.startswith('docker://') for arg in args)
+        pathlib.Path(args[-1].split(':', 2)[1]).write_bytes(b'owned export')
     elif '--format' in args:
         print('sha256:'+'c'*64)
     else:
@@ -65,8 +68,23 @@ class LocalVM(unittest.TestCase):
         for event_name in ('pull_request', 'merge_group'):
             with self.subTest(event=event_name):
                 self.exercise(event_name)
+        self.exercise('merge_group', profile='finite-dev')
 
-    def exercise(self, event_name):
+    def test_premerge_context_remains_required(self):
+        preamble = (ROOT / 'scripts/bluebuild/local-vm.sh').read_text().split('work=$(mktemp', 1)[0]
+        for event in ('pull_request', 'merge_group', 'workflow_dispatch', 'push'):
+            for force in ('false', 'true'):
+                for ref in ('refs/heads/main', 'refs/heads/test-validation'):
+                    with self.subTest(event=event, force=force, ref=ref):
+                        env = {**os.environ, 'GITHUB_ACTIONS': 'true',
+                               'GITHUB_REPOSITORY': 'closure-labs/finite', 'GITHUB_SHA': 'a' * 40,
+                               'GITHUB_EVENT_NAME': event, 'FORCE_QUALIFICATION': force, 'GITHUB_REF': ref}
+                        result = subprocess.run(['bash', '-c', preamble, 'fixture', 'finite'],
+                                                env=env, capture_output=True)
+                        expected = ref != 'refs/heads/main' and event in ('pull_request', 'merge_group')
+                        self.assertEqual(result.returncode == 0, expected)
+
+    def exercise(self, event_name, profile='finite'):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / 'bin').mkdir()
@@ -88,6 +106,8 @@ printf '{}\\n' >"$ISO_OUTPUT_DIR/installer.json"
 set -eu
 [[ $FINITE_LOCAL_VM_VALIDATION == true && $FINITE_SECURE_BOOT == true && -z $2 && $3 == fresh ]]
 (cd "$1" && sha256sum -c SHA256SUMS)
+test ! -e "$(dirname "$1")/candidate.tar"
+test -s "$1/finite.iso"
 cp "$1/installation.json" result.json
 mkdir -p .bluebuild/vm-local
 if [[ -n ${FINITE_NATIVE_NIX_PREDECESSOR:-} ]]; then
@@ -98,12 +118,12 @@ fi
             (root / 'sources').mkdir()
             (root / 'sources/bluebuild-installer.json').write_text('{"cliAlias":"installer-fixture"}')
             (root / '.bluebuild').mkdir()
-            (root / '.bluebuild/finite-image-ref.txt').write_text('a' * 12)
+            (root / f'.bluebuild/{profile}-image-ref.txt').write_text('a' * 12)
             env = {**os.environ, 'PATH': str(root / 'bin') + ':' + os.environ['PATH'],
                    'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
                    'GITHUB_EVENT_NAME': event_name, 'GITHUB_REF': 'refs/pull/5/merge' if event_name == 'pull_request' else 'refs/heads/gh-readonly-queue/main/pr-5-aaaaaaa',
                    'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '5', 'GITHUB_RUN_ATTEMPT': '1'}
-            result = subprocess.run(['bash', 'scripts/bluebuild/local-vm.sh', 'finite'], cwd=root,
+            result = subprocess.run(['bash', 'scripts/bluebuild/local-vm.sh', profile], cwd=root,
                                     env=env, capture_output=True, text=True, timeout=15)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             document = json.loads((root / 'result.json').read_text())
@@ -111,18 +131,19 @@ fi
             self.assertTrue(document['image'].startswith('local-image@sha256:'))
             self.assertEqual(document['sourceRevision'], 'a' * 40)
             self.assertFalse(list((root / '.bluebuild').glob('*.iso')))
-            timings = [json.loads(line) for line in (root / '.bluebuild/finite-timings.jsonl').read_text().splitlines()]
+            timings = [json.loads(line) for line in (root / f'.bluebuild/{profile}-timings.jsonl').read_text().splitlines()]
             expected = ['local-vm-oci-export', 'local-vm-installer-prepare', 'local-vm-iso-build', 'local-vm-acceptance']
-            if event_name == 'pull_request': expected.append('local-vm-persistent-nix')
+            persistent = event_name == 'pull_request' and profile == 'finite'
+            if persistent: expected.append('local-vm-persistent-nix')
             self.assertEqual([entry['stage'] for entry in timings], expected)
             self.assertTrue((root/'.bluebuild/vm-local-fresh').is_dir())
-            self.assertEqual((root/'.bluebuild/vm-local-persistent-nix').is_dir(), event_name == 'pull_request')
+            self.assertEqual((root/'.bluebuild/vm-local-persistent-nix').is_dir(), persistent)
             for entry in timings:
                 self.assertEqual(entry['repository'], 'closure-labs/finite')
                 self.assertEqual(entry['runId'], '5')
                 self.assertEqual(entry['runAttempt'], '1')
                 self.assertEqual(entry['revision'], 'a' * 40)
-                self.assertEqual(entry['profile'], 'finite')
+                self.assertEqual(entry['profile'], profile)
                 self.assertEqual(entry['status'], 0)
                 self.assertFalse(entry['authorizesPublication'])
             self.assertIsNone(timings[0]['candidateDigest'])

@@ -47,6 +47,36 @@ TIMING
 }
 active_stage=
 stage_started=0
+disk_after_initialize=false
+host_disk_snapshot() {
+  # Fixed paths and bounded native commands; diagnostic failure cannot replace
+  # the guest verdict. Console output remains available if the disk is full.
+  {
+    echo "Host disk snapshot: $1"
+    timeout 5s df -B1 -- "$state" "$artifact" /nix/store /var/lib/docker .bluebuild 2>/dev/null || true
+    timeout 10s sudo -n du -sx -B1 -- "$state" "$artifact" .bluebuild /var/lib/docker /nix/store 2>/dev/null || true
+  } | head -c 8192 | tee "$state/disk-$1.log" || true
+}
+ensure_local_host_space() {
+  [[ $local_validation == true ]] || return 0
+  # This is the completed builder created by this disposable Actions job.
+  # Never prune a developer host, publication runner, image or Nix store.
+  [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite &&
+     -n ${GITHUB_REF:-} && ${GITHUB_REF:-} != refs/heads/main ]] || return 1
+  # Observed VM-state growth was 19.1 GB; retain another 10.9 GB of margin.
+  local available required=30000000000
+  timeout 90s docker buildx prune --builder bluebuild --min-free-space "$required" --force || return $?
+  available=$(timeout 5s df -B1 --output=avail -- "$state") || return 1
+  available=${available##*$'\n'}
+  [[ $available =~ ^[[:space:]]*([0-9]+)[[:space:]]*$ ]] || return 1
+  available=${BASH_REMATCH[1]}
+  [[ ${#available} -le 18 ]] || return 1
+  echo "Host initialization headroom: $available bytes available; $required required"
+  if ((10#$available < required)); then
+    echo 'Insufficient host space after scoped build-cache reclamation; stopping before initialization.' >&2
+    return 1
+  fi
+}
 begin_stage() {
   active_stage=$1
   stage_started=$(monotonic_seconds)
@@ -132,7 +162,7 @@ log_pid=
 cleanup() {
   local result=$?
   trap - EXIT INT TERM
-  end_stage "$result"
+  end_stage "$result" || true
   local cleanup_started
   cleanup_started=$(monotonic_seconds)
   if [[ $pilot != true && -n $pid && -f $state/ssh-key ]]; then
@@ -143,7 +173,10 @@ cleanup() {
   if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi
   if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
   # Installer/journal diagnostics can include kickstart content on failure.
-  record_duration cleanup "$(($(monotonic_seconds) - cleanup_started))" "$result"
+  record_duration cleanup "$(($(monotonic_seconds) - cleanup_started))" "$result" || true
+  if [[ $pilot != true && $disk_after_initialize != true ]]; then
+    host_disk_snapshot cleanup
+  fi
   if [[ $pilot == true ]]; then
     # Strict allowlist: no logs, disk, firmware variables, kickstart or keys.
     mkdir -p .bluebuild/bootability-pilot
@@ -156,7 +189,7 @@ cleanup() {
   fi
   if ! python3 scripts/bluebuild/redact-vm-logs.py "$state" "$secrets/luks-key" "$evidence" --snapshot; then
     echo 'VM diagnostics could not be sanitized; withholding all VM artifacts.' >&2
-    result=1
+    if [[ $result == 0 ]]; then result=1; fi
   fi
   rm -rf "$state"
   exit "$result"
@@ -550,7 +583,12 @@ if [[ -n $native_predecessor ]]; then
   poweroff_vm
   boot_vm native-nix-reboot
 fi
+host_disk_snapshot before-initialize
+ensure_local_host_space
+host_disk_snapshot ready-initialize
 run_functional initialize
+host_disk_snapshot after-initialize
+disk_after_initialize=true
 record_duration home-activation "$(($(monotonic_seconds) - activation_started))" "$functional_status"
 if [[ -z $target ]]; then
   poweroff_vm

@@ -51,6 +51,8 @@ jq -n --arg image "local-image@$digest" --arg tag "$local_ref" \
     updateChannel:$channel,profile:$profile,installer:$installer[0]}' >"$ISO_OUTPUT_DIR/installation.json"
 cp "$work/source-manifest.json" "$ISO_OUTPUT_DIR/source-manifest.json"
 (cd "$ISO_OUTPUT_DIR" && sha256sum -- *.iso installation.json source-manifest.json >SHA256SUMS)
+# The completed ISO owns the installer data; release only this temporary export.
+rm -f -- "$work/candidate.tar"
 FINITE_LOCAL_VM_VALIDATION=true FINITE_SECURE_BOOT=true \
   python3 scripts/bluebuild/measure.py local-vm-acceptance \
     bash scripts/bluebuild/vm-acceptance.sh "$ISO_OUTPUT_DIR" '' fresh
@@ -64,7 +66,8 @@ if [[ $GITHUB_EVENT_NAME == pull_request && $profile == finite && $(python3 scri
   reference="ghcr.io/closure-labs/finite@$predecessor"
   cosign verify --new-bundle-format=false --key cosign.pub "$reference" >"$work/predecessor-signature.json"
   docker pull "$reference"
-  container=$(docker create --network=none "$reference")
+  # The image need not define a command; this container is never started.
+  container=$(docker create --network=none --entrypoint /bin/sh "$reference" -c ':')
   mkdir -p "$work/predecessor-media"
   # Keep Docker's archive ownership metadata; extracting on the runner first
   # would replace root ownership with the runner's UID.

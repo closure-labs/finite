@@ -39,7 +39,21 @@ guest_begin() {
   guest_stage=$1
   guest_started=$(guest_now)
 }
-trap 'guest_finish "$?"' EXIT
+guest_disk_snapshot() {
+  {
+    echo "Guest disk snapshot: $1"
+    timeout 5s df -B1 -- / /var/home/nix /var/log "$HOME/.cache" 2>/dev/null || true
+    timeout 10s sudo -n du -sx -B1 -- /var/log "$HOME/.cache" /var/home/nix 2>/dev/null || true
+  } | head -c 8192 || true
+}
+guest_exit() {
+  local status=$?
+  trap - EXIT
+  guest_disk_snapshot after-initialize
+  guest_finish "$status"
+  exit "$status"
+}
+trap guest_exit EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 guest_begin startup-checks
@@ -63,6 +77,7 @@ if [[ $2 == upgrade ]]; then
   bash /var/lib/finite-vm/prepare-predecessor-home
 fi
 guest_begin home-init
+guest_disk_snapshot before-initialize
 echo 'Building and activating the base Home Manager environment'
 FOUNDATION_TIMINGS=1 /usr/libexec/finite/home-init --profile "$HOME/profile.json" </dev/null 2>&1
 GUEST
