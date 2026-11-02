@@ -75,7 +75,6 @@ in {
     bash tests/nix/nix-lifecycle.sh
     bash tests/nix/nix-systemd.sh
     python3 tests/bluebuild/native-nix-runtime.py
-    python3 tests/ci/native-nix-selection.py
     python3 tests/bluebuild/wifi-power.py
     bash tests/nix/home-selinux-contexts.sh
     bash tests/nix/nix-selinux.sh
@@ -85,6 +84,7 @@ in {
     export PYTHONDONTWRITEBYTECODE=1
     python3 tests/automation/bluefin-upstream.py
     python3 tests/ci/containerfile-experiment.py
+    python3 tests/ci/native-nix-selection.py
     python3 tests/ci/foundation-update.py
     python3 tests/ci/github-api.py
     python3 tests/ci/publisher-health.py
