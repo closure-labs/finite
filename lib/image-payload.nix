@@ -6,14 +6,13 @@
   version,
   foundation,
   inputs,
-}:
-let
+}: let
   native = import ./native-nix-backport.nix {
     inherit inputs;
     system = pkgs.stdenv.hostPlatform.system;
   };
   determinate = builtins.fromJSON (builtins.readFile ../sources/determinate-nix.json);
-  fetch = asset: pkgs.fetchurl { inherit (asset) url sha256; };
+  fetch = asset: pkgs.fetchurl {inherit (asset) url sha256;};
   homeCatalog = pkgs.writeText "home-profile-catalog.json" (
     builtins.toJSON (
       import ./home-catalog.nix {
@@ -22,7 +21,7 @@ let
       }
     )
   );
-  payload = pkgs.runCommand "finite-image-payload-${version}" { } ''
+  payload = pkgs.runCommand "finite-image-payload-${version}" {} ''
     mkdir -p "$out/home-manager-template"
     cp -R ${homeScaffold}/. "$out/home-manager-template/"
     cp ${homeCatalog} "$out/home-profile-catalog.json"
@@ -54,7 +53,6 @@ let
     }, indent=2) + "\n")
     PY
   '';
-in
-{
+in {
   inherit payload homeCatalog;
 }
