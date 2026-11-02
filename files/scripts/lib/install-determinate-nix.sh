@@ -71,7 +71,7 @@ install -D -m 0444 "${policy}" /usr/share/selinux/packages/determinate-nix.pp
 install -D -m 0444 "${file_contexts}" /usr/share/finite/selinux/nix.fc
 /usr/libexec/finite/require-determinate-nix-version \
 	"${minimum_runtime_version}"
-/usr/libexec/finite/install-native-nix-runtime --image-build
+bash /usr/libexec/finite/install-native-nix-runtime --image-build
 
 # The installer emits mutable-host unit overrides. Finite vendors the same
 # unit contracts under /usr/lib/systemd/system and owns the bootc mount order.

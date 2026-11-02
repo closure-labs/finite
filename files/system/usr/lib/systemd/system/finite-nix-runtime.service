@@ -7,5 +7,5 @@ RequiresMountsFor=/usr/lib/finite/nix-runtime
 
 [Service]
 Type=oneshot
-ExecStart=/usr/libexec/finite/install-native-nix-runtime
+ExecStart=/usr/bin/bash /usr/libexec/finite/install-native-nix-runtime
 RemainAfterExit=yes
