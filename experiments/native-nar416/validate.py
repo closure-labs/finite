@@ -35,6 +35,46 @@ def save(value):
     (OUT / 'result.json').write_text(json.dumps(value, indent=2) + '\n')
 
 
+def unique_object(pairs):
+    value = {}
+    for key, item in pairs:
+        if key in value:
+            raise ValueError('Duplicate derivation metadata key')
+        value[key] = item
+    return value
+
+
+def derivation_source(raw, deriver):
+    """Accept pinned v4 and legacy JSON, retaining exact deriver/source binding."""
+    value = json.loads(raw, object_pairs_hook=unique_object)
+    assert isinstance(value, dict)
+    if 'version' in value or 'derivations' in value:
+        assert set(value) == {'version', 'derivations'}
+        assert type(value['version']) is int and value['version'] == 4
+        drvs, key = value['derivations'], Path(deriver).name
+    else:
+        drvs, key = value, deriver
+    assert isinstance(drvs, dict) and set(drvs) == {key}
+    drv = drvs[key]
+    assert isinstance(drv, dict) and isinstance(drv.get('env'), dict)
+    env = drv['env']
+    sources = [env['src']] if 'src' in env else []
+    if 'structuredAttrs' in drv:
+        attrs = drv['structuredAttrs']
+        assert isinstance(attrs, dict)
+        if 'src' in attrs:
+            sources.append(attrs['src'])
+    if '__json' in env:
+        attrs = json.loads(env['__json'], object_pairs_hook=unique_object)
+        assert isinstance(attrs, dict)
+        if 'src' in attrs:
+            sources.append(attrs['src'])
+    assert sources and all(isinstance(src, str) and re.fullmatch(
+        r'/nix/store/[a-z0-9]{32}-[^/]+', src) for src in sources)
+    assert len(set(sources)) == 1, 'Ambiguous derivation source'
+    return Path(sources[0])
+
+
 def prepare():
     assert capture(['git', '-C', str(SOURCE), 'rev-parse', 'HEAD']) == REV
     assert not capture(['git', '-C', str(SOURCE), 'status', '--porcelain'])
@@ -53,7 +93,7 @@ def prepare():
     save({'schema': 1, 'stage': 'prepared', 'sourceRevision': REV, 'patches': PATCHES,
           'patchedSourceSha256': PATCHED, 'lockSha256': lock,
           'testSourceSha256': digest(SOURCE/'tests/filetransfer-retry-backoff/test_retry_backoff.py'),
-          'experimentScripts': {name: digest(FILES/name) for name in ('validate.py', 'regressions.py')},
+          'experimentScripts': {name: digest(FILES/name) for name in ('validate.py', 'regressions.py', 'test_validation.py')},
           'experimentRevision': os.environ['GITHUB_SHA'], 'run': os.environ['GITHUB_RUN_ID'],
           'attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'runnerImage': os.environ.get('ImageVersion'),
           'cpuCount': os.cpu_count(), 'jobCapMinutes': 59, 'distributionChanged': False})
@@ -83,11 +123,7 @@ def test(record):
     library_root = Path(*library.parts[:4])
     deriver = capture(['nix-store', '--query', '--deriver', str(library_root)])
     assert deriver.startswith('/nix/store/') and deriver.endswith('.drv')
-    drv = json.loads(capture(['nix', 'derivation', 'show', deriver]))
-    assert len(drv) == 1
-    env = next(iter(drv.values()))['env']
-    attrs = json.loads(env.get('__json', '{}'))
-    source = Path(env.get('src') or attrs['src'])
+    source = derivation_source(capture(['nix', 'derivation', 'show', deriver]), deriver)
     candidates = [source / CORE, source / 'filetransfer.cc', source / 'libstore/filetransfer.cc']
     found = [path for path in candidates if path.is_file() and digest(path) == PATCHED]
     assert len(found) == 1, 'Loaded library does not bind the exact patched source'
