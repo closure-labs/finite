@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Default desktop rejects NoCloud input; guest assertions fail on each breach."""
 import os
+import re
 from pathlib import Path
 import subprocess
 import shutil
@@ -102,7 +103,17 @@ class Provisioning(unittest.TestCase):
         self.assertIn("-V cidata", script)
         self.assertIn("finite-nocloud-write-executed", script)
         self.assertIn("finite-nocloud-command-executed", script)
-        self.assertIn("$phase == updated || ($phase == first-boot && $phase_name != upgrade)", script)
+        condition = re.search(r"^  if (\[\[ \$phase == updated .*? \]\]); then$", script, re.MULTILINE)
+        self.assertIsNotNone(condition)
+        # Execute the production predicate: keep predecessor/rollback exclusions
+        # while checking candidate security again after the native-Nix reboot.
+        for phase_name in ("manual", "fresh", "upgrade"):
+            for phase in ("first-boot", "updated", "native-nix-reboot", "rollback"):
+                with self.subTest(phase_name=phase_name, phase=phase):
+                    result = subprocess.run(["bash", "-c", condition.group(1)],
+                                            env=dict(os.environ, phase=phase, phase_name=phase_name))
+                    expected = phase in ("updated", "native-nix-reboot") or (phase == "first-boot" and phase_name != "upgrade")
+                    self.assertEqual(result.returncode == 0, expected)
         self.assertIn('"${provisioning_args[@]}" -boot c', script)
         self.assertIn("<scripts/bluebuild/check-vm-security.sh", script)
 
