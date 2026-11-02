@@ -51,7 +51,7 @@
     inherit (outputDependencies) foundation;
   };
   imagePayload = import ../lib/image-payload.nix {
-    inherit pkgs lib catalog homeScaffold version;
+    inherit pkgs lib catalog homeScaffold version inputs;
     inherit (outputDependencies) foundation;
   };
   baseApplications = import ../lib/flake-applications.nix {

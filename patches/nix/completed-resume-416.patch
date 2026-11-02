@@ -1,0 +1,35 @@
+--- a/src/libstore/filetransfer.cc
++++ b/src/libstore/filetransfer.cc
+@@ -9,0 +10 @@
++#include "nix/util/split.hh"
+@@ -53,0 +55 @@
++    RangeNotSatisfiable = 416,
+@@ -245,0 +248,3 @@
++        /** Complete resource length from a 416 Content-Range, reset per response. */
++        std::optional<curl_off_t> unsatisfiedRangeLength;
++
+@@ -433,0 +439 @@
++                unsatisfiedRangeLength = std::nullopt;
+@@ -463,0 +470,7 @@
++
++                    else if (name == "content-range") {
++                        auto value = toLower(trim(line.substr(i + 1)));
++                        std::string_view rest = value;
++                        if (splitPrefix(rest, "bytes */") && rest.find_first_not_of("0123456789") == rest.npos)
++                            unsatisfiedRangeLength = string2Int<curl_off_t>(rest);
++                    }
+@@ -811,0 +825,7 @@
++        /** For 416 Content-Range describes the resource; Content-Length is the error body. */
++        bool resumedAtEnd(long httpStatus) const
++        {
++            return request.method == HttpMethod::Get && writtenToSink > 0
++                   && httpStatus == HttpStatus::RangeNotSatisfiable && unsatisfiedRangeLength == writtenToSink;
++        }
++
+@@ -857,0 +878,6 @@
++                done = true;
++                callback(std::move(result));
++            }
++
++            else if (code == CURLE_OK && resumedAtEnd(httpStatus)) {
++                act().progress(writtenToSink, writtenToSink);
