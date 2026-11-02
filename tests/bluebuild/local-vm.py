@@ -62,6 +62,11 @@ elif name == 'cosign':
 
 class LocalVM(unittest.TestCase):
     def test_export_is_local_and_vm_receipt_is_diagnostic_only(self):
+        for event_name in ('pull_request', 'merge_group'):
+            with self.subTest(event=event_name):
+                self.exercise(event_name)
+
+    def exercise(self, event_name):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / 'bin').mkdir()
@@ -96,7 +101,7 @@ fi
             (root / '.bluebuild/finite-image-ref.txt').write_text('a' * 12)
             env = {**os.environ, 'PATH': str(root / 'bin') + ':' + os.environ['PATH'],
                    'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
-                   'GITHUB_EVENT_NAME': 'pull_request', 'GITHUB_REF': 'refs/pull/5/merge',
+                   'GITHUB_EVENT_NAME': event_name, 'GITHUB_REF': 'refs/pull/5/merge' if event_name == 'pull_request' else 'refs/heads/gh-readonly-queue/main/pr-5-aaaaaaa',
                    'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '5', 'GITHUB_RUN_ATTEMPT': '1'}
             result = subprocess.run(['bash', 'scripts/bluebuild/local-vm.sh', 'finite'], cwd=root,
                                     env=env, capture_output=True, text=True, timeout=15)
@@ -107,10 +112,11 @@ fi
             self.assertEqual(document['sourceRevision'], 'a' * 40)
             self.assertFalse(list((root / '.bluebuild').glob('*.iso')))
             timings = [json.loads(line) for line in (root / '.bluebuild/finite-timings.jsonl').read_text().splitlines()]
-            self.assertEqual([entry['stage'] for entry in timings], [
-                'local-vm-oci-export', 'local-vm-installer-prepare', 'local-vm-iso-build', 'local-vm-acceptance', 'local-vm-persistent-nix'])
+            expected = ['local-vm-oci-export', 'local-vm-installer-prepare', 'local-vm-iso-build', 'local-vm-acceptance']
+            if event_name == 'pull_request': expected.append('local-vm-persistent-nix')
+            self.assertEqual([entry['stage'] for entry in timings], expected)
             self.assertTrue((root/'.bluebuild/vm-local-fresh').is_dir())
-            self.assertTrue((root/'.bluebuild/vm-local-persistent-nix').is_dir())
+            self.assertEqual((root/'.bluebuild/vm-local-persistent-nix').is_dir(), event_name == 'pull_request')
             for entry in timings:
                 self.assertEqual(entry['repository'], 'closure-labs/finite')
                 self.assertEqual(entry['runId'], '5')

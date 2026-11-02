@@ -51,6 +51,8 @@ migration coverage, not a signed OS update/deployment or a kernel-transition
 claim. The finite-dev profile receives normal fresh coverage, not a separate
 persisted-state cohort.
 
-The finite premerge image job is capped at 150 minutes, finite-dev at its
-existing 120 minutes. ISO creation is not repeated for the second finite VM.
+The finite PR image job is capped at 150 minutes, finite-dev at its existing
+120 minutes. The extra preserved-state cohort runs on PRs; merge-queue jobs
+retain the existing fresh validation and 120-minute cap, fitting the unchanged
+240-minute queue deadline. ISO creation is not repeated for the second PR VM.
 No production signing/promotion action is part of this draft validation.

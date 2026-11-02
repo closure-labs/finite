@@ -55,7 +55,7 @@ FINITE_LOCAL_VM_VALIDATION=true FINITE_SECURE_BOOT=true \
   python3 scripts/bluebuild/measure.py local-vm-acceptance \
     bash scripts/bluebuild/vm-acceptance.sh "$ISO_OUTPUT_DIR" '' fresh
 mv .bluebuild/vm-local .bluebuild/vm-local-fresh
-if [[ $profile == finite && $(python3 scripts/ci/native-nix-selection.py) == true ]]; then
+if [[ $GITHUB_EVENT_NAME == pull_request && $profile == finite && $(python3 scripts/ci/native-nix-selection.py) == true ]]; then
   # Reuse this exact candidate ISO; change only the installed persistent Nix
   # fixture. The predecessor is read by immutable digest and authenticated
   # with the existing public key; no registry alias or signing policy changes.
