@@ -20,7 +20,8 @@ if name == 'docker':
     if args[0] == 'pull':
         assert args[1] == 'ghcr.io/closure-labs/finite@sha256:' + 'c'*64
     elif args[0] == 'create':
-        assert '--network=none' in args
+        assert args == ['create', '--network=none', '--entrypoint', '/bin/sh',
+                        'ghcr.io/closure-labs/finite@sha256:' + 'c'*64, '-c', ':']
         print('fixture-container')
     elif args[0] == 'cp':
         assert args[1] == 'fixture-container:/usr/lib/finite/determinate-nix-seed'

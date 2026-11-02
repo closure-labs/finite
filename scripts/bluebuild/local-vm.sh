@@ -69,7 +69,8 @@ if [[ $manual_validation == true && $profile == finite && $(python3 scripts/ci/n
   reference="ghcr.io/closure-labs/finite@$predecessor"
   cosign verify --new-bundle-format=false --key cosign.pub "$reference" >"$work/predecessor-signature.json"
   docker pull "$reference"
-  container=$(docker create --network=none "$reference")
+  # The image need not define a default command. This container is never started.
+  container=$(docker create --network=none --entrypoint /bin/sh "$reference" -c ':')
   mkdir -p "$work/predecessor-media"
   # Keep Docker's archive ownership metadata; extracting on the runner first
   # would replace root ownership with the runner's UID.

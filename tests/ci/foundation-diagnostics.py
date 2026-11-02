@@ -174,6 +174,82 @@ class BoundedGuestLogs(unittest.TestCase):
         with self.assertRaisesRegex(OSError, 'disk failure'):
             guest.CompressedCapture(Broken()).write(b'output')
 
+    def test_capture_disk_failure_drains_input_and_retains_guest_verdict(self):
+        class Broken:
+            def write(self, data):
+                raise OSError('disk failure')
+        content = b'private secret\nFINITE_GUEST_STAGE home-init 3 19\n'
+        source = io.BytesIO(content)
+        capture = guest.CompressedCapture(Broken())
+        with tempfile.TemporaryDirectory() as temporary:
+            output = io.StringIO()
+            rows = guest.collect(guest.bounded_lines(source, capture, b'secret'),
+                                 Path(temporary) / 'timings.json', guest.BoundedConsole(output))
+            self.assertEqual(source.tell(), len(content))
+            self.assertEqual(capture.input_bytes, len(content.replace(b'secret', b'[REDACTED]')))
+            self.assertEqual(capture.error, 'storage-io-error')
+            self.assertEqual(rows[-1]['status'], 19)
+            self.assertNotIn('secret', output.getvalue())
+
+    def test_unavailable_capture_fails_closed_after_recording_guest_status(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'key').write_bytes(b'secret')
+            for status in (0, 19):
+                result = subprocess.run([sys.executable, str(ROOT / 'scripts/bluebuild/guest-timings.py'),
+                                         str(root / 'timings.json'), '--log', str(root / 'absent/home-init.log.gz'),
+                                         '--secret', str(root / 'key')],
+                                        input=f'private secret\nFINITE_GUEST_STAGE home-init 3 {status}\n',
+                                        text=True, capture_output=True)
+                self.assertEqual(result.returncode, status or 1)
+                self.assertNotIn('secret', result.stdout + result.stderr)
+                self.assertIn(f'Guest stage home-init: 3s, exit {status}', result.stdout)
+                self.assertIn('incomplete', result.stderr)
+
+    def test_timing_storage_error_is_recorded_without_stopping_drain(self):
+        class Broken:
+            def write_text(self, data):
+                raise OSError('disk failure')
+        errors = []
+        rows = guest.collect(['FINITE_GUEST_STAGE startup-checks 1 0\n',
+                              'FINITE_GUEST_STAGE home-init 3 19\n'], Broken(),
+                             guest.BoundedConsole(io.StringIO()), errors)
+        self.assertEqual(errors, ['timing-storage-io-error'])
+        self.assertEqual(rows[-1]['status'], 19)
+
+    def test_disk_snapshots_are_bounded_and_cannot_replace_guest_failure(self):
+        acceptance = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        functional = (ROOT / 'scripts/bluebuild/vm-functional.sh').read_text()
+        host = acceptance.split('host_disk_snapshot() {', 1)[1].split('\nbegin_stage()', 1)[0]
+        host = 'host_disk_snapshot() {' + host
+        guest_functions = functional.split('guest_disk_snapshot() {', 1)[1].split('\ntrap guest_exit EXIT', 1)[0]
+        guest_functions = 'guest_disk_snapshot() {' + guest_functions
+        for script in (host, guest_functions):
+            self.assertIn('timeout 5s df -B1', script)
+            self.assertIn('timeout 10s sudo -n du -sx -B1', script)
+            self.assertIn('head -c 8192', script)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'bin').mkdir()
+            for name in ('df', 'du'):
+                tool = root / 'bin' / name
+                tool.write_text('#!/bin/sh\nhead -c 16384 /dev/zero\nexit 1\n')
+                tool.chmod(0o755)
+            sudo = root / 'bin/sudo'
+            sudo.write_text('#!/bin/sh\ntest "$1" = -n && shift\nexec "$@"\n')
+            sudo.chmod(0o755)
+            env = {**os.environ, 'PATH': str(root / 'bin') + ':' + os.environ['PATH']}
+            result = subprocess.run(['bash', '-c', 'set -euo pipefail; ' + host +
+                                     '\nstate=/absent; artifact=/absent; host_disk_snapshot fixture'],
+                                    env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertLessEqual(len(result.stdout), 8192)
+            result = subprocess.run(['bash', '-c', 'set -euo pipefail; ' + guest_functions +
+                                     '\nguest_finish() { echo "verdict:$1"; }; trap guest_exit EXIT; exit 19'],
+                                    env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 19, result.stderr)
+            self.assertIn('verdict:19', result.stdout)
+
     def test_more_than_512_mib_progress_is_complete_with_bounded_memory(self):
         import hashlib
         class Generated:

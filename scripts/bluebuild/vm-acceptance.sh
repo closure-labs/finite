@@ -47,6 +47,16 @@ TIMING
 }
 active_stage=
 stage_started=0
+disk_after_initialize=false
+host_disk_snapshot() {
+  # Fixed paths and bounded native commands; diagnostic failure cannot replace
+  # the guest verdict. Console output remains available if the disk is full.
+  {
+    echo "Host disk snapshot: $1"
+    timeout 5s df -B1 -- "$state" "$artifact" /nix/store /var/lib/docker .bluebuild 2>/dev/null || true
+    timeout 10s sudo -n du -sx -B1 -- "$state" "$artifact" .bluebuild /var/lib/docker /nix/store 2>/dev/null || true
+  } | head -c 8192 | tee "$state/disk-$1.log" || true
+}
 begin_stage() {
   active_stage=$1
   stage_started=$(monotonic_seconds)
@@ -132,7 +142,7 @@ log_pid=
 cleanup() {
   local result=$?
   trap - EXIT INT TERM
-  end_stage "$result"
+  end_stage "$result" || true
   local cleanup_started
   cleanup_started=$(monotonic_seconds)
   if [[ $pilot != true && -n $pid && -f $state/ssh-key ]]; then
@@ -143,7 +153,10 @@ cleanup() {
   if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi
   if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
   # Installer/journal diagnostics can include kickstart content on failure.
-  record_duration cleanup "$(($(monotonic_seconds) - cleanup_started))" "$result"
+  record_duration cleanup "$(($(monotonic_seconds) - cleanup_started))" "$result" || true
+  if [[ $pilot != true && $disk_after_initialize != true ]]; then
+    host_disk_snapshot cleanup
+  fi
   if [[ $pilot == true ]]; then
     # Strict allowlist: no logs, disk, firmware variables, kickstart or keys.
     mkdir -p .bluebuild/bootability-pilot
@@ -156,7 +169,7 @@ cleanup() {
   fi
   if ! python3 scripts/bluebuild/redact-vm-logs.py "$state" "$secrets/luks-key" "$evidence" --snapshot; then
     echo 'VM diagnostics could not be sanitized; withholding all VM artifacts.' >&2
-    result=1
+    if [[ $result == 0 ]]; then result=1; fi
   fi
   rm -rf "$state"
   exit "$result"
@@ -550,7 +563,10 @@ if [[ -n $native_predecessor ]]; then
   poweroff_vm
   boot_vm native-nix-reboot
 fi
+host_disk_snapshot before-initialize
 run_functional initialize
+host_disk_snapshot after-initialize
+disk_after_initialize=true
 record_duration home-activation "$(($(monotonic_seconds) - activation_started))" "$functional_status"
 if [[ -z $target ]]; then
   poweroff_vm
