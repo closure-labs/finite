@@ -48,6 +48,9 @@ class Migration(unittest.TestCase):
         self.write_manifest()
         systemctl = self.bin/'systemctl'
         systemctl.write_text(shell+'exit "${DAEMON_STATUS:-3}"\n'); systemctl.chmod(0o755)
+        restorecon = self.bin/'restorecon'
+        restorecon.write_text(shell+'echo "restorecon $*" >>"$CALLS"\nexit "${RESTORE_FAIL:-0}"\n')
+        restorecon.chmod(0o755)
         text = (ROOT/'files/system/usr/libexec/finite/install-native-nix-runtime').read_text()
         for old, new in (('/usr/lib/finite/nix-runtime', self.assets),
                          ('/nix/var/nix/profiles/default', self.profile), ('/nix/store', self.store)):
@@ -69,6 +72,7 @@ class Migration(unittest.TestCase):
         calls = (self.root/'calls').read_text().splitlines()
         self.assertEqual(sum('--install' in c for c in calls), 1)
         self.assertEqual(sum('--verify-path' in c for c in calls), 2)
+        self.assertEqual(sum(c.startswith('restorecon -RFD -- ') for c in calls), 2)
 
     def test_active_daemon_blocks_before_copy(self):
         self.assertNotEqual(self.run_migration(DAEMON_STATUS='0').returncode, 0)
@@ -87,6 +91,11 @@ class Migration(unittest.TestCase):
     def test_nar_verification_failure_blocks_activation(self):
         self.assertNotEqual(self.run_migration(VERIFY_FAIL='1').returncode, 0)
         self.assertFalse((self.profile/'bin/nix').exists())
+
+    def test_selinux_label_failure_blocks_execution_and_activation(self):
+        self.assertNotEqual(self.run_migration(RESTORE_FAIL='1').returncode, 0)
+        self.assertFalse((self.profile/'bin/nix').exists())
+        self.assertNotIn('--load-db', (self.root/'calls').read_text())
 
     def test_binary_tampering_blocks_activation(self):
         self.manifest['binarySha256'] = '0'*64; self.write_manifest()

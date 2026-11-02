@@ -27,6 +27,12 @@ for path in "${paths[@]}"; do
   # Existing paths belong to persistent state. Never overwrite their bytes.
   if [[ ! -e $path ]]; then cp -a -- "$source" /nix/store/; fi
 done
+if [[ ${1:-} != --image-build ]]; then
+  # The seed provisioner labels existing state before /nix is mounted. New
+  # paths copied into preserved state need the same existing policy labels.
+  command -v restorecon >/dev/null
+  restorecon -RFD -- "${paths[@]}"
+fi
 export NIX_REMOTE=local
 "$runtime/bin/nix-store" --load-db <"$assets/registration"
 "$runtime/bin/nix-store" --verify-path "${paths[@]}"

@@ -12,6 +12,10 @@ digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
 binary = runtime/'bin/nix'
 assert digest(binary) == manifest['binarySha256']
 assert digest(library) == manifest['librarySha256']
+for path in (binary, library):
+    expected = subprocess.check_output(['matchpathcon', '-n', str(path)], text=True).strip().split(':')[2]
+    actual = subprocess.check_output(['stat', '-c', '%C', str(path)], text=True).strip().split(':')[2]
+    assert actual == expected and actual not in ('default_t', 'unlabeled_t'), 'Native runtime SELinux label mismatch'
 assert Path('/nix/var/nix/profiles/default/bin/nix').resolve() == binary
 subprocess.run([str(binary), '--extra-experimental-features', 'nix-command', '--store', 'daemon',
                 'store', 'ping'], check=True, capture_output=True, timeout=30)
@@ -50,5 +54,6 @@ Path('/var/lib/finite-vm/native-nix-verified').touch()
 print(json.dumps({'schema': 1, 'status': 'pass', 'client': str(binary),
     'binarySha256': manifest['binarySha256'], 'librarySha256': manifest['librarySha256'],
     'runningDaemonMatched': True, 'predecessorStatePresent': marker.exists(),
+    'selinuxTypesMatched': True,
     'priorClient': prior[0], 'sourceRevision': manifest['sourceRevision'],
     'patchedSourceSha256': manifest['patchedSourceSha256']}))
