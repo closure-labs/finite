@@ -43,6 +43,8 @@ modules:
         destination: /usr/share/finite/foundation-source.json
       - source: payload/version
         destination: /usr/share/finite/version
+      - source: payload/nix-runtime
+        destination: /usr/lib/finite/nix-runtime
   - type: script@v1
     scripts:
       - nix-install.sh

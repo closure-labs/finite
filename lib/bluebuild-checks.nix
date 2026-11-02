@@ -74,6 +74,8 @@ in {
     bash tests/nix/determinate-version.sh
     bash tests/nix/nix-lifecycle.sh
     bash tests/nix/nix-systemd.sh
+    python3 tests/bluebuild/native-nix-runtime.py
+    python3 tests/ci/native-nix-selection.py
     python3 tests/bluebuild/wifi-power.py
     bash tests/nix/home-selinux-contexts.sh
     bash tests/nix/nix-selinux.sh

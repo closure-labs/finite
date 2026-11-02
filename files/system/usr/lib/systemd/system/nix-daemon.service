@@ -1,8 +1,8 @@
 [Unit]
 Description=Nix Daemon, with Determinate Nix superpowers
 Documentation=man:nix-daemon https://determinate.systems
-Requires=nix-daemon.socket determinate-nixd.socket
-After=nix-daemon.socket determinate-nixd.socket
+Requires=nix-daemon.socket determinate-nixd.socket finite-nix-runtime.service
+After=nix-daemon.socket determinate-nixd.socket finite-nix-runtime.service
 RequiresMountsFor=/nix/store /nix/var /nix/var/nix/db
 ConditionPathIsReadWrite=/nix/var/nix/daemon-socket
 

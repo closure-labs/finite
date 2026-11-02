@@ -1,0 +1,77 @@
+--- a/src/libstore/filetransfer.cc
++++ b/src/libstore/filetransfer.cc
+@@ -7,6 +7,7 @@
+ #include "nix/util/processes.hh"
+ #include "nix/util/signals.hh"
+ #include "nix/util/util.hh"
++#include "nix/util/split.hh"
+ 
+ #include "nix/store/s3-url.hh"
+ #include <optional>
+@@ -51,6 +52,7 @@
+     ProxyAuthRequired = 407,
+     RequestTimeout = 408,
+     Gone = 410,
++    RangeNotSatisfiable = 416,
+     TooManyRequests = 429,
+     NotImplemented = 501,
+     ServiceUnavailable = 503,
+@@ -243,6 +245,9 @@
+          */
+         std::optional<uint32_t> retryAfterMs;
+ 
++        /** Complete resource length from a 416 Content-Range, reset per response. */
++        std::optional<curl_off_t> unsatisfiedRangeLength;
++
+         curl_off_t bytesReceived = 0;
+ 
+         curl_off_t writtenToSink = 0;
+@@ -431,6 +436,7 @@
+                 acceptRanges = false;
+                 hasContentEncoding = false;
+                 retryAfterMs = std::nullopt;
++                unsatisfiedRangeLength = std::nullopt;
+                 bytesReceived = 0;
+                 appendCurrentUrl();
+             } else {
+@@ -461,6 +467,13 @@
+ 
+                     else if (name == "accept-ranges" && toLower(trim(line.substr(i + 1))) == "bytes")
+                         acceptRanges = true;
++
++                    else if (name == "content-range") {
++                        auto value = toLower(trim(line.substr(i + 1)));
++                        std::string_view rest = value;
++                        if (splitPrefix(rest, "bytes */") && rest.find_first_not_of("0123456789") == rest.npos)
++                            unsatisfiedRangeLength = string2Int<curl_off_t>(rest);
++                    }
+ 
+                     else if (name == "link" || name == "x-amz-meta-link") {
+                         auto value = trim(line.substr(i + 1));
+@@ -809,6 +822,13 @@
+             result.bodySize = 0;
+         }
+ 
++        /** For 416 Content-Range describes the resource; Content-Length is the error body. */
++        bool resumedAtEnd(long httpStatus) const
++        {
++            return request.method == HttpMethod::Get && writtenToSink > 0
++                   && httpStatus == HttpStatus::RangeNotSatisfiable && unsatisfiedRangeLength == writtenToSink;
++        }
++
+         void finish(CURLcode code)
+         {
+             auto finishTime = std::chrono::steady_clock::now();
+@@ -855,6 +875,12 @@
+                 curl_off_t dlSize = 0;
+                 curl_easy_getinfo(req, CURLINFO_SIZE_DOWNLOAD_T, &dlSize);
+                 act().progress(dlSize, dlSize);
++                done = true;
++                callback(std::move(result));
++            }
++
++            else if (code == CURLE_OK && resumedAtEnd(httpStatus)) {
++                act().progress(writtenToSink, writtenToSink);
+                 done = true;
+                 callback(std::move(result));
+             }
