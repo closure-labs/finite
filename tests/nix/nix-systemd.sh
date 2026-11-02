@@ -39,6 +39,7 @@ done
 cp \
   "${unit_source}/finite-nix-selinux.service" \
   "${unit_source}/finite-nix-seed.service" \
+  "${unit_source}/finite-nix-runtime.service" \
   "${unit_source}/finite-nix-socket-cleanup.service" \
   "${unit_source}/finite-nix-gpu.service" \
   "${unit_source}/nix.mount" \
@@ -52,6 +53,8 @@ install -m 0755 "${true_command}" \
   "${test_root}/usr/libexec/finite/install-determinate-nix-selinux-policy"
 install -m 0755 "${true_command}" \
   "${test_root}/usr/libexec/finite/provision-determinate-nix"
+install -m 0755 "${true_command}" \
+  "${test_root}/usr/libexec/finite/install-native-nix-runtime"
 install -m 0755 "${true_command}" "${test_root}/usr/bin/determinate-nixd"
 install -m 0755 "$(type -P rm)" "${test_root}/usr/bin/rm"
 install -m 0755 "${true_command}" "${test_root}/usr/bin/systemd-tmpfiles"
@@ -66,6 +69,8 @@ for unit in user@.service display-manager.service; do
     "${test_root}/usr/lib/systemd/system/${unit}"
   grep -qFx 'Requires=nix.mount' "${unit_source}/${unit}.d/50-finite-nix.conf"
   grep -qFx 'After=nix.mount' "${unit_source}/${unit}.d/50-finite-nix.conf"
+  grep -qFx 'Requires=finite-nix-runtime.service' "${unit_source}/${unit}.d/50-finite-nix.conf"
+  grep -qFx 'After=finite-nix-runtime.service' "${unit_source}/${unit}.d/50-finite-nix.conf"
 done
 install -m 0755 "${true_command}" "${test_root}/usr/bin/true"
 install -d "${test_root}/usr/lib/systemd/system/multi-user.target.wants"
@@ -147,9 +152,9 @@ grep -qFx 'Conflicts=shutdown.target' \
   "${test_root}/usr/lib/systemd/system/nix-daemon.socket"
 grep -qFx 'DefaultDependencies=no' \
   "${test_root}/usr/lib/systemd/system/determinate-nixd.socket"
-grep -qFx 'Requires=nix-daemon.socket determinate-nixd.socket' \
+grep -qFx 'Requires=nix-daemon.socket determinate-nixd.socket finite-nix-runtime.service' \
   "${test_root}/usr/lib/systemd/system/nix-daemon.service"
-grep -qFx 'After=nix-daemon.socket determinate-nixd.socket' \
+grep -qFx 'After=nix-daemon.socket determinate-nixd.socket finite-nix-runtime.service' \
   "${test_root}/usr/lib/systemd/system/nix-daemon.service"
 
 # verify validates unit syntax and references. Test mode additionally resolves
@@ -168,6 +173,7 @@ if [[ -d /run/systemd ]]; then
     finite-nix-selinux.service \
     finite-vm-predecessor-policy.service \
     finite-nix-seed.service \
+    finite-nix-runtime.service \
     finite-nix-socket-cleanup.service \
     finite-nix-gpu.service \
     nix.mount \

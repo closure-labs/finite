@@ -10,7 +10,7 @@
   nixInputs = [../flake.nix ../flake.lock ../devenv.lock ../sources];
 in {
   home-contracts = source [../tests/home ../scripts/home ../files/system];
-  nix-lifecycle = source ([../tests/nix ../scripts/bluebuild ../tests/bluebuild/nix-readiness.sh ../tests/bluebuild/wifi-power.py ../tests/bluebuild/vm-predecessor-home.sh] ++ system);
+  nix-lifecycle = source ([../tests/nix ../scripts/bluebuild ../tests/bluebuild/nix-readiness.sh ../tests/bluebuild/wifi-power.py ../tests/bluebuild/vm-predecessor-home.sh ../tests/bluebuild/native-nix-runtime.py] ++ system);
   vm-iso-layout = source [../tests/bluebuild/vm-iso.sh ../scripts/bluebuild/prepare-vm-iso.sh];
   vm-firmware = source [../tests/bluebuild/vm-firmware.sh ../scripts/bluebuild/prepare-vm-firmware.sh];
   dependency-update-contracts = source ([../tests/automation ../scripts/ci/http-get.py] ++ nixInputs);

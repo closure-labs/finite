@@ -23,6 +23,11 @@ separate_functional=${FINITE_SEPARATE_FUNCTIONAL:-false}
 [[ $separate_functional == true || $separate_functional == false ]]
 local_validation=${FINITE_LOCAL_VM_VALIDATION:-false}
 [[ $local_validation == true || $local_validation == false ]]
+native_predecessor=${FINITE_NATIVE_NIX_PREDECESSOR:-}
+if [[ -n $native_predecessor ]]; then
+  [[ $local_validation == true && $phase_name == fresh && $pilot == false ]]
+  [[ -f $native_predecessor/state.tar && -f $native_predecessor/provenance.json ]]
+fi
 evidence="$PWD/.bluebuild/vm-$phase_name"
 if [[ $pilot == true ]]; then evidence="$PWD/.bluebuild/pilot-private"; fi
 if [[ $local_validation == true ]]; then evidence="$PWD/.bluebuild/vm-local"; fi
@@ -257,6 +262,28 @@ UNIT
 systemctl enable finite-vm-diagnostics.timer
 %end
 KS
+if [[ -n $native_predecessor ]]; then
+  python3 - "$secrets/ks.cfg" <<'PREDECESSOR_STATE'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text()
+assert text.count('%end\n') == 1
+text = text.replace('%end\n', '''
+test ! -e /var/home/nix
+mkdir -p /mnt/finite-native-predecessor
+mount -o ro /dev/disk/by-label/FINITE-NIX-STATE /mnt/finite-native-predecessor
+echo "$(jq -er .archiveSha256 /mnt/finite-native-predecessor/provenance.json)  /mnt/finite-native-predecessor/state.tar" | sha256sum -c -
+mkdir /var/home/nix
+tar -xf /mnt/finite-native-predecessor/state.tar --strip-components=1 -C /var/home/nix
+jq -er .imageDigest /mnt/finite-native-predecessor/provenance.json >/var/home/nix/finite-predecessor-fixture
+umount /mnt/finite-native-predecessor
+%end
+''')
+path.write_text(text)
+PREDECESSOR_STATE
+  xorriso -as mkisofs -quiet -V FINITE-NIX-STATE -J -R -o "$state/native-predecessor.iso" "$native_predecessor"
+fi
 if [[ $pilot == true ]]; then
   # The account label helper must not wait on Nix functional initialization.
   # Leave all shipped OS services and their enablement untouched.
@@ -289,6 +316,9 @@ qemu_args=(
   -drive "if=virtio,format=qcow2,file=$state/disk.qcow2"
   -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22" -device "virtio-net-pci,netdev=net0"
 )
+if [[ -n $native_predecessor ]]; then
+  qemu_args+=(-drive "if=ide,index=3,media=cdrom,format=raw,readonly=on,file=$state/native-predecessor.iso")
+fi
 pid=
 log_pid=
 stream_console() {
@@ -341,7 +371,7 @@ boot_vm() {
   deadline=$((started + 600))
   local -a provisioning_args=()
   local check_security=false
-  if [[ $phase == updated || ($phase == first-boot && $phase_name != upgrade) ]]; then
+  if [[ $phase == updated || $phase == native-nix-reboot || ($phase == first-boot && $phase_name != upgrade) ]]; then
     provisioning_args=(-drive "if=ide,media=cdrom,format=raw,readonly=on,file=$state/nocloud.iso")
     check_security=true
   fi
@@ -388,6 +418,8 @@ boot_vm() {
           >"$state/$phase-security.log"
         ssh "${ssh_args[@]}" sudo python3 - <scripts/bluebuild/check-vm-desktop.py \
           >"$state/$phase-desktop.json"
+        ssh "${ssh_args[@]}" sudo python3 - <scripts/bluebuild/check-native-nix-guest.py \
+          >"$state/$phase-native-nix.json"
         ssh "${ssh_args[@]}" sudo bash -s -- /usr/lib/tmpfiles.d/finite-gdm.conf \
           <scripts/bluebuild/check-vm-gdm-labels.sh >"$state/$phase-gdm-labels.log" 2>&1 || {
             cat "$state/$phase-gdm-labels.log" >&2
@@ -514,6 +546,10 @@ finish_functional() {
   fi
 }
 activation_started=$(monotonic_seconds)
+if [[ -n $native_predecessor ]]; then
+  poweroff_vm
+  boot_vm native-nix-reboot
+fi
 run_functional initialize
 record_duration home-activation "$(($(monotonic_seconds) - activation_started))" "$functional_status"
 if [[ -z $target ]]; then

@@ -52,7 +52,7 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: ${{ inputs.vm_validation && !inputs.publish && inputs.profile == 'finite' && 150 || 120 }}
     outputs:
       digest: ${{ steps.resume.outputs.digest || steps.inspect.outputs.digest }}
       previous: ${{ steps.resume.outputs.previous || steps.prepare.outputs.previous }}
