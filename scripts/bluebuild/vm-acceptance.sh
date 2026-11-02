@@ -23,6 +23,11 @@ separate_functional=${FINITE_SEPARATE_FUNCTIONAL:-false}
 [[ $separate_functional == true || $separate_functional == false ]]
 local_validation=${FINITE_LOCAL_VM_VALIDATION:-false}
 [[ $local_validation == true || $local_validation == false ]]
+native_predecessor=${FINITE_NATIVE_NIX_PREDECESSOR:-}
+if [[ -n $native_predecessor ]]; then
+  [[ $local_validation == true && $phase_name == fresh && $pilot == false ]]
+  [[ -f $native_predecessor/state.tar && -f $native_predecessor/provenance.json ]]
+fi
 evidence="$PWD/.bluebuild/vm-$phase_name"
 if [[ $pilot == true ]]; then evidence="$PWD/.bluebuild/pilot-private"; fi
 if [[ $local_validation == true ]]; then evidence="$PWD/.bluebuild/vm-local"; fi
@@ -42,6 +47,36 @@ TIMING
 }
 active_stage=
 stage_started=0
+disk_after_initialize=false
+host_disk_snapshot() {
+  # Fixed paths and bounded native commands; diagnostic failure cannot replace
+  # the guest verdict. Console output remains available if the disk is full.
+  {
+    echo "Host disk snapshot: $1"
+    timeout 5s df -B1 -- "$state" "$artifact" /nix/store /var/lib/docker .bluebuild 2>/dev/null || true
+    timeout 10s sudo -n du -sx -B1 -- "$state" "$artifact" .bluebuild /var/lib/docker /nix/store 2>/dev/null || true
+  } | head -c 8192 | tee "$state/disk-$1.log" || true
+}
+ensure_local_host_space() {
+  [[ $local_validation == true ]] || return 0
+  # This is the completed builder created by this disposable Actions job.
+  # Never prune a developer host, publication runner, image or Nix store.
+  [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite &&
+     -n ${GITHUB_REF:-} && ${GITHUB_REF:-} != refs/heads/main ]] || return 1
+  # Observed VM-state growth was 19.1 GB; retain another 10.9 GB of margin.
+  local available required=30000000000
+  timeout 90s docker buildx prune --builder bluebuild --min-free-space "$required" --force || return $?
+  available=$(timeout 5s df -B1 --output=avail -- "$state") || return 1
+  available=${available##*$'\n'}
+  [[ $available =~ ^[[:space:]]*([0-9]+)[[:space:]]*$ ]] || return 1
+  available=${BASH_REMATCH[1]}
+  [[ ${#available} -le 18 ]] || return 1
+  echo "Host initialization headroom: $available bytes available; $required required"
+  if ((10#$available < required)); then
+    echo 'Insufficient host space after scoped build-cache reclamation; stopping before initialization.' >&2
+    return 1
+  fi
+}
 begin_stage() {
   active_stage=$1
   stage_started=$(monotonic_seconds)
@@ -127,7 +162,7 @@ log_pid=
 cleanup() {
   local result=$?
   trap - EXIT INT TERM
-  end_stage "$result"
+  end_stage "$result" || true
   local cleanup_started
   cleanup_started=$(monotonic_seconds)
   if [[ $pilot != true && -n $pid && -f $state/ssh-key ]]; then
@@ -138,7 +173,10 @@ cleanup() {
   if [[ -n $pid ]]; then kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi
   if [[ -n $log_pid ]]; then kill "$log_pid" 2>/dev/null || true; wait "$log_pid" 2>/dev/null || true; fi
   # Installer/journal diagnostics can include kickstart content on failure.
-  record_duration cleanup "$(($(monotonic_seconds) - cleanup_started))" "$result"
+  record_duration cleanup "$(($(monotonic_seconds) - cleanup_started))" "$result" || true
+  if [[ $pilot != true && $disk_after_initialize != true ]]; then
+    host_disk_snapshot cleanup
+  fi
   if [[ $pilot == true ]]; then
     # Strict allowlist: no logs, disk, firmware variables, kickstart or keys.
     mkdir -p .bluebuild/bootability-pilot
@@ -151,7 +189,7 @@ cleanup() {
   fi
   if ! python3 scripts/bluebuild/redact-vm-logs.py "$state" "$secrets/luks-key" "$evidence" --snapshot; then
     echo 'VM diagnostics could not be sanitized; withholding all VM artifacts.' >&2
-    result=1
+    if [[ $result == 0 ]]; then result=1; fi
   fi
   rm -rf "$state"
   exit "$result"
@@ -257,6 +295,28 @@ UNIT
 systemctl enable finite-vm-diagnostics.timer
 %end
 KS
+if [[ -n $native_predecessor ]]; then
+  python3 - "$secrets/ks.cfg" <<'PREDECESSOR_STATE'
+from pathlib import Path
+import sys
+path = Path(sys.argv[1])
+text = path.read_text()
+assert text.count('%end\n') == 1
+text = text.replace('%end\n', '''
+test ! -e /var/home/nix
+mkdir -p /mnt/finite-native-predecessor
+mount -o ro /dev/disk/by-label/FINITE-NIX-STATE /mnt/finite-native-predecessor
+echo "$(jq -er .archiveSha256 /mnt/finite-native-predecessor/provenance.json)  /mnt/finite-native-predecessor/state.tar" | sha256sum -c -
+mkdir /var/home/nix
+tar -xf /mnt/finite-native-predecessor/state.tar --strip-components=1 -C /var/home/nix
+jq -er .imageDigest /mnt/finite-native-predecessor/provenance.json >/var/home/nix/finite-predecessor-fixture
+umount /mnt/finite-native-predecessor
+%end
+''')
+path.write_text(text)
+PREDECESSOR_STATE
+  xorriso -as mkisofs -quiet -V FINITE-NIX-STATE -J -R -o "$state/native-predecessor.iso" "$native_predecessor"
+fi
 if [[ $pilot == true ]]; then
   # The account label helper must not wait on Nix functional initialization.
   # Leave all shipped OS services and their enablement untouched.
@@ -289,6 +349,9 @@ qemu_args=(
   -drive "if=virtio,format=qcow2,file=$state/disk.qcow2"
   -netdev "user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22" -device "virtio-net-pci,netdev=net0"
 )
+if [[ -n $native_predecessor ]]; then
+  qemu_args+=(-drive "if=ide,index=3,media=cdrom,format=raw,readonly=on,file=$state/native-predecessor.iso")
+fi
 pid=
 log_pid=
 stream_console() {
@@ -341,7 +404,7 @@ boot_vm() {
   deadline=$((started + 600))
   local -a provisioning_args=()
   local check_security=false
-  if [[ $phase == updated || ($phase == first-boot && $phase_name != upgrade) ]]; then
+  if [[ $phase == updated || $phase == native-nix-reboot || ($phase == first-boot && $phase_name != upgrade) ]]; then
     provisioning_args=(-drive "if=ide,media=cdrom,format=raw,readonly=on,file=$state/nocloud.iso")
     check_security=true
   fi
@@ -388,6 +451,8 @@ boot_vm() {
           >"$state/$phase-security.log"
         ssh "${ssh_args[@]}" sudo python3 - <scripts/bluebuild/check-vm-desktop.py \
           >"$state/$phase-desktop.json"
+        ssh "${ssh_args[@]}" sudo python3 - <scripts/bluebuild/check-native-nix-guest.py \
+          >"$state/$phase-native-nix.json"
         ssh "${ssh_args[@]}" sudo bash -s -- /usr/lib/tmpfiles.d/finite-gdm.conf \
           <scripts/bluebuild/check-vm-gdm-labels.sh >"$state/$phase-gdm-labels.log" 2>&1 || {
             cat "$state/$phase-gdm-labels.log" >&2
@@ -514,7 +579,16 @@ finish_functional() {
   fi
 }
 activation_started=$(monotonic_seconds)
+if [[ -n $native_predecessor ]]; then
+  poweroff_vm
+  boot_vm native-nix-reboot
+fi
+host_disk_snapshot before-initialize
+ensure_local_host_space
+host_disk_snapshot ready-initialize
 run_functional initialize
+host_disk_snapshot after-initialize
+disk_after_initialize=true
 record_duration home-activation "$(($(monotonic_seconds) - activation_started))" "$functional_status"
 if [[ -z $target ]]; then
   poweroff_vm

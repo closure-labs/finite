@@ -25,6 +25,11 @@ def workflow(name):
 
 
 class Premerge(unittest.TestCase):
+    def test_native_backport_changes_always_require_guest_validation(self):
+        for path in ('patches/nix/completed-resume-416.patch', 'lib/native-nix-backport.nix'):
+            with self.subTest(path=path):
+                self.assertTrue(selection.required([path]))
+
     def lock(self):
         return {'version': 7, 'root': 'root', 'nodes': {
             'root': {'inputs': {'nixpkgs': 'nixpkgs'}},

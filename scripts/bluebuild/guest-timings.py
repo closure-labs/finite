@@ -46,7 +46,14 @@ def bounded_lines(stream, raw, secret):
     spec.loader.exec_module(redactor)
     pending, overflow = b'', False
     for chunk in redactor.redacted_chunks(stream, secret):
-        raw.write(chunk)
+        try:
+            raw.write(chunk)
+        except OSError:
+            if not isinstance(raw, CompressedCapture):
+                raise
+            # Keep draining SSH so a diagnostic disk error cannot terminate
+            # the guest early or conceal its real exit status.
+            raw.error = 'storage-io-error'
         for index, part in enumerate(chunk.split(b'\n')):
             if index:
                 yield ('[oversized guest line omitted from console; see capture receipt]\n'
@@ -91,15 +98,15 @@ class BoundedConsole:
     def flush(self):
         self.output.flush()
 
-    def finish(self, rows):
-        failed = not any(row['stage'] == 'home-init' and row['status'] == 0 for row in rows)
+    def finish(self, rows, complete=True):
+        failed = not complete or not any(row['stage'] == 'home-init' and row['status'] == 0 for row in rows)
         if failed:
             self.output.write('Guest initialization failed or was incomplete; recent non-progress output:\n' + self.tail)
         self.output.write('Sanitized initializer output (completeness in home-init-log.json): home-init.log.gz in the VM evidence artifact.\n')
         self.output.flush()
 
 
-def collect(stream, output, console=sys.stdout):
+def collect(stream, output, console=sys.stdout, storage_errors=None):
     rows = []
     foundation, rejected = [], 0
     def document():
@@ -107,6 +114,14 @@ def collect(stream, output, console=sys.stdout):
         if foundation or rejected:
             value['foundation'] = {'schema': 1, 'stages': foundation, 'rejectedRecords': rejected}
         return json.dumps(value) + '\n'
+    def save():
+        try:
+            output.write_text(document())
+        except OSError:
+            if storage_errors is None:
+                raise
+            if not storage_errors:
+                storage_errors.append('timing-storage-io-error')
     for line in stream:
         match = PATTERN.fullmatch(line)
         if match:
@@ -117,7 +132,7 @@ def collect(stream, output, console=sys.stdout):
             if isinstance(console, BoundedConsole):
                 console.output.write(f'Guest stage {stage}: {seconds}s, exit {status}\n')
                 console.flush()
-            output.write_text(document())
+            save()
         else:
             if line.startswith(FOUNDATION):
                 try:
@@ -134,7 +149,7 @@ def collect(stream, output, console=sys.stdout):
                 except (ValueError, TypeError):
                     rejected = min(rejected + 1, 1000000)
                 try:
-                    output.write_text(document())
+                    save()
                 except OSError:
                     # Optional diagnostics must not replace the guest's status.
                     pass
@@ -153,24 +168,46 @@ if __name__ == '__main__':
         parser.error('--log and --secret must be supplied together')
     if args.log:
         console = BoundedConsole(sys.stdout)
-        rows, complete, capture = [], False, None
+        rows, complete, capture, raw = [], False, None, None
+        storage_errors = []
         try:
-            with args.log.open('xb') as raw:
+            try:
+                raw = args.log.open('xb')
                 args.log.chmod(0o600)
-                capture = CompressedCapture(raw)
-                rows = collect(bounded_lines(sys.stdin.buffer, capture, args.secret.read_bytes().strip()), args.output, console)
-                complete = capture.error is None
+            except OSError:
+                storage_errors.append('capture-open-io-error')
+            capture = CompressedCapture(raw)
+            if storage_errors:
+                capture.error = storage_errors[0]
+            rows = collect(bounded_lines(sys.stdin.buffer, capture, args.secret.read_bytes().strip()),
+                           args.output, console, storage_errors)
+            complete = capture.error is None and not storage_errors
         finally:
-            args.log.with_name('home-init-log.json').write_text(json.dumps({
+            if raw is not None:
+                try:
+                    raw.close()
+                except OSError:
+                    complete = False
+                    storage_errors.append('capture-close-io-error')
+            receipt = json.dumps({
                 'schema': 1, 'captureComplete': complete, 'authorizesPublication': False,
                 'consoleByteBudget': 32768, 'compressedLogByteBudget': LOG_LIMIT,
                 'compressedBytes': capture.bytes if capture else 0,
                 'sanitizedBytesObserved': capture.input_bytes if capture else 0,
-                'captureError': capture.error if capture else 'capture-not-started',
-                'homeInitStatus': next((r['status'] for r in rows if r['stage'] == 'home-init'), None)}) + '\n')
-            if capture and capture.error:
-                print('Guest log capture incomplete: compressed storage budget exhausted; '
+                'captureError': (capture.error or next(iter(storage_errors), None)) if capture else 'capture-not-started',
+                'homeInitStatus': next((r['status'] for r in rows if r['stage'] == 'home-init'), None)}) + '\n'
+            try:
+                args.log.with_name('home-init-log.json').write_text(receipt)
+            except OSError:
+                complete = False
+                print('Guest capture receipt unavailable; required evidence remains incomplete.', file=sys.stderr)
+            if not complete:
+                print('Guest log capture incomplete: bounded storage unavailable or exhausted; '
                       'guest status is reported separately.', file=sys.stderr)
-            console.finish(rows)
+            console.finish(rows, complete)
+        if not complete:
+            # Fail closed even if an older receipt survived an I/O failure.
+            # A recorded nonzero guest verdict retains its original status.
+            raise SystemExit(next((r['status'] for r in rows if r['stage'] == 'home-init'), None) or 1)
     else:
         collect(sys.stdin, args.output)

@@ -18,5 +18,6 @@ in
       catalog
       homeScaffold
       version
+      inputs
       ;
   }

@@ -24,6 +24,20 @@ def action_allowed(action, selected):
             or any(fnmatch.fnmatchcase(action, pattern) for pattern in selected['patterns_allowed']))
 
 
+def image_timeout(value, event, profile, vm_validation, publish):
+    """Interpret only the reviewed bounded profile expression, never eval YAML."""
+    if event not in ('pull_request', 'merge_group', 'push') or profile not in ('finite', 'finite-dev') or type(vm_validation) is not bool or type(publish) is not bool:
+        raise ValueError('Unknown image execution context')
+    if type(value) is int and value > 0:
+        return value
+    if not isinstance(value, str):
+        raise ValueError('Invalid image deadline')
+    match = re.fullmatch(r"\$\{\{ github\.event_name == 'pull_request' && inputs\.vm_validation && !inputs\.publish && inputs\.profile == 'finite' && ([1-9][0-9]*) \|\| ([1-9][0-9]*) \}\}", value)
+    if not match:
+        raise ValueError('Unreviewed image deadline expression')
+    return int(match[1] if event == 'pull_request' and vm_validation and not publish and profile == 'finite' else match[2])
+
+
 class DeliveryPolicy(unittest.TestCase):
     def test_all_external_actions_are_allowed_without_verified_publisher_bypass(self):
         policy = json.loads((ROOT / 'automation/github/repository-security.json').read_text())['actions']
@@ -69,12 +83,30 @@ class DeliveryPolicy(unittest.TestCase):
         # Docs run alongside impact; images start after both and Nix checks.
         critical = max(jobs['impact']['timeout-minutes'], jobs['docs']['timeout-minutes'])
         critical += jobs['checks']['timeout-minutes']
-        critical += workflow('image')['jobs']['build']['timeout-minutes']
+        limit = workflow('image')['jobs']['build']['timeout-minutes']
+        critical += max(image_timeout(limit, 'merge_group', profile, vm, publish)
+                        for profile in ('finite', 'finite-dev')
+                        for vm in (False, True) for publish in (False, True))
         critical += jobs['gate']['timeout-minutes']
         policy = json.loads((ROOT / 'automation/github/policies/main-merge-queue.json').read_text())
         queue = next(rule['parameters']['check_response_timeout_minutes']
                      for rule in policy['rules'] if rule['type'] == 'merge_queue')
         self.assertGreaterEqual(queue, critical + 20)
+
+    def test_profile_deadlines_preserve_approved_caps(self):
+        limit = workflow('image')['jobs']['build']['timeout-minutes']
+        for event in ('pull_request', 'merge_group', 'push'):
+            for profile in ('finite', 'finite-dev'):
+                for vm in (False, True):
+                    for publish in (False, True):
+                        with self.subTest(event=event, profile=profile, vm=vm, publish=publish):
+                            expected = 150 if event == 'pull_request' and profile == 'finite' and vm and not publish else 120
+                            self.assertEqual(image_timeout(limit, event, profile, vm, publish), expected)
+
+    def test_unknown_deadlines_fail_closed(self):
+        for value in (True, 0, -1, '150', '${{ 150 || 0 }}', '${{ inputs.other && 150 || 120 }}'):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                image_timeout(value, 'merge_group', 'finite', True, False)
 
     def test_updater_continuation_is_bounded_and_never_substitutes_for_native_checks(self):
         operations = (ROOT / 'lib/ci-applications/dependency-operations.nix').read_text()

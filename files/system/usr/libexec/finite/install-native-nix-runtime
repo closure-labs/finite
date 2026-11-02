@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# The signed OS supplies this local seed, as it supplies the installer seed.
+# Register its closure with the native installer API, then verify every NAR hash.
+# No network cache trust or signature setting is changed.
+set -euo pipefail
+assets=/usr/lib/finite/nix-runtime
+profile=/nix/var/nix/profiles/default
+[[ ${1:-} == '' || ${1:-} == --image-build ]]
+if [[ ${1:-} != --image-build ]] && systemctl is-active --quiet nix-daemon.service; then
+  echo 'Native Nix migration requires the daemon to be stopped.' >&2
+  exit 1
+fi
+jq -e '.schema == 1 and (.runtime | type == "string")' "$assets/runtime.json" >/dev/null
+runtime=$(jq -er .runtime "$assets/runtime.json")
+[[ $runtime =~ ^/nix/store/[a-z0-9]{32}-determinate-nix-[^/]+$ ]]
+[[ -f $profile/manifest.nix && ! -e $profile/manifest.json ]] || {
+  echo 'Expected the installer-managed legacy default profile; refusing an unknown profile format.' >&2
+  exit 1
+}
+certificate_before=$(sha256sum "$profile/etc/ssl/certs/ca-bundle.crt" | cut -d' ' -f1)
+mapfile -t paths <"$assets/store-paths"
+((${#paths[@]} > 0))
+for path in "${paths[@]}"; do
+  [[ $path =~ ^/nix/store/[a-z0-9]{32}-[^/]+$ ]]
+  source="$assets/store/${path##*/}"
+  [[ -e $source && ! -L $source ]]
+  # Existing paths belong to persistent state. Never overwrite their bytes.
+  if [[ ! -e $path ]]; then cp -a -- "$source" /nix/store/; fi
+done
+if [[ ${1:-} != --image-build ]]; then
+  # The seed provisioner labels existing state before /nix is mounted. New
+  # paths copied into preserved state need the same existing policy labels.
+  command -v restorecon >/dev/null
+  restorecon -RFD -- "${paths[@]}"
+fi
+export NIX_REMOTE=local
+"$runtime/bin/nix-store" --load-db <"$assets/registration"
+"$runtime/bin/nix-store" --verify-path "${paths[@]}"
+echo "$(jq -er .binarySha256 "$assets/runtime.json")  $runtime/bin/nix" | sha256sum -c -
+library=$(jq -er .library "$assets/runtime.json")
+[[ $library =~ ^/nix/store/[a-z0-9]{32}-[^/]+/lib/libnixstore.so$ ]]
+echo "$(jq -er .librarySha256 "$assets/runtime.json")  $library" | sha256sum -c -
+printf 'Prior native Nix: %s\n' "$(readlink -f "$profile/bin/nix")"
+if [[ $(readlink -f "$profile/bin/nix") != "$runtime/bin/nix" ]]; then
+  # Native nix-env replaces the same determinate-nix package name atomically,
+  # retaining CA certificates, other packages, prior generations and all roots.
+  "$runtime/bin/nix-env" --profile "$profile" --install "$runtime"
+fi
+[[ $(readlink -f "$profile/bin/nix") == "$runtime/bin/nix" ]]
+[[ $(sha256sum "$profile/etc/ssl/certs/ca-bundle.crt" | cut -d' ' -f1) == "$certificate_before" ]]

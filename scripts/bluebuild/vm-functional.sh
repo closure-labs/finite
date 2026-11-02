@@ -6,6 +6,16 @@ operation=${1:?}; state=${2:?}; profile=${3:?}; phase_name=${4:?}; key=${5:?}
 shift 5
 ssh_args=("$@")
 secrets=$(dirname "$key")
+if [[ $operation == updated || ($operation == initialize && $phase_name != upgrade) ]]; then
+  # This controlled network/substitution test is required functional evidence;
+  # it must not turn a dependency failure into an OS boot failure.
+  ssh "${ssh_args[@]}" sudo tee /var/lib/finite-vm/check-native-nix-nars.py \
+    <scripts/bluebuild/check-native-nix-nars.py >/dev/null
+  runtime=$(ssh "${ssh_args[@]}" jq -er .runtime /usr/lib/finite/nix-runtime/runtime.json)
+  [[ $runtime =~ ^/nix/store/[a-z0-9]{32}-determinate-nix-[^/]+$ ]]
+  ssh "${ssh_args[@]}" sudo python3 /var/lib/finite-vm/check-native-nix-nars.py \
+    --runtime "$runtime" >"$state/native-nars-$operation.json"
+fi
 case "$operation" in
 initialize)
 ssh "${ssh_args[@]}" bash -s -- "$profile" "$phase_name" <<'GUEST' 2>&1 | python3 scripts/bluebuild/guest-timings.py "$state/guest-timings.json" --log "$state/home-init.log.gz" --secret "$secrets/luks-key"
@@ -29,7 +39,21 @@ guest_begin() {
   guest_stage=$1
   guest_started=$(guest_now)
 }
-trap 'guest_finish "$?"' EXIT
+guest_disk_snapshot() {
+  {
+    echo "Guest disk snapshot: $1"
+    timeout 5s df -B1 -- / /var/home/nix /var/log "$HOME/.cache" 2>/dev/null || true
+    timeout 10s sudo -n du -sx -B1 -- /var/log "$HOME/.cache" /var/home/nix 2>/dev/null || true
+  } | head -c 8192 || true
+}
+guest_exit() {
+  local status=$?
+  trap - EXIT
+  guest_disk_snapshot after-initialize
+  guest_finish "$status"
+  exit "$status"
+}
+trap guest_exit EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 guest_begin startup-checks
@@ -53,6 +77,7 @@ if [[ $2 == upgrade ]]; then
   bash /var/lib/finite-vm/prepare-predecessor-home
 fi
 guest_begin home-init
+guest_disk_snapshot before-initialize
 echo 'Building and activating the base Home Manager environment'
 FOUNDATION_TIMINGS=1 /usr/libexec/finite/home-init --profile "$HOME/profile.json" </dev/null 2>&1
 GUEST
