@@ -56,6 +56,9 @@ jq -n --arg image "local-image@$digest" --arg tag "$local_ref" \
     updateChannel:$channel,profile:$profile,installer:$installer[0]}' >"$ISO_OUTPUT_DIR/installation.json"
 cp "$work/source-manifest.json" "$ISO_OUTPUT_DIR/source-manifest.json"
 (cd "$ISO_OUTPUT_DIR" && sha256sum -- *.iso installation.json source-manifest.json >SHA256SUMS)
+# Installer construction has consumed this owned export. Keep the verified ISO
+# and manifests for both VM cohorts, without retaining a second image archive.
+rm -f -- "$work/candidate.tar"
 FINITE_LOCAL_VM_VALIDATION=true FINITE_SECURE_BOOT=true \
   python3 scripts/bluebuild/measure.py local-vm-acceptance \
     bash scripts/bluebuild/vm-acceptance.sh "$ISO_OUTPUT_DIR" '' fresh

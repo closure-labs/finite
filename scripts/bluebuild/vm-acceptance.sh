@@ -57,6 +57,26 @@ host_disk_snapshot() {
     timeout 10s sudo -n du -sx -B1 -- "$state" "$artifact" .bluebuild /var/lib/docker /nix/store 2>/dev/null || true
   } | head -c 8192 | tee "$state/disk-$1.log" || true
 }
+ensure_local_host_space() {
+  [[ $local_validation == true ]] || return 0
+  # This is the completed builder created by this disposable Actions job.
+  # Never prune a developer host, publication runner, image or Nix store.
+  [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite &&
+     -n ${GITHUB_REF:-} && ${GITHUB_REF:-} != refs/heads/main ]] || return 1
+  # Observed VM-state growth was 19.1 GB; retain another 10.9 GB of margin.
+  local available required=30000000000
+  timeout 90s docker buildx prune --builder bluebuild --min-free-space "$required" --force || return $?
+  available=$(timeout 5s df -B1 --output=avail -- "$state") || return 1
+  available=${available##*$'\n'}
+  [[ $available =~ ^[[:space:]]*([0-9]+)[[:space:]]*$ ]] || return 1
+  available=${BASH_REMATCH[1]}
+  [[ ${#available} -le 18 ]] || return 1
+  echo "Host initialization headroom: $available bytes available; $required required"
+  if ((10#$available < required)); then
+    echo 'Insufficient host space after scoped build-cache reclamation; stopping before initialization.' >&2
+    return 1
+  fi
+}
 begin_stage() {
   active_stage=$1
   stage_started=$(monotonic_seconds)
@@ -564,6 +584,8 @@ if [[ -n $native_predecessor ]]; then
   boot_vm native-nix-reboot
 fi
 host_disk_snapshot before-initialize
+ensure_local_host_space
+host_disk_snapshot ready-initialize
 run_functional initialize
 host_disk_snapshot after-initialize
 disk_after_initialize=true

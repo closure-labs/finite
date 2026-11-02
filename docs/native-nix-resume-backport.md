@@ -57,3 +57,13 @@ preserved-state cohort runs only on the explicit branch dispatch; merge-queue jo
 retain the existing fresh validation and 120-minute cap, fitting the unchanged
 240-minute queue deadline. ISO creation is not repeated for the second validation VM.
 No production signing/promotion action is part of this draft validation.
+
+Local validation removes its owned OCI export after ISO construction. Before
+functional initialization, it reclaims only unused cache from this job's named
+`bluebuild` builder, using native Buildx free-space targeting. It then requires
+30,000,000,000 free host bytes after the guest disk has been installed. Successful
+finite initialization grew host-backed VM state by up to 19.1 GB; the threshold
+leaves about 10.9 GB of margin, without claiming a universal future workload bound.
+An unsuccessful prune, unavailable measurement or insufficient space fails before
+initialization. Guest disks, the ISO, Docker images, Nix stores and production
+publication cache policy are preserved. Existing 150/120-minute caps are unchanged.

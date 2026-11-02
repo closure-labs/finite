@@ -15,6 +15,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts/ci'))
@@ -33,6 +34,58 @@ def record(stage='nix-activities'):
 
 
 class BoundedGuestLogs(unittest.TestCase):
+    def test_local_host_headroom_scope_and_boundaries(self):
+        source = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        function = 'ensure_local_host_space() {' + source.split('ensure_local_host_space() {', 1)[1].split('\nbegin_stage()', 1)[0]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'bin').mkdir()
+            docker = root / 'bin/docker'
+            docker.write_text('#!' + sys.executable + '\nimport json,os,sys\nfrom pathlib import Path\nPath(os.environ["CALLS"]).write_text(json.dumps(sys.argv[1:]))\nsys.exit(int(os.environ.get("PRUNE_EXIT","0")))\n')
+            docker.chmod(0o755)
+            df = root / 'bin/df'
+            df.write_text('#!' + sys.executable + '\nimport os,sys\nfrom pathlib import Path\nPath(os.environ["DF_CALLED"]).touch()\nprint("Available\\n  "+os.environ["AVAILABLE"])\nsys.exit(int(os.environ.get("DF_EXIT","0")))\n')
+            df.chmod(0o755)
+            env = {**os.environ, 'PATH': str(root / 'bin') + ':' + os.environ['PATH'],
+                   'CALLS': str(root / 'calls'), 'DF_CALLED': str(root / 'df-called'),
+                   'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
+                   'GITHUB_REF': 'refs/heads/validation', 'AVAILABLE': '30000000000',
+                   'LOCAL_VALIDATION': 'true', 'PRUNE_EXIT': '0', 'DF_EXIT': '0'}
+            cases = [({}, True, True), ({'AVAILABLE': '30000000001'}, True, True),
+                     ({'AVAILABLE': '29999999999'}, False, True), ({'AVAILABLE': '0'}, False, True),
+                     ({'AVAILABLE': 'bad'}, False, True), ({'AVAILABLE': '9' * 30}, False, True),
+                     ({'DF_EXIT': '1'}, False, True), ({'PRUNE_EXIT': '1'}, False, True),
+                     ({'LOCAL_VALIDATION': 'false', 'GITHUB_REF': 'refs/heads/main'}, True, False),
+                     ({'GITHUB_ACTIONS': 'false'}, False, False),
+                     ({'GITHUB_REPOSITORY': 'other/repository'}, False, False),
+                     ({'GITHUB_REF': ''}, False, False),
+                     ({'GITHUB_REF': 'refs/heads/main'}, False, False)]
+            for changes, accepted, pruned in cases:
+                with self.subTest(changes=changes):
+                    (root / 'calls').unlink(missing_ok=True)
+                    (root / 'df-called').unlink(missing_ok=True)
+                    result = subprocess.run(['bash', '-c', 'set -euo pipefail; ' + function +
+                                             '\nlocal_validation=$LOCAL_VALIDATION; state=/tmp/fixture; ensure_local_host_space; echo initialization-reached'],
+                                            env={**env, **changes}, text=True, capture_output=True)
+                    self.assertEqual(result.returncode == 0, accepted, result.stderr)
+                    self.assertEqual('initialization-reached' in result.stdout, accepted)
+                    self.assertEqual((root / 'calls').exists(), pruned)
+                    if pruned:
+                        self.assertEqual(json.loads((root / 'calls').read_text()),
+                                         ['buildx', 'prune', '--builder', 'bluebuild', '--min-free-space', '30000000000', '--force'])
+                    if changes.get('PRUNE_EXIT') == '1':
+                        self.assertFalse((root / 'df-called').exists())
+
+    def test_headroom_reclaims_only_completed_validation_builder_before_initialization(self):
+        image = yaml.safe_load((ROOT / '.github/workflows/image.yml').read_text())
+        builder = next(step for step in image['jobs']['build']['steps'] if step.get('name') == 'Set up the BlueBuild builder')
+        self.assertEqual(builder['with']['name'], 'bluebuild')
+        acceptance = (ROOT / 'scripts/bluebuild/vm-acceptance.sh').read_text()
+        self.assertIn('host_disk_snapshot before-initialize\nensure_local_host_space\nhost_disk_snapshot ready-initialize\nrun_functional initialize', acceptance)
+        local = (ROOT / 'scripts/bluebuild/local-vm.sh').read_text()
+        self.assertLess(local.index('>SHA256SUMS)'), local.index('rm -f -- "$work/candidate.tar"'))
+        self.assertLess(local.index('rm -f -- "$work/candidate.tar"'), local.index('local-vm-acceptance'))
+
     def test_cancelled_collector_never_claims_complete_capture(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

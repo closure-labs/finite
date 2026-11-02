@@ -43,6 +43,7 @@ if name == 'docker':
         assert 'IMAGE_SIGNED=false' in args
         assert any(arg.startswith('IMAGE_SRC=oci-archive:') for arg in args)
         output = next(arg.split(':')[0] for arg in args if arg.endswith(':/build-container-installer/build'))
+        assert pathlib.Path(output).parent.joinpath('candidate.tar').read_bytes() == b'owned export'
         pathlib.Path(output, 'finite.iso').write_bytes(b'local installer')
     assert '--push' not in args
 elif name == 'skopeo':
@@ -51,6 +52,7 @@ elif name == 'skopeo':
         assert args[-2].startswith('docker-daemon:localhost/finite-validation:')
         assert args[-1].startswith('oci-archive:')
         assert not any(arg.startswith('docker://') for arg in args)
+        pathlib.Path(args[-1].split(':', 2)[1]).write_bytes(b'owned export')
     elif '--format' in args:
         print('sha256:'+'c'*64)
     else:
@@ -105,6 +107,8 @@ printf '{}\\n' >"$ISO_OUTPUT_DIR/installer.json"
 set -eu
 [[ $FINITE_LOCAL_VM_VALIDATION == true && $FINITE_SECURE_BOOT == true && -z $2 && $3 == fresh ]]
 (cd "$1" && sha256sum -c SHA256SUMS)
+test ! -e "$(dirname "$1")/candidate.tar"
+test -s "$1/finite.iso"
 cp "$1/installation.json" result.json
 mkdir -p .bluebuild/vm-local
 if [[ -n ${FINITE_NATIVE_NIX_PREDECESSOR:-} ]]; then
