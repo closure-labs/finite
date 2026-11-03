@@ -1,0 +1,8 @@
+name: Set up checksum-pinned Gitleaks
+description: Install the single reviewed upstream Gitleaks binary without credentials or Nix
+runs:
+  using: composite
+  steps:
+    - name: Install checksum-pinned upstream Gitleaks
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/install.sh"
