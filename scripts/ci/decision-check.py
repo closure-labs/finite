@@ -194,19 +194,39 @@ def review_fingerprint(api, repository, number, head):
     return canonical_hash({'head': head, 'reviews': sorted(rows, key=lambda row: row['id'])})
 
 
-def recovery_origin(api, repository, run_id):
+def recovery_origin(api, repository, run_id, event=None):
     if (not isinstance(repository, str) or not authority.REPOSITORY.fullmatch(repository)
             or type(run_id) is not int or run_id < 1):
         raise authority.AuthorityError('Invalid approval recovery identity')
     run = api(f'repos/{repository}/actions/runs/{run_id}')
     if (run.get('id') != run_id or run.get('path') != CONTROLLER
             or run.get('repository', {}).get('full_name') != repository
-            or run.get('head_repository', {}).get('full_name') != repository
-            or run.get('head_branch') != 'main' or run.get('status') != 'in_progress'
-            or run.get('event') not in ('schedule', 'workflow_dispatch')
+            or run.get('status') != 'in_progress'
+            or (run.get('event') != 'pull_request_target' and
+                (run.get('head_repository', {}).get('full_name') != repository
+                 or run.get('head_branch') != 'main'))
+            or run.get('event') not in ('schedule', 'workflow_dispatch', 'pull_request_target')
             or not authority.SHA.fullmatch(run.get('head_sha', ''))
             or type(run.get('run_attempt')) is not int or run['run_attempt'] < 1):
         raise authority.AuthorityError('Recovery requires its active native trusted-main workflow')
+    if run['event'] == 'pull_request_target':
+        if event is None:
+            event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+        pr = event.get('pull_request', {})
+        head = pr.get('head', {})
+        if (event.get('action') not in ('opened', 'synchronize', 'reopened', 'ready_for_review', 'edited')
+                or (event.get('action') == 'edited' and not isinstance(
+                    event.get('changes', {}).get('base', {}).get('ref', {}).get('from'), str))
+                or (event.get('action') == 'edited' and not
+                    event.get('changes', {}).get('base', {}).get('ref', {}).get('from'))
+                or type(event.get('number')) is not int or event['number'] < 1
+                or pr.get('number') != event['number']
+                or event.get('repository', {}).get('full_name') != repository
+                or pr.get('base', {}).get('repo', {}).get('full_name') != repository
+                or pr.get('base', {}).get('ref') != 'main'
+                or head.get('sha') != run['head_sha'] or head.get('ref') != run.get('head_branch')
+                or head.get('repo', {}).get('full_name') != run.get('head_repository', {}).get('full_name')):
+            raise authority.AuthorityError('Target event differs from native repository PR source')
     return run
 
 
@@ -261,16 +281,21 @@ def stale_review_check(api, repository, target, app_id, fingerprint, now, *, for
     return True
 
 
-def recovery_targets(repository, run_id, app_id, github=None, *, number=None, now=None):
+def recovery_targets(repository, run_id, app_id, github=None, *, number=None, now=None, event=None):
     api = github or authority.github_api
-    origin = recovery_origin(api, repository, run_id)
+    origin = recovery_origin(api, repository, run_id, event)
     if type(app_id) is not int or app_id < 1:
         raise authority.AuthorityError('Recovery requires the configured review App ID')
-    manual = origin['event'] == 'workflow_dispatch'
+    manual = origin['event'] in ('workflow_dispatch', 'pull_request_target')
     if manual and (type(number) is not int or number < 1):
         raise authority.AuthorityError('Manual approval recheck requires one PR number')
     if not manual and number is not None:
         raise authority.AuthorityError('Scheduled recovery selects native open PRs only')
+    if origin['event'] == 'pull_request_target':
+        if event is None:
+            event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+        if event['number'] != number:
+            raise authority.AuthorityError('Target discovery differs from event PR')
     pulls = ([{'number': number}] if manual else
              authority.collection(api, f'repos/{repository}/pulls?state=open&base=main'))
     if len(pulls) > 64:

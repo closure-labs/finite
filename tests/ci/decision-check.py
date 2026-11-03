@@ -520,6 +520,62 @@ class ApprovalRecovery(unittest.TestCase):
                     redirect_stdout(io.StringIO()):
                 self.assertEqual(mod.main(), expected)
 
+    def test_direct_native_target_event_uses_one_live_head_without_collector(self):
+        self.api.pr['head'].update(ref='feature', repo={'full_name': REPO})
+        self.api.controller.update(event='pull_request_target', head_branch='feature', head_sha=HEAD)
+        event = {'action': 'synchronize', 'number': 7,
+                 'repository': {'full_name': REPO}, 'pull_request': self.api.pr}
+        result = mod.recovery_targets(REPO, 55, 123, self.api, number=7, now=self.now, event=event)
+        self.assertEqual(result, {'include': [{'number': 7, 'head': HEAD, 'target': HEAD}]})
+        for key, value in (('number', 8), ('action', 'edited'), ('repository', {'full_name': 'fork/finite'})):
+            with self.subTest(key=key), self.assertRaises(mod.authority.AuthorityError):
+                mod.recovery_targets(REPO, 55, 123, self.api, number=7, now=self.now,
+                                     event={**event, key: value})
+        with self.assertRaises(mod.authority.AuthorityError):
+            mod.recovery_targets(REPO, 55, 123, self.api, now=self.now, event=event)
+        for field, value in (('head_branch', 'attacker'), ('path', mod.COLLECTOR),
+                             ('status', 'completed'), ('event', 'pull_request')):
+            previous = self.api.controller[field]
+            self.api.controller[field] = value
+            with self.subTest(field=field), self.assertRaises(mod.authority.AuthorityError):
+                mod.recovery_targets(REPO, 55, 123, self.api, number=7, now=self.now, event=event)
+            self.api.controller[field] = previous
+
+    def test_native_base_retarget_is_covered_but_title_body_edits_are_skipped(self):
+        self.api.pr['head'].update(ref='feature', repo={'full_name': REPO})
+        self.api.controller.update(event='pull_request_target', head_branch='feature', head_sha=HEAD)
+        event = {'action': 'edited', 'number': 7, 'repository': {'full_name': REPO},
+                 'pull_request': self.api.pr, 'changes': {'base': {'ref': {'from': 'other-base'}}}}
+        result = mod.recovery_targets(REPO, 55, 123, self.api, number=7, now=self.now, event=event)
+        self.assertEqual(result, {'include': [{'number': 7, 'head': HEAD, 'target': HEAD}]})
+        for changes in ({'title': {'from': 'old'}}, {'body': {'from': 'old'}}, {},
+                        {'base': {'ref': {'from': ''}}}):
+            with self.subTest(changes=changes), self.assertRaises(mod.authority.AuthorityError):
+                mod.recovery_targets(REPO, 55, 123, self.api, number=7, now=self.now,
+                                     event={**event, 'changes': changes})
+        import yaml
+        value = yaml.safe_load((ROOT / '.github/workflows/decision-authority.yml').read_text())
+        guard = value['jobs']['discover']['if']
+        self.assertIn("github.event.action != 'edited'", guard)
+        self.assertIn("github.event.changes.base.ref.from != ''", guard)
+
+    def test_native_lifecycle_routes_do_not_add_untrusted_checkout_or_credentials(self):
+        import yaml
+        authority = yaml.safe_load((ROOT / '.github/workflows/decision-authority.yml').read_text())
+        triggers = authority.get('on', authority.get(True))
+        self.assertEqual(triggers['pull_request_target']['types'],
+                         ['opened', 'synchronize', 'reopened', 'ready_for_review', 'edited'])
+        collector = yaml.safe_load((ROOT / mod.COLLECTOR).read_text())
+        events = collector.get('on', collector.get(True))
+        self.assertEqual(set(events), {'pull_request_review', 'merge_group'})
+        for job in authority['jobs'].values():
+            for step in job['steps']:
+                if step.get('uses', '').startswith('actions/checkout@'):
+                    self.assertEqual(step['with']['ref'], 'main')
+                    self.assertFalse(step['with']['persist-credentials'])
+        self.assertIn('github.event.pull_request.number',
+                      authority['jobs']['discover']['steps'][-1]['env']['RECHECK_PR'])
+
     def test_workflow_exposes_main_only_manual_recheck_and_cheap_periodic_repair(self):
         import yaml
         value = yaml.safe_load((ROOT / '.github/workflows/decision-authority.yml').read_text())

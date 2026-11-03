@@ -1,6 +1,9 @@
 name: Verify maintainer decision authority
 
 on:
+  pull_request_target: # zizmor: ignore[dangerous-triggers] Trusted main only; no PR checkout or execution.
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+    branches: [main]
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
@@ -24,6 +27,8 @@ jobs:
   discover:
     if: >-
       github.repository == 'closure-labs/finite' &&
+      (github.event_name != 'pull_request_target' || github.event.action != 'edited' ||
+       github.event.changes.base.ref.from != '') &&
       ((github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
        (github.event_name != 'workflow_run' && github.ref == 'refs/heads/main'))
     runs-on: ubuntu-24.04
@@ -47,7 +52,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           AUTHORITY_RUN: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || github.run_id }}
           FINITE_REVIEW_APP_ID: ${{ vars.FINITE_REVIEW_APP_ID }}
-          RECHECK_PR: ${{ inputs.pull_request || '' }}
+          RECHECK_PR: ${{ github.event.pull_request.number || inputs.pull_request || '' }}
         run: |
           python3 - <<'PYTHON'
           import json, os, subprocess

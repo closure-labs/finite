@@ -1,8 +1,6 @@
 name: Collect maintainer decision events
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, edited]
   pull_request_review:
     types: [submitted, edited, dismissed]
   merge_group:
