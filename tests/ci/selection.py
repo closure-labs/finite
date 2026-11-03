@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.dont_write_bytecode = True
@@ -31,6 +32,42 @@ class Selection(unittest.TestCase):
         mixed = impact.classify(['scripts/bluebuild/unlock-vm.py', 'files/system/shipped-file'])
         self.assertEqual(mixed['profiles'], sorted(impact.PROFILES))
         self.assertTrue(mixed['checks'])
+
+    def test_host_scanners_keep_source_checks_without_os_assembly(self):
+        for path in impact.HOST_SCANNER_ONLY:
+            with self.subTest(path=path):
+                self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
+        for path in ('.github/actions/setup-gitleaks/new-helper.sh',
+                     'scripts/ci/new-scanner.py', '.github/security/new-policy.json',
+                     'files/system/etc/changed.conf', '.github/workflows/image.yml'):
+            self.assertEqual(impact.classify([*impact.HOST_SCANNER_ONLY, path])['profiles'], sorted(impact.PROFILES))
+        self.assertEqual(impact.classify([*impact.HOST_SCANNER_ONLY, 'recipes/finite-dev.yml'])['profiles'], ['finite-dev'])
+        self.assertEqual(impact.classify([*impact.HOST_SCANNER_ONLY, 'flake.lock']),
+                         {'checks': True, 'nix': True, 'profiles': []})
+
+    def test_scanner_dependencies_remain_host_only(self):
+        allowed = {('build.yml', 'repository-secrets'),
+                   ('finding-id-fixtures.yml', 'fixtures'),
+                   ('repository-secret-history.yml', 'history')}
+        needle = '.github/actions/setup-gitleaks'
+        for path in (ROOT/'.github/workflows').glob('*.yml'):
+            value = yaml.safe_load(path.read_text())
+            for name, job in value.get('jobs', {}).items():
+                if needle in str(job):
+                    self.assertIn((path.name, name), allowed)
+                    permissions = job.get('permissions', value.get('permissions', {}))
+                    self.assertTrue(all(v == 'read' for v in permissions.values()))
+        for path in (ROOT/'.github/actions').rglob('*'):
+            if path.is_file() and path.parent.name != 'setup-gitleaks':
+                self.assertNotIn(needle.encode(), path.read_bytes(), str(path))
+        markers = [Path(p).stem.encode() for p in impact.HOST_SCANNER_ONLY if p.endswith('.py')]
+        for base in ('files', 'recipes'):
+            for path in (ROOT/base).rglob('*'):
+                if path.is_file() and not path.is_symlink():
+                    data = path.read_bytes()
+                    self.assertFalse(any(marker in data for marker in markers), str(path))
+        payload = (ROOT/'lib/image-payload.nix').read_bytes()
+        self.assertFalse(any(marker in payload for marker in markers))
 
     def test_documentation_and_mixed_changes(self):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})

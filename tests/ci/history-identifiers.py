@@ -38,20 +38,6 @@ class PolicyData(unittest.TestCase):
             path = directory/'history-identifiers.gitleaksignore';path.write_text(path.read_text()+'forged\n')
             with self.assertRaises(identifiers.Invalid):identifiers.load_policy(directory)
 
-    def test_ambiguous_cli_clears_stale_exceptions_and_emits_fixed_error(self):
-        policy,_=identifiers.load_policy();fp=next(iter(policy));commit,path,rule,line=fp.rsplit(':',3)
-        row={'Commit':commit,'File':path,'RuleID':rule,'StartLine':int(line),'Fingerprint':fp}
-        with tempfile.TemporaryDirectory() as name:
-            p=Path(name);report=p/'report';report.write_text(json.dumps([row,row]));base=p/'base';base.write_text('')
-            output=p/'output';output.write_text('stale exceptions\n');receipt=p/'receipt'
-            result=subprocess.run([sys.executable,'-I',str(ROOT/'scripts/ci/history_identifiers.py'),
-                '--candidate',name,'--report',str(report),'--status','2','--base-ignores',str(base),
-                '--output',str(output),'--receipt',str(receipt)],capture_output=True,text=True)
-            self.assertEqual(result.returncode,1);self.assertEqual(output.read_text(),'')
-            self.assertEqual(output.stat().st_mode & 0o777,0o600);self.assertEqual(result.stdout,'')
-            self.assertEqual(result.stderr,'Unable to verify historical identifier exceptions: ambiguous-fingerprint.\n')
-            self.assertEqual(json.loads(receipt.read_text())['reason'],'ambiguous-fingerprint')
-
     def test_frozen_input_digest_mismatch_is_not_replaced_by_current_refs(self):
         with tempfile.TemporaryDirectory() as name:
             path = Path(name)/'baseline';path.write_text('{}')
@@ -105,30 +91,92 @@ class RealScanner(unittest.TestCase):
             'lineSha256':identifiers.digest(line.encode()),'identifierSha256':identifiers.digest((identifier or self.public).encode()),
             'shape':shape,'binding':{'kind':kind}}}
 
-    def test_known_public_identifier_passes_and_native_engine_decides_final_result(self):
-        status,found=self.scan();self.assertEqual(status,2);self.assertEqual(len(found),1)
-        policy=self.policy(found[0]);verified=identifiers.verified(self.repo,found,policy,require_complete=True)
-        self.assertEqual(verified,[found[0]['Fingerprint']])
-        self.assertEqual(self.scan(verified),(0,[]))
+    def test_native_and_allowlist_accepts_only_verified_complete_line(self):
+        _, found = self.scan()
+        policy = self.policy(found[0])
+        config, counts = identifiers.native_config(self.repo, policy, require_complete=True)
+        self.config.write_bytes(config)
+        self.assertEqual(counts['verifiedExactIdentifierCount'], 1)
+        self.assertEqual(self.scan(), (0, []))
+        self.assertTrue(config.startswith(b'[extend]\nuseDefault = true\n'))
+        self.assertIn(b'condition = "AND"', config)
+        self.assertIn(b'regexTarget = "line"', config)
 
-    def test_unknown_credential_and_copied_identifier_remain_native_findings(self):
-        _,found=self.scan();policy=self.policy(found[0]);original=found[0]['Fingerprint']
-        token='ghp_'+'9F0r2JtQ6Lw8aD3sG7hK1mN5pR4vXyZcBeTu'
-        self.commit('copied.json',json.dumps({'keyFingerprint':self.public},indent=2)+'\n')
-        self.commit('credential.txt','token = "'+token+'"\n')
-        _,found=self.scan();verified=identifiers.verified(self.repo,found,policy)
-        self.assertEqual(verified,[original]);status,remaining=self.scan(verified);self.assertEqual(status,2)
-        self.assertTrue(any(f['File']=='copied.json' for f in remaining))
-        self.assertTrue(any(f['RuleID']=='github-pat' for f in remaining))
+    def test_native_manifest_binds_actual_config_without_public_identifier_payload(self):
+        _, found = self.scan()
+        policy = self.policy(found[0])
+        with patch.object(identifiers, 'load_policy', return_value=(policy, {'version': 'fixture'})):
+            value = snapshot.snapshot(self.repo, self.git('rev-parse','HEAD'), self.config,
+                self.ignore, '1', '1', native_identifiers=True, require_complete=True)
+        self.assertEqual(value['schema'], 2)
+        scanner = value['scanner']
+        self.assertEqual(scanner['configSha256'], hashlib.sha256(self.config.read_bytes()).hexdigest())
+        self.assertTrue(scanner['defaultRules'])
+        self.assertFalse(scanner['inlineAllows'])
+        self.assertIsNone(scanner['config'])
+        self.assertEqual(scanner['nativeIdentifierPolicy']['verifiedExactIdentifierCount'], 1)
+        self.assertNotIn(self.public, json.dumps(value))
+        snapshot.check(self.repo, value)
+        self.commit('unrelated.txt','changed refs\n')
+        with self.assertRaises(ValueError): snapshot.check(self.repo, value)
 
-    def test_changed_commit_same_path_line_is_outside_policy(self):
-        _,found=self.scan();policy=self.policy(found[0]);original=found[0]['Fingerprint']
-        next_id=hashlib.sha256(b'distinct synthetic credential').hexdigest()
-        revision=self.commit('proof.json',json.dumps({'keyFingerprint':next_id},indent=2)+'\n')
-        _,found=self.scan();verified=identifiers.verified(self.repo,found,policy)
-        self.assertEqual(verified,[original])
-        _,remaining=self.scan(verified)
-        self.assertTrue(any(f['Commit']==revision and f['StartLine']==2 for f in remaining))
+    def test_native_same_public_line_at_a_new_commit_is_a_finding(self):
+        _, found = self.scan()
+        config, _ = identifiers.native_config(self.repo, self.policy(found[0]))
+        raw = (self.repo/'proof.json').read_text()
+        self.commit('proof.json', '{}\n')
+        revision = self.commit('proof.json', raw)
+        self.config.write_bytes(config)
+        status, remaining = self.scan()
+        self.assertEqual(status, 2)
+        self.assertTrue(any(row['Commit'] == revision for row in remaining))
+
+    def test_native_added_generic_and_provider_credentials_are_not_masked(self):
+        _, found = self.scan()
+        policy = self.policy(found[0])
+        config, _ = identifiers.native_config(self.repo, policy)
+        unknown = hashlib.sha256(b'synthetic unknown credential').hexdigest()
+        provider = 'ghp_'+'9F0r2JtQ6Lw8aD3sG7hK1mN5pR4vXyZcBeTu'
+        for name, text in (
+                ('same-line.json', '{"keyFingerprint": "'+self.public+'", "api_key": "'+unknown+'"}\n'),
+                ('provider.txt', 'token = "'+provider+'"\n'),
+                ('other-path.json', '{"keyFingerprint": "'+self.public+'"}\n'),
+                ('other-field.json', '{"api_key": "'+self.public+'"}\n')):
+            self.commit(name, text)
+        self.config.write_bytes(config)
+        status, remaining = self.scan()
+        self.assertEqual(status, 2)
+        self.assertEqual({row['File'] for row in remaining},
+                         {'same-line.json', 'provider.txt', 'other-path.json', 'other-field.json'})
+        self.assertTrue(any(row['RuleID'] == 'github-pat' for row in remaining))
+
+    def test_native_source_proofs_fail_before_any_config_is_returned(self):
+        _, found = self.scan()
+        policy = self.policy(found[0])
+        for field in ('blobGitSha1', 'blobSha256', 'lineSha256', 'identifierSha256'):
+            forged = copy.deepcopy(policy)
+            forged[found[0]['Fingerprint']][field] = 'f'*(40 if field == 'blobGitSha1' else 64)
+            with self.subTest(field=field), self.assertRaises(identifiers.Invalid):
+                identifiers.native_config(self.repo, forged)
+
+    def test_native_history_limit_is_not_a_partial_allowance(self):
+        _, found = self.scan()
+        with patch.object(identifiers.history_finding_ids, 'MAX_COMMITS', 0):
+            with self.assertRaises(identifiers.Invalid) as context:
+                identifiers.native_config(self.repo, self.policy(found[0]))
+        self.assertEqual(context.exception.reason, 'history-limit')
+
+    def test_native_missing_catalog_commit_is_not_substituted(self):
+        _, found = self.scan()
+        policy = self.policy(found[0])
+        fingerprint, item = next(iter(policy.items()))
+        missing = {'1'*40+fingerprint[40:]: item}
+        config, counts = identifiers.native_config(self.repo, missing)
+        self.assertEqual(counts['verifiedExactIdentifierCount'], 0)
+        self.assertEqual(counts['unreachableCatalogEntryCount'], 1)
+        self.assertNotIn(b'allowlists', config)
+        with self.assertRaises(identifiers.Invalid):
+            identifiers.native_config(self.repo, missing, require_complete=True)
 
     def test_ambiguous_same_fingerprint_fails_before_any_ignore(self):
         extra=hashlib.sha256(b'second synthetic credential').hexdigest()
@@ -136,23 +184,8 @@ class RealScanner(unittest.TestCase):
         _,found=self.scan();shared=[f for f in found if f['File']=='shared.json']
         self.assertEqual(len(shared),2);self.assertEqual(shared[0]['Fingerprint'],shared[1]['Fingerprint'])
         policy=self.policy(shared[0])
-        with self.assertRaises(identifiers.Invalid) as context:identifiers.verified(self.repo,found,policy)
-        self.assertEqual(context.exception.reason,'ambiguous-fingerprint')
+        with self.assertRaises(identifiers.Invalid):identifiers.native_config(self.repo,policy)
         self.assertEqual(self.scan(())[0],2)
-
-    def test_duplicated_row_multiline_span_and_redacted_value_forgery_fail(self):
-        _,found=self.scan();policy=self.policy(found[0])
-        for rows in ([found[0],copy.deepcopy(found[0])], [dict(found[0],EndLine=found[0]['EndLine']+1)],
-                     [dict(found[0],StartColumn=1)], [dict(found[0],Match='REDACTED')],
-                     [dict(found[0],Secret='not-redacted')]):
-            with self.subTest(case=len(rows)),self.assertRaises(identifiers.Invalid):identifiers.verified(self.repo,rows,policy)
-
-    def test_wrong_blob_line_or_identifier_digest_fail(self):
-        _,found=self.scan();policy=self.policy(found[0]);fp=found[0]['Fingerprint']
-        for field in ('blobGitSha1','blobSha256','lineSha256','identifierSha256'):
-            forged=copy.deepcopy(policy);forged[fp][field]='f'*(40 if field=='blobGitSha1' else 64)
-            with self.subTest(field=field),self.assertRaises(identifiers.Invalid):identifiers.verified(self.repo,found,forged)
-        with self.assertRaises(identifiers.Invalid):identifiers.verified(self.repo,[],policy,require_complete=True)
 
     def test_other_provider_rule_sharing_a_line_is_never_waived(self):
         token='ghp_'+'9F0r2JtQ6Lw8aD3sG7hK1mN5pR4vXyZcBeTu'
@@ -160,7 +193,7 @@ class RealScanner(unittest.TestCase):
         _,found=self.scan();public=[f for f in found if f['File']=='provider.json' and f['RuleID']=='generic-api-key']
         self.assertTrue(public);self.assertTrue(any(f['RuleID']=='github-pat' for f in found))
         policy=self.policy(public[0])
-        with self.assertRaises(identifiers.Invalid):identifiers.verified(self.repo,found,policy)
+        with self.assertRaises(identifiers.Invalid):identifiers.native_config(self.repo,policy)
         _,remaining=self.scan([public[0]['Fingerprint']])
         self.assertTrue(any(f['RuleID']=='github-pat' for f in remaining))
 
@@ -173,7 +206,11 @@ class RealScanner(unittest.TestCase):
         git_reference=next(f for f in found if f['File']=='revision.json' and f['RuleID']=='sourcegraph-access-token')
         policy=self.policy(constant,shape='standalone-python-public-key-constant')
         policy.update(self.policy(git_reference,identifier=revision,kind='public-Git-commit-object'))
-        self.assertEqual(set(identifiers.verified(self.repo,found,policy)),set(policy))
+        policy.update(self.policy(next(f for f in found if f['File']=='proof.json')))
+        config, counts = identifiers.native_config(self.repo, policy)
+        self.config.write_bytes(config)
+        self.assertEqual(counts['verifiedExactIdentifierCount'],3)
+        self.assertEqual(self.scan(),(0,[]))
 
     def test_canonical_packet_identity_uses_full_shared_validator(self):
         spec=importlib.util.spec_from_file_location('history_fixture',ROOT/'tests/ci/history-finding-ids.py')
@@ -185,9 +222,12 @@ class RealScanner(unittest.TestCase):
         row=next(f for f in found if f['File']==path)
         policy=self.policy(row,identifier=identifier,shape='standalone-recomputed-packet-key',kind='canonical-packet-finding-identity')
         item=policy[row['Fingerprint']];item['binding'].update(packetPath=path,packetBlob=item['blobGitSha1'],packetDigest=item['blobSha256'])
-        self.assertEqual(identifiers.verified(self.repo,[row],policy),[row['Fingerprint']])
+        config, counts = identifiers.native_config(self.repo,policy)
+        self.assertEqual(counts['verifiedExactIdentifierCount'],1)
+        self.config.write_bytes(config)
+        self.assertFalse(any(f['File']==path for f in self.scan()[1]))
         item['binding']['packetDigest']='f'*64
-        with self.assertRaises(identifiers.Invalid):identifiers.verified(self.repo,[row],policy)
+        with self.assertRaises(identifiers.Invalid):identifiers.native_config(self.repo,policy)
 
 
 class FrozenRefs(unittest.TestCase):

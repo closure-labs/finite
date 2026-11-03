@@ -84,7 +84,7 @@ class Summary(unittest.TestCase):
         job = yaml.safe_load((ROOT / '.github/workflows/repository-secret-history.yml').read_text())['jobs']['history']
         run = next(s['run'] for s in job['steps'] if 'log_opts=' in s.get('run', ''))
         for expected in ('--all --full-history --diff-merges=first-parent --text --no-ext-diff --no-textconv',
-                         'useDefault = true', '--ignore-gitleaks-allow', '--redact=100', '--exit-code=2',
+                         '--ignore-gitleaks-allow', '--redact=100', '--exit-code=2',
                          'umask 077', 'trap', '--report-path="$report"', 'history_scan_summary.py'):
             self.assertIn(expected, run)
         for forbidden in ('continue-on-error', '--baseline', 'allowlists'):
@@ -93,9 +93,10 @@ class Summary(unittest.TestCase):
         self.assertEqual(len(uploads), 1)
         self.assertEqual(uploads[0]['with']['path'], '${{ runner.temp }}/finite-history-evidence/')
         self.assertNotIn('report', uploads[0]['with']['path'])
-        self.assertEqual(run.count('--candidate . --check'), 2)
-        self.assertIn('history_identifiers.py', run)
-        self.assertIn('--require-complete-baseline', run)
+        self.assertEqual(run.count('--candidate . --check'), 1)
+        self.assertEqual(run.count('\"$RUNNER_TEMP/gitleaks/gitleaks\" git .'), 1)
+        self.assertIn('--native-identifiers', run)
+        self.assertNotIn('first_report', run)
         self.assertIn('history_frozen_refs.py', run)
         self.assertIn('>/dev/null 2>&1', run)
         engine = (ROOT / '.github/workflows/finding-id-fixtures.yml').read_text()

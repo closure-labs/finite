@@ -33,21 +33,36 @@ def refs(candidate):
     return result
 
 
-def snapshot(candidate, source, config, ignores, run, attempt, tooling=None):
+def snapshot(candidate, source, config, ignores, run, attempt, tooling=None, *, native_identifiers=False, require_complete=False):
     if (not SHA.fullmatch(source) or packets.git(candidate, 'rev-parse', 'HEAD').decode().strip() != source
             or packets.git(candidate, 'rev-parse', '--is-shallow-repository').strip() != b'false'
-            or config.read_bytes() != CONFIG or not re.fullmatch('[1-9][0-9]{0,19}', run)
+            or not re.fullmatch('[1-9][0-9]{0,19}', run)
             or not re.fullmatch('[1-9][0-9]{0,19}', attempt)):
         raise ValueError('Invalid immutable history scan context')
+    generated = None
+    if native_identifiers:
+        import history_identifiers
+        policy, catalog = history_identifiers.load_policy()
+        config_bytes, counts = history_identifiers.native_config(candidate, policy, require_complete=require_complete)
+        config.write_bytes(config_bytes)
+        config.chmod(0o600)
+        generated = {'policy': catalog['version'], 'catalogSha256': hashlib.sha256(
+            (history_identifiers.DIRECTORY / 'history-identifiers.json').read_bytes()).hexdigest(), **counts}
+    else:
+        config_bytes = config.read_bytes()
+        if config_bytes != CONFIG:
+            raise ValueError('Unsupported scanner configuration')
     raw = ignores.read_bytes()
     if len(raw) > 32 * 1024**2:
         raise ValueError('Exception metadata exceeds bound')
-    return {'schema': 1, 'repository': 'closure-labs/finite', 'sourceRevision': source,
+    return {'schema': 2 if generated else 1, 'repository': 'closure-labs/finite', 'sourceRevision': source,
             'runId': run, 'runAttempt': attempt, 'toolingRevision': tooling or source, 'refs': refs(candidate),
             'scanner': {'version': '8.30.1', 'officialArchiveSha256': ARCHIVE_SHA256,
-                        'config': CONFIG.decode(), 'configSha256': hashlib.sha256(CONFIG).hexdigest(),
+                        'config': None if generated else CONFIG.decode(), 'configSha256': hashlib.sha256(config_bytes).hexdigest(),
+                        'nativeIdentifierPolicy': generated,
                         'logOptions': OPTIONS, 'defaultRules': True, 'inlineAllows': False,
-                        'exceptionPolicy': 'byte-identical-main-canonical-finding-ids-v1',
+                        'exceptionPolicy': ('canonical-main-ids-and-native-exact-identifiers-v1' if generated
+                                            else 'byte-identical-main-canonical-finding-ids-v1'),
                         'exceptionSha256': hashlib.sha256(raw).hexdigest(),
                         'exceptionFingerprintCount': len(raw.splitlines())}}
 
@@ -97,6 +112,7 @@ def main():
     parser.add_argument('--check', action='store_true')
     parser.add_argument('--source')
     parser.add_argument('--frozen', action='store_true')
+    parser.add_argument('--native-identifiers', action='store_true')
     parser.add_argument('--config', type=Path)
     parser.add_argument('--ignores', type=Path)
     args = parser.parse_args()
@@ -108,7 +124,8 @@ def main():
         check(args.candidate, value)
     else:
         value = snapshot(args.candidate, args.source or os.environ['GITHUB_SHA'], args.config, args.ignores,
-                         os.environ['GITHUB_RUN_ID'], os.environ['GITHUB_RUN_ATTEMPT'], os.environ['GITHUB_SHA'])
+                         os.environ['GITHUB_RUN_ID'], os.environ['GITHUB_RUN_ATTEMPT'], os.environ['GITHUB_SHA'],
+                         native_identifiers=args.native_identifiers, require_complete=args.frozen)
         if args.frozen:
             import history_frozen_refs
             history_frozen_refs.check_inputs(args.candidate, args.ignores)

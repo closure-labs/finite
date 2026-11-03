@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
-"""Validate reviewed exact fingerprints before giving them to upstream Gitleaks."""
-from collections import Counter
-import argparse
+"""Compile verified public identifiers into native Gitleaks AND allowances."""
+from collections import defaultdict
 import ast
 import hashlib
 import json
-import os
 from pathlib import Path, PurePosixPath
 import re
 import sys
-import tempfile
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import finding_id_packets as packets
-from history_scan_summary import MAX_BYTES, MAX_FINDINGS
+import history_finding_ids
 
 ROOT = Path(__file__).resolve().parents[2]
 DIRECTORY = ROOT / '.github/security'
@@ -85,21 +82,8 @@ def load_policy(directory=DIRECTORY):
     return result, value
 
 
-def reported_fingerprint(finding):
-    commit, path, rule, line = (finding.get(k) for k in ('Commit', 'File', 'RuleID', 'StartLine'))
-    if (not isinstance(commit, str) or not re.fullmatch('[a-f0-9]{40}', commit)
-            or not isinstance(path, str) or not 0 < len(path) <= 4096
-            or not isinstance(rule, str) or not re.fullmatch('[a-z0-9][a-z0-9-]{0,127}', rule)
-            or type(line) is not int or line <= 0):
-        raise Invalid('report-metadata')
-    fp = f'{commit}:{path}:{rule}:{line}'
-    if finding.get('Fingerprint') != fp:
-        raise Invalid('report-fingerprint')
-    return fp
-
-
-def validate_match(candidate, finding, item, blobs, packet_lines):
-    commit, path, rule, number = FINGERPRINT.fullmatch(finding['Fingerprint']).groups()
+def source_identifier(candidate, fingerprint, item, blobs, packet_lines):
+    commit, path, rule, number = FINGERPRINT.fullmatch(fingerprint).groups()
     number = int(number)
     if (commit, path) not in blobs:
         if len(blobs) >= 256:
@@ -117,8 +101,7 @@ def validate_match(candidate, finding, item, blobs, packet_lines):
     if (oid != item['blobGitSha1'] or blob_digest != item['blobSha256'] or number > len(lines)):
         raise Invalid('blob-binding')
     line = lines[number - 1]
-    if (not line.isascii() or digest(line.encode()) != item['lineSha256']
-            or type(finding.get('EndLine')) is not int or finding.get('EndLine') != number):
+    if not line.isascii() or digest(line.encode()) != item['lineSha256']:
         raise Invalid('line-binding')
     if item['shape'] == 'standalone-recomputed-packet-key':
         if (item['binding']['kind'] != 'canonical-packet-finding-identity' or rule != 'generic-api-key'
@@ -148,87 +131,41 @@ def validate_match(candidate, finding, item, blobs, packet_lines):
         identifier = match[3]
     if digest(identifier.encode()) != item['identifierSha256']:
         raise Invalid('identifier-binding')
-    start, end = finding.get('StartColumn'), finding.get('EndColumn')
-    match = finding.get('Match')
-    if (type(start) is not int or type(end) is not int or start < 1 or end < start
-            or finding.get('Secret') != 'REDACTED' or not isinstance(match, str)
-            or match.count('REDACTED') != 1):
-        raise Invalid('match-span')
-    source_match = match.replace('REDACTED', identifier)
-    if source_match.count(identifier) != 1 or line.count(source_match) != 1:
-        raise Invalid('match-span')
-    offset = line.index(source_match)
-    # v8.30.1 detect/location.go counts the preceding newline in columns
-    # after a fragment's first line. Authenticate the exact unique source
-    # substring independently; then require one of its two defined modes.
-    column_mode = start - (offset + 1)
-    if column_mode not in (0, 1) or end != offset + len(source_match) + column_mode:
-        raise Invalid('match-span')
+    return line, identifier
 
 
+def native_config(candidate, policy, *, require_complete=False):
+    """Use upstream rule/commit/path/whole-line AND semantics, never a file ignore.
 
-def verified(candidate, findings, policy, *, require_complete=False):
-    if not isinstance(findings, list) or len(findings) > MAX_FINDINGS:
-        raise Invalid('report-limit')
-    fps = [reported_fingerprint(row) for row in findings]
-    counts = Counter(fps)
-    if any(counts[fp] != 1 for fp in counts if fp in policy):
-        raise Invalid('ambiguous-fingerprint')
-    result, blobs, packet_lines = [], {}, {}
-    for row, fp in zip(findings, fps):
-        if fp in policy:
-            validate_match(candidate, row, policy[fp], blobs, packet_lines)
-            result.append(fp)
-    if require_complete and set(result) != set(policy):
-        raise Invalid('incomplete-frozen-baseline')
-    return sorted(result)
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--candidate', type=Path, required=True)
-    parser.add_argument('--report', type=Path, required=True)
-    parser.add_argument('--status', type=int, required=True)
-    parser.add_argument('--base-ignores', type=Path, required=True)
-    parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--receipt', type=Path, required=True)
-    parser.add_argument('--require-complete-baseline', action='store_true')
-    args = parser.parse_args()
-    fd = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
-    os.fchmod(fd, 0o600)
-    os.close(fd)
-    try:
-        policy, value = load_policy()
-        raw = bounded(args.report, MAX_BYTES)
-        findings = packets.decision_controller.decision_packets.decode_json(raw)
-        if args.status not in (0, 2) or bool(findings) != (args.status == 2):
-            raise Invalid('scanner-status')
-        matches = verified(args.candidate, findings, policy, require_complete=args.require_complete_baseline)
-        base = bounded(args.base_ignores, 32 * 1024**2).decode('ascii').splitlines()
-        for fp in base:
-            match = FINGERPRINT.fullmatch(fp)
-            if not match or match[3] != 'generic-api-key' or not packets.PACKET.fullmatch(match[2]):
-                raise Invalid('base-exceptions')
-        union = sorted(set(base) | set(matches))
-        if len(union) > 100000:
-            raise Invalid('fingerprint-limit')
-        with tempfile.NamedTemporaryFile(mode='w', dir=args.output.parent, delete=False) as stream:
-            stream.write(''.join(fp + '\n' for fp in union))
-        os.replace(stream.name, args.output)
-        receipt = {'schema': 1, 'policy': value['version'], 'firstPassFindingCount': len(findings),
-                   'verifiedExactIdentifierCount': len(matches), 'unclassifiedFindingCount': len(findings) - len(matches),
-                   'firstPassReportDigest': digest(raw), 'catalogDigest': digest((DIRECTORY / 'history-identifiers.json').read_bytes()),
-                   'reviewedFingerprintsDigest': value['fingerprintsDigest'],
-                   'combinedExceptionDigest': digest(args.output.read_bytes()), 'requireCompleteBaseline': args.require_complete_baseline}
-        args.receipt.write_text(json.dumps(receipt, sort_keys=True) + '\n')
-        args.receipt.chmod(0o600)
-    except Exception as error:
-        reason = error.reason if isinstance(error, Invalid) else 'validation-error'
-        args.receipt.write_text(json.dumps({'schema': 1, 'verdict': 'exception-validation-failed', 'reason': reason}) + '\n')
-        args.receipt.chmod(0o600)
-        print('Unable to verify historical identifier exceptions: ' + reason + '.', file=sys.stderr)
-        raise SystemExit(1)
-
-
-if __name__ == '__main__':
-    main()
+    Validate source bytes before scanning, so one native pass can decide the
+    verdict. An exception cannot match an added credential on that line: its
+    entire source line, immutable commit, path and rule must all match.
+    """
+    reachable = set(packets.git(candidate, 'rev-list', '--all',
+        f'--max-count={history_finding_ids.MAX_COMMITS + 1}').decode('ascii').splitlines())
+    if len(reachable) > history_finding_ids.MAX_COMMITS:
+        raise Invalid('history-limit')
+    groups, blobs, packet_lines = defaultdict(set), {}, {}
+    used = 0
+    for fingerprint, item in sorted(policy.items()):
+        commit, path, rule, _ = FINGERPRINT.fullmatch(fingerprint).groups()
+        if commit not in reachable:
+            if require_complete:
+                raise Invalid('incomplete-frozen-baseline')
+            continue  # --all cannot scan commits outside this exact ref closure.
+        line, _ = source_identifier(candidate, fingerprint, item, blobs, packet_lines)
+        groups[rule, path, commit].add(line)
+        used += 1
+    lines = ['[extend]', 'useDefault = true']
+    for rule in sorted({key[0] for key in groups}):
+        lines.extend(['[[rules]]', 'id = ' + json.dumps(rule)])
+        for _, path, commit in sorted(key for key in groups if key[0] == rule):
+            lines.extend(['[[rules.allowlists]]', 'condition = "AND"', 'regexTarget = "line"',
+                'commits = [' + json.dumps(commit) + ']',
+                'paths = [' + json.dumps('^' + re.escape(path) + '$') + ']',
+                'regexes = ' + json.dumps([r'\A\n?' + re.escape(line) + r'\z'
+                    for line in sorted(groups[rule, path, commit])])])
+    return ('\n'.join(lines) + '\n').encode(), {
+        'verifiedExactIdentifierCount': used,
+        'unreachableCatalogEntryCount': len(policy) - used,
+        'ruleCommitPathGroups': len(groups)}
