@@ -25,6 +25,25 @@ def iso_channels(value):
 
 
 def options(env):
+    # GitHub exposes public configuration variables only at workflow scope.
+    # Decode their native JSON once, then export only our declared switches.
+    # Explicit job/step overrides retain their existing precedence.
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate public CI variable')
+            result[key] = value
+        return result
+
+    public = json.loads(env.get('FINITE_CI_VARS') or '{}', object_pairs_hook=unique)
+    if not isinstance(public, dict):
+        raise ValueError('Expected public CI variables object')
+    declared = (*OPTIONS, ISO_CHANNELS_OPTION)
+    inherited = {key: value for key, value in public.items() if key in declared}
+    if any(not isinstance(value, str) for value in inherited.values()):
+        raise ValueError('Expected string public CI options')
+    env = {**inherited, **env}
     result = {}
     for key in OPTIONS:
         value = env.get(key, 'false') or 'false'
