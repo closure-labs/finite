@@ -60,10 +60,38 @@ class Manifest(unittest.TestCase):
                 continue
             with self.subTest(workflow=path.name):
                 values = yaml.safe_load(source).get('env', {})
-                self.assertEqual({key: values.get(key) for key in PUBLIC_OPTIONS - {SOURCE_MODE}},
-                                 {key: '${{ vars.' + key + ' }}' for key in PUBLIC_OPTIONS - {SOURCE_MODE}})
+                self.assertEqual(values.get('FINITE_CI_VARS'), '${{ toJSON(vars) }}')
+                self.assertFalse((PUBLIC_OPTIONS - {SOURCE_MODE}) & values.keys())
         build = yaml.safe_load((ROOT / '.github/workflows/build.yml').read_text())
         self.assertEqual(build['jobs']['checks']['env'][SOURCE_MODE], '${{ vars.FINITE_SOURCE_PROOF_REUSE }}')
+
+    def test_public_bootstrap_matches_legacy_flags_for_all_combinations(self):
+        import itertools
+        for flags in itertools.product(('true', 'false', ''), repeat=len(FLAGS)):
+            values = dict(zip(sorted(FLAGS), flags))
+            for channel in ('', 'finite', 'finite-dev', 'all'):
+                legacy = {**values, SELECTOR: channel}
+                self.assertEqual(OPTIONS.options(legacy),
+                                 OPTIONS.options({'FINITE_CI_VARS': json.dumps(legacy)}))
+
+    def test_native_public_variables_preserve_flags_defaults_and_override_precedence(self):
+        values = {key: 'true' for key in FLAGS}
+        values.update({SELECTOR: 'all', SOURCE_MODE: 'shadow', 'UNRELATED': 'not-exported'})
+        resolved = OPTIONS.options({'FINITE_CI_VARS': json.dumps(values)})
+        self.assertEqual(set(resolved), PUBLIC_OPTIONS)
+        self.assertTrue(all(resolved[key] == 'true' for key in FLAGS))
+        self.assertEqual(resolved[SELECTOR], 'finite,finite-dev')
+        self.assertEqual(resolved[SOURCE_MODE], 'off')
+        override = OPTIONS.options({'FINITE_CI_VARS': json.dumps(values), SOURCE_MODE: 'off',
+                                    'FINITE_OPTIMIZED_CACHES': 'false'})
+        self.assertEqual(override[SOURCE_MODE], 'off')
+        self.assertEqual(override['FINITE_OPTIMIZED_CACHES'], 'false')
+        self.assertEqual(OPTIONS.options({}), OPTIONS.options({'FINITE_CI_VARS': '{}'}))
+        for raw in ('[]', 'null', '{', '{"FINITE_CACHIX_WRITER":true}',
+                    '{"FINITE_CACHIX_WRITER":"false","FINITE_CACHIX_WRITER":"true"}',
+                    '{"FINITE_CACHIX_WRITER":"true\\nINJECTED=value"}'):
+            with self.subTest(raw=raw), self.assertRaises((ValueError, TypeError)):
+                OPTIONS.options({'FINITE_CI_VARS': raw})
 
     def test_source_proof_mode_defaults_off_and_rejects_ambiguous_values(self):
         self.assertEqual(OPTIONS.options({})[SOURCE_MODE], 'off')
