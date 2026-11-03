@@ -367,7 +367,7 @@ class NativeGateTests(unittest.TestCase):
         self.assertEqual(jobs['repository-secrets']['name'], 'Repository security audit')
         self.assertEqual(jobs['repository-secrets']['if'],
                          "github.event_name == 'pull_request' || github.event_name == 'merge_group'")
-        self.assertEqual(jobs['repository-secrets']['permissions'], {'contents': 'read', 'actions': 'read'})
+        self.assertEqual(jobs['repository-secrets']['permissions'], {'contents': 'read'})
         self.assertIn('repository-secrets', jobs['gate']['needs'])
         self.assertEqual(jobs['gate']['name'], 'CI gate')
         self.assertEqual(jobs['gate']['if'], 'always()')
@@ -519,14 +519,17 @@ class NewPacketTests(unittest.TestCase):
         (self.runtime / 'authenticated-finding-ids.gitleaksignore').write_text(''.join(v + '\n' for v in values))
         return values
 
-    def test_full_byte_authentication_precedes_exact_exceptions(self):
+    def test_canonical_id_classification_has_no_producer_downloads(self):
         path = self.add_packet()
-        values = self.receipt()
-        self.assertEqual(self.authenticated_calls, 2)
+        with patch.object(self.controller, 'api', side_effect=AssertionError('No scanner API reads')), \
+                patch.object(self.controller.decision_packets, 'command',
+                             side_effect=AssertionError('No scanner registry reads')):
+            values = self.receipt()
+        self.assertEqual(self.authenticated_calls, 0)
         self.assertEqual(len(values), 1)
         self.assertTrue(values[0].startswith(self.head + ':' + path + ':generic-api-key:'))
 
-    def test_substituted_provenance_request_and_archive_bytes_never_get_receipt(self):
+    def test_scanner_exception_cannot_satisfy_independent_producer_authentication(self):
         for kind in ('run', 'attempt', 'source', 'artifact', 'request', 'oci', 'zip', 'zip-digest', 'oci-bytes'):
             with self.subTest(kind=kind):
                 value = copy.deepcopy(self.value)
@@ -545,7 +548,7 @@ class NewPacketTests(unittest.TestCase):
                     if kind == 'zip-digest':self.zips[1] = self.zips[1][:-1] + bytes([self.zips[1][-1] ^ 1])
                     if kind == 'oci-bytes':self.blobs = {key: bytes([raw[0] ^ 1]) + raw[1:] for key, raw in self.blobs.items()}
                     with self.assertRaises((ValueError, subprocess.CalledProcessError, AssertionError)):
-                        packets.authenticate_packet(parsed, self.base, self.repo)
+                        self.controller.validate_proposal_packet(parsed)
                 finally:self.zips, self.blobs = original_zip, original_blobs
 
     def test_duplicate_minified_relocated_forged_and_spoofed_data_get_no_exception(self):
@@ -581,12 +584,14 @@ class NewPacketTests(unittest.TestCase):
         self.assertNotIn(token, result.stdout + result.stderr)
 
     @unittest.skipUnless(shutil.which('gitleaks'), 'Pinned Gitleaks supplied by dedicated hosted fixture job')
-    def test_pinned_real_engine_blocks_unverified_new_ids(self):
+    def test_pinned_real_engine_classifies_ids_without_approving_claimed_producer(self):
         self.real_engine()
         value = copy.deepcopy(self.value);value['payload']['packet']['producer']['runAttempt'] = 3
-        self.add_packet(value)
-        with self.assertRaises(ValueError):self.receipt()
-        self.assertEqual(self.run_scan().returncode, 2)
+        path = self.add_packet(value)
+        self.receipt()
+        self.assertEqual(self.run_scan().returncode, 0)
+        parsed, _ = packets.proposal_lines((self.repo / path).read_bytes(), path)
+        with self.assertRaises(ValueError):self.controller.validate_proposal_packet(parsed)
 
     @unittest.skipUnless(shutil.which('gitleaks'), 'Pinned Gitleaks supplied by dedicated hosted fixture job')
     def test_pinned_real_engine_rejects_all_ambiguous_or_unbound_new_packets(self):
@@ -613,13 +618,33 @@ class NewPacketTests(unittest.TestCase):
                 self.assertEqual(output.read_text(), '')
                 self.assertEqual(self.run_scan().returncode, 2)
 
+    @unittest.skipUnless(shutil.which('gitleaks'), 'Pinned Gitleaks supplied by dedicated hosted fixture job')
+    def test_native_shape_allowlist_would_hide_a_non_generated_hex_credential(self):
+        self.real_engine()
+        value = copy.deepcopy(self.value)
+        value['payload']['findings'][0]['key'] = hashlib.sha256(b'synthetic-random-api-key').hexdigest()
+        self.add_packet(value)
+        with self.assertRaises(ValueError):self.receipt()
+        self.assertEqual(self.run_scan().returncode, 2)
+        config = self.runtime / 'native-shape-allowlist.toml'
+        config.write_text("[extend]\nuseDefault = true\n[[rules]]\nid = \"generic-api-key\"\n"
+                          "[[rules.allowlists]]\ncondition = \"AND\"\nregexTarget = \"line\"\n"
+                          "paths = ['''^automation/decisions/security/[0-9a-f]{64}\\.json$''']\n"
+                          "regexes = ['''^\\s*\"key\": \"[0-9a-f]{64}\",?\\s*$''']\n")
+        # This is a negative evaluation of an alternative, never production config.
+        result = subprocess.run([str(self.runtime / 'gitleaks/gitleaks'), 'git', '.',
+            '--config', str(config), '--ignore-gitleaks-allow', '--redact=100', '--no-banner',
+            '--log-level=error', '--exit-code=2', '--log-opts=' + self.base + '..' + self.head],
+            cwd=self.repo, capture_output=True)
+        self.assertEqual(result.returncode, 0)
+
     def test_protected_base_absence_never_executes_candidate_helper(self):
         trusted = self.root / 'trusted-scanner'
         self.git('worktree', 'add', '--detach', str(trusted), self.base)
         marker = self.root / 'candidate-helper-executed'
         self.commit('scripts/ci/finding_id_packets.py', 'from pathlib import Path\nPath(' + repr(str(marker)) + ').touch()\n')
         head = self.git('rev-parse', 'HEAD')
-        step = next(s for s in workflow()['jobs']['repository-secrets']['steps'] if s.get('name') == 'Authenticate new packet finding IDs')
+        step = next(s for s in workflow()['jobs']['repository-secrets']['steps'] if s.get('name') == 'Classify generated finding IDs')
         result = subprocess.run(['bash', '-c', step['run']], cwd=self.repo,
             env={**self.env, 'RUNNER_TEMP': str(self.runtime), 'GITHUB_WORKSPACE': str(self.root),
                  'BASE_SHA': self.base, 'HEAD_SHA': head, 'BASE_REPOSITORY': 'closure-labs/finite',
@@ -663,9 +688,12 @@ class NewPacketTests(unittest.TestCase):
         checkout = next(s for s in job['steps'] if s.get('name') == 'Checkout protected base scanner tools')
         self.assertEqual(checkout['with']['ref'], '${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}')
         self.assertIs(checkout['with']['persist-credentials'], False)
-        auth = next(s for s in job['steps'] if s.get('name') == 'Authenticate new packet finding IDs')
+        auth = next(s for s in job['steps'] if s.get('name') == 'Classify generated finding IDs')
         scan = next(s for s in job['steps'] if s.get('name') == 'Scan complete introduced commit range')
-        self.assertEqual(auth['env']['GH_TOKEN'], '${{ github.token }}')
+        self.assertNotIn('GH_TOKEN', auth['env'])
+        self.assertNotIn('curl', auth['run'])
+        self.assertNotIn('oras', auth['run'])
+        self.assertEqual(job['permissions'], {'contents': 'read'})
         self.assertNotIn('GH_TOKEN', scan['env'])
         self.assertIn('python3 -I "$helper"', auth['run'])
         self.assertIn('helper="$trusted/scripts/ci/finding_id_packets.py"', auth['run'])
