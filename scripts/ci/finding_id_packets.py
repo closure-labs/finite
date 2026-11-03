@@ -1,4 +1,4 @@
-"""Authenticate new finding-ID exceptions; never grants decision authority."""
+"""Classify deterministic finding-ID false positives; never grants decision authority."""
 import argparse
 import copy
 import json
@@ -18,7 +18,6 @@ from security_decisions import canonical_hash
 ROOT = Path(__file__).resolve().parents[2]
 PACKET = re.compile(r'automation/decisions/security/([0-9a-f]{64})\.json')
 MAX_DOCUMENT = 2 * 1024**2
-MAX_NATIVE = 2 * 768 * 1024**2 + MAX_DOCUMENT
 
 
 def git(candidate, *args):
@@ -63,24 +62,6 @@ def proposal_lines(raw, path):
     return value, lines
 
 
-def authenticate_packet(value, base, candidate):
-    source = value['payload']['packet']['producer']['headSha']
-    # Producer must be in protected main history, not a candidate side commit.
-    subprocess.run(['git', '-c', 'core.hooksPath=/dev/null', '-C', str(candidate),
-                    'merge-base', '--is-ancestor', source, base], check=True,
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
-    # Existing validator authenticates OCI descriptor/layer bytes, canonical
-    # request hash, live producer/source/run/attempt, both Actions ZIP digests,
-    # exact native file inventories and reevaluated normalized finding ceilings.
-    packets = decision_controller.decision_packets
-    prior_bytes, prior_files = packets.MAX_BYTES, packets.MAX_FILES
-    try:
-        packets.MAX_BYTES, packets.MAX_FILES = MAX_NATIVE, 128
-        decision_controller.validate_proposal_packet(value)
-    finally:
-        packets.MAX_BYTES, packets.MAX_FILES = prior_bytes, prior_files
-
-
 def fingerprints(candidate, base, head):
     if (git(candidate, 'rev-parse', '--is-shallow-repository').decode().strip() != 'false'
             or git(candidate, 'rev-parse', 'HEAD').decode().strip() != head):
@@ -119,7 +100,8 @@ def fingerprints(candidate, base, head):
         raise ValueError('New packet authentication is bounded to one immutable packet per range')
     result = set()
     for item, value, lines in eligible:
-        authenticate_packet(value, base, candidate)
+        # Secret classification needs the canonical ID bytes, not a producer
+        # download. Findings acceptance independently authenticates the packet.
         result.update(f'{commit}:{item["path"]}:generic-api-key:{line}'
                       for commit in item['commits'] for line in lines)
     return sorted(result)
@@ -153,5 +135,5 @@ if __name__ == '__main__':
     try:
         main()
     except Exception:
-        print('Unable to authenticate new finding-ID packet; no new exceptions granted.', file=sys.stderr)
+        print('Unable to classify generated finding IDs; no new exceptions granted.', file=sys.stderr)
         raise SystemExit(1)

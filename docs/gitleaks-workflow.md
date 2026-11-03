@@ -23,9 +23,8 @@ execution covers ordinary contributors and Dependabot without extending the
 execution-approval allowlist. Existing author, reviewer and execution-approval
 requirements still apply. Gitleaks executes no candidate scripts or local actions,
 and receives no persisted checkout credentials, secrets, write or OIDC grants.
-The job additionally grants `actions: read` only for protected-base payload
-authentication; its API token is not passed to Gitleaks. Governance already covers
-both the workflow and gate implementation.
+The job needs only `contents: read`; finding-ID classification uses no API token
+or registry download. Governance covers the workflow and gate implementation.
 
 The gate consumes GitHub's same-run `needs.repository-secrets.result`, rather
 than searching for another run by name. An unrelated workflow, historical job,
@@ -82,41 +81,41 @@ exists only in runner temporary storage; findings and exception payloads are not
 logged or uploaded. Generator or scanner errors fail the native gate closed.
 
 
-## Authenticated new packet identifiers
+## New packet identifier classification is not risk acceptance
 
-A separate protected-base verifier may grant exact `generic-api-key`
-commit/path/line exceptions for one new immutable security packet in an incoming
-range. Revocations retain their existing full scan and separate authority gate;
-they receive no new exceptions or new authentication gate. It never imports PR code. The verifier and all authentication helpers are
-loaded from the exact GitHub event base checkout; an older base lacking the
-verifier grants no new exceptions. The read-only Actions token belongs only to
-that verifier step, not Gitleaks. No review, risk acceptance, signing or release
-authority is granted by this operation.
+A protected-base classifier permits exact `generic-api-key` commit/path/line
+exceptions for a new canonical content-addressed security packet. It parses the
+complete JSON, validates the proposal structure, recomputes each finding key from
+profile/component/advisory/exposure, and requires the key alone on its canonical
+line. Duplicate JSON, forged keys, minified/shared lines, spoofed paths and other
+credential locations still fail. It never imports candidate code, and an older
+protected base without the classifier grants no new exceptions.
 
-The verifier reuses `decision_controller.validate_proposal_packet`: live native
-producer repository/workflow/source/run/attempt, source ancestry in protected
-main, exact artifact identities/digests, OCI manifest/layer hashes and canonical
-request hash, both downloaded Actions ZIP sizes/digests, complete matching native
-file inventories, and reevaluated normalized findings must all agree. Metadata
-alone cannot grant an exception. Canonical JSON, duplicate rejection, complete
-finding identity recomputation and equal-length structural markers restrict each
-exception to the standalone `payload.findings[].key` field.
+Secret classification does not need to download the producer's OCI packet and
+both Actions ZIPs to determine whether a computed identifier is a credential.
+Those operations duplicated the independent findings-acceptance verifier. The
+scanner now performs the local semantic proof without `actions: read`, an API
+token or an ORAS installation. It does not authenticate a claimed producer or
+grant any authority. The unchanged maintainer decision authority and security
+admission paths still authenticate producer payload bytes/source/run/attempt and
+require exact findings-specific human acceptance. Fixtures deliberately classify
+a generated ID under invalid producer metadata while proving the independent
+producer verifier rejects that packet. There is no shared successful scan receipt
+that can satisfy the risk-acceptance gate.
 
-The new path is bounded to one immutable packet, a 2 MiB proposal document,
-128 OCI members, 1,538 MiB of OCI payload including its manifest, and a 600-second
-authentication timeout. Existing tighter native ZIP/member/expansion limits still
-apply. Authentication failure clears the new receipt and fails the job; the full
-Gitleaks scan still runs. Existing inherited-base semantics, scanner pin,
-complete history range, default rules and credential redaction are unchanged.
+### Native allowlist tradeoff
 
-The dedicated read-only fixture workflow checksum-pins the same real Gitleaks
-engine and exercises genuine secret signals, forged provenance/IDs, modified ZIP
-and OCI bytes, duplicate/minified/relocated fields and path spoofing without
-network authentication. The actual #345 payload was also independently fetched
-and authenticated: 34 native files matched, all 596 IDs recomputed, and its 593
-generated-ID detections were precisely covered. #345 itself is untouched. Its
-old event base cannot gain this behavior from a stale rerun; the policy must be
-reviewed/merged and fresh validation bound to a base containing the verifier.
+Gitleaks supports a standard rule-specific AND allowlist combining packet paths
+and a standalone 64-hex `key` line. The pinned 8.30.1 engine demonstrates that this
+also hides an arbitrary non-generated hex API key on that line: a regex cannot
+recompute the finding identity. That would be a classification blind spot even
+without a tampering threat model. This draft therefore retains standard native
+fingerprints generated only after the semantic check. Native allowlist config is
+a negative fixture, not production policy. Full incoming/default-rule scanning,
+separate historical scans and merge-group tests remain active. No file/range or
+blanket hash exclusion is added.
+
+See the pinned upstream [allowlist documentation](https://github.com/gitleaks/gitleaks/blob/v8.30.1/README.md#configuration).
 
 ## Historical finding-ID exceptions
 
