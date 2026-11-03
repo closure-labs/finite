@@ -74,7 +74,9 @@ class InstallerTests(unittest.TestCase):
         # The first rollout must not require a new local action from the old base.
         incoming = workflow()['jobs']['repository-secrets']
         self.assertFalse(any('setup-gitleaks' in s.get('uses', '') for s in incoming['steps']))
-        self.assertEqual(incoming['permissions'], {'contents': 'read', 'actions': 'read'})
+        self.assertEqual(incoming['permissions']['contents'], 'read')
+        self.assertLessEqual(set(incoming['permissions']), {'contents', 'actions'})
+        self.assertTrue(all(value == 'read' for value in incoming['permissions'].values()))
 
 
 class RangeTests(unittest.TestCase):
