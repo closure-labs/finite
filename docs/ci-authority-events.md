@@ -3,8 +3,9 @@
 Handle `opened`, `synchronize`, `reopened` and `ready_for_review` directly in the
 trusted main authority workflow using GitHub's native `pull_request_target`
 event, limited to PRs targeting main. Remove their empty collector job and its
-completion fanout. Title/body-only `edited` events no longer wake authority: those
-fields are not authority inputs. Review-body edits remain covered.
+completion fanout. Base-retarget `edited` events remain covered; a job guard skips
+title/body-only edits because those fields are not authority inputs. Review-body
+edits remain covered.
 
 The collector still handles review submission/edit/dismissal and merge-group
 requests. Those events must not execute credentialed code from a candidate tree.

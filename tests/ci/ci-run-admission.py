@@ -388,6 +388,19 @@ class Admission(unittest.TestCase):
                 mod.main()
             approve.assert_not_called()
 
+    def test_native_target_authority_callbacks_do_not_enter_recovery_even_for_main_named_forks(self):
+        from types import SimpleNamespace
+        workflow = yaml.safe_load((ROOT / '.github/workflows/ci-run-admission.yml').read_text())
+        expression = workflow['jobs']['discover']['if'].replace('&&', ' and ').replace('||', ' or ')
+        for event, wanted in [('workflow_run', True), ('schedule', True),
+                              ('workflow_dispatch', True), ('pull_request_target', False),
+                              ('pull_request_review', False)]:
+            native = SimpleNamespace(event=event, name='Verify maintainer decision authority',
+                                     head_branch='main', conclusion='success')
+            github = SimpleNamespace(repository='closure-labs/finite', event_name='workflow_run',
+                                     event=SimpleNamespace(workflow_run=native))
+            self.assertEqual(bool(eval(expression, {'__builtins__': {}}, {'github': github})), wanted)
+
     def test_workflow_uses_only_trusted_main_and_narrow_credentialed_worker(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/ci-run-admission.yml').read_text())
         triggers = workflow.get('on', workflow.get(True))

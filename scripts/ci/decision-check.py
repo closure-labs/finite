@@ -214,7 +214,11 @@ def recovery_origin(api, repository, run_id, event=None):
             event = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
         pr = event.get('pull_request', {})
         head = pr.get('head', {})
-        if (event.get('action') not in ('opened', 'synchronize', 'reopened', 'ready_for_review')
+        if (event.get('action') not in ('opened', 'synchronize', 'reopened', 'ready_for_review', 'edited')
+                or (event.get('action') == 'edited' and not isinstance(
+                    event.get('changes', {}).get('base', {}).get('ref', {}).get('from'), str))
+                or (event.get('action') == 'edited' and not
+                    event.get('changes', {}).get('base', {}).get('ref', {}).get('from'))
                 or type(event.get('number')) is not int or event['number'] < 1
                 or pr.get('number') != event['number']
                 or event.get('repository', {}).get('full_name') != repository
