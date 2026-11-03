@@ -107,6 +107,24 @@ QUALIFICATION_ONLY = {
     'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml',
     'scripts/ci/report-release-transport.py', 'scripts/ci/release_transport_benchmark.py',
 }
+# Read-only host secret scanning is not an image/payload input. Keep this an
+# exact inventory: unknown siblings and mixed image inputs stay conservative.
+HOST_SCANNER_ONLY = frozenset({
+    '.github/actions/setup-gitleaks/action.yml',
+    '.github/actions/setup-gitleaks/install.sh',
+    '.github/workflows/finding-id-fixtures.yml',
+    '.github/workflows/repository-secret-history.yml',
+    '.github/security/history-baseline-41338989009.json',
+    '.github/security/history-identifiers.gitleaksignore',
+    '.github/security/history-identifiers.json',
+    'scripts/ci/finding_id_packets.py',
+    'scripts/ci/history_finding_ids.py',
+    'scripts/ci/history_identifiers.py',
+    'scripts/ci/history_frozen_refs.py',
+    'scripts/ci/history_snapshot.py',
+    'scripts/ci/history_scan_summary.py',
+})
+QUALIFICATION_ONLY |= HOST_SCANNER_ONLY
 QUALIFICATION_ONLY |= IMAGE_QUALIFICATION_ONLY
 
 

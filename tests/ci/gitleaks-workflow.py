@@ -42,13 +42,45 @@ class InstallerTests(unittest.TestCase):
         self.assertNotIn('inputs', action)
         self.assertEqual(action['runs']['steps'][0]['run'], 'bash "$GITHUB_ACTION_PATH/install.sh"')
         run = (ROOT / '.github/actions/setup-gitleaks/install.sh').read_text().split('\n', 1)[1]
-        self.assertEqual(run, next(s['run'] for s in workflow()['jobs']['repository-secrets']['steps']
-                                  if s.get('name') == 'Install checksum-pinned upstream Gitleaks'))
+        incoming = next(s['run'] for s in workflow()['jobs']['repository-secrets']['steps']
+                        if s.get('name') == 'Install checksum-pinned upstream Gitleaks')
+        self.assertIn('bash \"$trusted/.github/actions/setup-gitleaks/install.sh\"', incoming)
+        self.assertNotIn('curl ', incoming)
         self.assertIn('551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb', run)
         self.assertLess(run.index('sha256sum --check --status'), run.index('tar -xzf'))
         self.assertIn('--proto', run)
         self.assertIn('--max-time 60', run)
         self.assertTrue(run.startswith('set -euo pipefail'))
+
+    def test_incoming_uses_verified_base_and_never_candidate_installer(self):
+        steps = workflow()['jobs']['repository-secrets']['steps']
+        checkout = next(s for s in steps if s.get('name') == 'Checkout protected base scanner tools')
+        install = next(s for s in steps if s.get('name') == 'Install checksum-pinned upstream Gitleaks')
+        self.assertNotIn('if', checkout)
+        self.assertLess(steps.index(checkout), steps.index(install))
+        self.assertEqual(install['env']['BASE_SHA'], checkout['with']['ref'])
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); trusted = root/'trusted-scanner'; trusted.mkdir()
+            candidate = root/'candidate'; candidate.mkdir()
+            def helper(where, body):
+                path = where/'.github/actions/setup-gitleaks/install.sh'
+                path.parent.mkdir(parents=True); path.write_text(body)
+            helper(trusted, 'printf protected-base >"$RUNNER_TEMP/installer-origin"\n')
+            helper(candidate, 'printf candidate >"$RUNNER_TEMP/installer-origin"; exit 91\n')
+            env = {**os.environ, 'GIT_CONFIG_GLOBAL': '/dev/null', 'GIT_CONFIG_NOSYSTEM': '1'}
+            def git(*args):
+                return subprocess.check_output(['git','-c','user.name=Fixture',
+                    '-c','user.email=fixture@example.invalid','-c','commit.gpgsign=false',
+                    '-c','core.hooksPath=/dev/null','-C',str(trusted),*args],env=env,stderr=subprocess.DEVNULL,text=True).strip()
+            git('init','-q');git('add','.');git('commit','-qm','protected installer fixture')
+            env.update(GITHUB_WORKSPACE=str(root), RUNNER_TEMP=str(root), BASE_SHA=git('rev-parse','HEAD'))
+            result = subprocess.run(['bash','-c',install['run']],cwd=candidate,env=env,capture_output=True)
+            self.assertEqual(result.returncode,0)
+            self.assertEqual((root/'installer-origin').read_text(),'protected-base')
+            (root/'installer-origin').unlink(); env['BASE_SHA'] = 'f'*40
+            result = subprocess.run(['bash','-c',install['run']],cwd=candidate,env=env,capture_output=True)
+            self.assertNotEqual(result.returncode,0)
+            self.assertFalse((root/'installer-origin').exists())
 
     def test_failure_never_extracts_or_executes_unverified_download(self):
         run = (ROOT / '.github/actions/setup-gitleaks/install.sh').read_text()
@@ -71,7 +103,7 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(steps[0]['run'], 'test "$GITHUB_REF" = refs/heads/main')
         install = next(s for s in steps if s.get('name') == 'Install checksum-pinned upstream Gitleaks')
         self.assertEqual(install['uses'], '$/.github/actions/setup-gitleaks')
-        # The first rollout must not require a new local action from the old base.
+        # Incoming code comes from the exact event base, never the candidate action.
         incoming = workflow()['jobs']['repository-secrets']
         self.assertFalse(any('setup-gitleaks' in s.get('uses', '') for s in incoming['steps']))
         self.assertEqual(incoming['permissions']['contents'], 'read')
@@ -453,10 +485,14 @@ class NativeGateTests(unittest.TestCase):
                 self.assertNotIn(forbidden, text)
             local_actions = [s['uses'] for s in jobs['steps'] if s.get('uses', '').startswith(('./', '$/'))]
             self.assertEqual(local_actions, [] if jobs is job else ['$/.github/actions/setup-gitleaks'])
-            installer = text if jobs is job else (ROOT / '.github/actions/setup-gitleaks/install.sh').read_text()
+            installer = (ROOT / '.github/actions/setup-gitleaks/install.sh').read_text()
             self.assertIn('551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb', installer)
             run = next(s['run'] for s in jobs['steps'] if 'log_opts=' in s.get('run', ''))
-            self.assertIn('useDefault = true', run)
+            if jobs is job:
+                self.assertIn('useDefault = true', run)
+            else:
+                self.assertIn('--native-identifiers', run)
+                self.assertEqual(run.count('\"$RUNNER_TEMP/gitleaks/gitleaks\" git .'), 1)
             self.assertNotIn('allowlists', run)
             self.assertIn('--ignore-gitleaks-allow', run)
             expected = 'verified-finding-ids' if jobs is job else 'verified-history-ids'
