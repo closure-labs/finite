@@ -93,7 +93,7 @@ class Integrations(unittest.TestCase):
         for name in ('codeql', 'decision-events'):
             workflow = document(name)
             triggers = workflow.get('on', workflow.get(True))
-            self.assertIn('pull_request', triggers)
+            self.assertIn('pull_request' if name == 'codeql' else 'pull_request_review', triggers)
             self.assertNotIn('draft', str(workflow))
         pr = document('codeql')['jobs']['analyze']
         self.assertNotIn('secrets.', str(pr))
