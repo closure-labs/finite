@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/build.yml
+      - .github/actions/setup-gitleaks/**
       - .github/workflows/finding-id-fixtures.yml
       - scripts/ci/finding_id_packets.py
       - scripts/ci/decision_controller.py
@@ -24,6 +25,7 @@ on:
     branches: [main]
     paths:
       - .github/workflows/build.yml
+      - .github/actions/setup-gitleaks/**
       - .github/workflows/finding-id-fixtures.yml
       - scripts/ci/finding_id_packets.py
       - scripts/ci/decision_controller.py
@@ -54,14 +56,7 @@ jobs:
       - name: Install fixture parser
         run: sudo apt-get update -qq && sudo apt-get install -y python3-yaml
       - name: Install checksum-pinned upstream Gitleaks
-        run: |
-          mkdir -p "$RUNNER_TEMP/gitleaks"
-          curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 --max-time 60 \
-            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
-            -o "$RUNNER_TEMP/gitleaks.tar.gz"
-          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum --check --status
-          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP/gitleaks" gitleaks
-          test "$("$RUNNER_TEMP/gitleaks/gitleaks" version)" = 8.30.1
+        uses: $/.github/actions/setup-gitleaks
       - name: Run real scanner and byte-authentication fixtures without credentials
         run: |
           export PATH="$RUNNER_TEMP/gitleaks:$PATH"

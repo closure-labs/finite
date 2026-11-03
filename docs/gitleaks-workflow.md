@@ -294,3 +294,21 @@ GitHub check names/conclusions for the published head. Publication is pending
 explicit approval: push only this dedicated branch, open a separate PR against
 current main, then inspect exact-head scanner, required gate, CodeQL and
 authority results. Do not merge or change settings as part of publication.
+
+
+## Shared upstream installer rollout
+
+The credential-free fixture job and protected-main historical job share the
+`setup-gitleaks` composite action, preserving the exact 8.30.1 archive checksum,
+HTTPS restriction, transfer timeout and version assertion. A failed download or
+checksum stops before extraction/execution. No new action dependency, license,
+credential, scanner configuration or cache is introduced.
+
+Incoming scanning deliberately retains its workflow-owned pinned installer during
+this first rollout: the protected event base cannot contain a newly introduced
+local action until this PR is reviewed and merged. A subsequent caller-only change
+can use the action from `trusted-scanner`, after moving that protected-base checkout
+before installation. It must never execute an installer from candidate contents.
+This staged dependency avoids a fallback parser or trust expansion. The first step
+consolidates two of three callsites; complete incoming consolidation remains a
+reviewed-base follow-up, not a claim made by this draft.

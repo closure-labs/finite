@@ -35,6 +35,47 @@ def scan_script():
                 if step.get('name') == 'Scan complete introduced commit range')
 
 
+class InstallerTests(unittest.TestCase):
+    def test_one_fixed_installer_preserves_reviewed_binary_and_failure_order(self):
+        action = yaml.safe_load((ROOT / '.github/actions/setup-gitleaks/action.yml').read_text())
+        self.assertEqual(action['runs']['using'], 'composite')
+        self.assertNotIn('inputs', action)
+        run = action['runs']['steps'][0]['run']
+        self.assertEqual(run, next(s['run'] for s in workflow()['jobs']['repository-secrets']['steps']
+                                  if s.get('name') == 'Install checksum-pinned upstream Gitleaks'))
+        self.assertIn('551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb', run)
+        self.assertLess(run.index('sha256sum --check --status'), run.index('tar -xzf'))
+        self.assertIn('--proto', run)
+        self.assertIn('--max-time 60', run)
+        self.assertTrue(run.startswith('set -euo pipefail'))
+
+    def test_failure_never_extracts_or_executes_unverified_download(self):
+        run = yaml.safe_load((ROOT / '.github/actions/setup-gitleaks/action.yml').read_text())['runs']['steps'][0]['run']
+        for failure in ('transfer', 'checksum'):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as tmp:
+                directory = Path(tmp); binaries = directory / 'bin'; binaries.mkdir()
+                curl = binaries / 'curl'
+                curl.write_text('#!/bin/bash\n' + ('exit 22\n' if failure == 'transfer' else
+                    'while [[ $# -gt 0 ]]; do if [[ $1 == -o ]]; then printf corrupted >"$2"; exit 0; fi; shift; done\nexit 1\n'))
+                tar = binaries / 'tar'; tar.write_text('#!/bin/bash\ntouch "$RUNNER_TEMP/extracted"\nexit 0\n')
+                curl.chmod(0o755); tar.chmod(0o755)
+                result = subprocess.run(['bash', '-c', run], env={**os.environ,
+                    'RUNNER_TEMP': tmp, 'PATH': str(binaries) + ':' + os.environ['PATH']}, capture_output=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse((directory / 'extracted').exists())
+
+    def test_history_uses_main_checkout_and_incoming_keeps_bootstrap_trust(self):
+        history = yaml.safe_load((ROOT / '.github/workflows/repository-secret-history.yml').read_text())
+        steps = history['jobs']['history']['steps']
+        self.assertEqual(steps[0]['run'], 'test "$GITHUB_REF" = refs/heads/main')
+        install = next(s for s in steps if s.get('name') == 'Install checksum-pinned upstream Gitleaks')
+        self.assertEqual(install['uses'], './candidate/.github/actions/setup-gitleaks')
+        # The first rollout must not require a new local action from the old base.
+        incoming = workflow()['jobs']['repository-secrets']
+        self.assertFalse(any('setup-gitleaks' in s.get('uses', '') for s in incoming['steps']))
+        self.assertEqual(incoming['permissions'], {'contents': 'read', 'actions': 'read'})
+
+
 class RangeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -405,9 +446,12 @@ class NativeGateTests(unittest.TestCase):
         for jobs in (job, history['jobs']['history']):
             text = yaml.safe_dump(jobs)
             for forbidden in ('secrets.', 'token:', 'continue-on-error:', 'checks: write',
-                              'id-token:', '--baseline', '--max-target-megabytes', 'uses: $/', 'uses: ./'):
+                              'id-token:', '--baseline', '--max-target-megabytes', 'uses: $/'):
                 self.assertNotIn(forbidden, text)
-            self.assertIn('551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb', text)
+            local_actions = [s['uses'] for s in jobs['steps'] if s.get('uses', '').startswith('./')]
+            self.assertEqual(local_actions, [] if jobs is job else ['./candidate/.github/actions/setup-gitleaks'])
+            installer = text if jobs is job else (ROOT / '.github/actions/setup-gitleaks/action.yml').read_text()
+            self.assertIn('551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb', installer)
             run = next(s['run'] for s in jobs['steps'] if 'log_opts=' in s.get('run', ''))
             self.assertIn('useDefault = true', run)
             self.assertNotIn('allowlists', run)
