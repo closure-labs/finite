@@ -30,8 +30,12 @@ def workflow():
     return yaml.safe_load(WORKFLOW.read_text())
 
 
+def scanner():
+    return yaml.safe_load((ROOT / '.github/workflows/incoming-secret-scan.yml').read_text())['jobs']['scan']
+
+
 def scan_script():
-    return next(step['run'] for step in workflow()['jobs']['repository-secrets']['steps']
+    return next(step['run'] for step in scanner()['steps']
                 if step.get('name') == 'Scan complete introduced commit range')
 
 
@@ -42,7 +46,7 @@ class InstallerTests(unittest.TestCase):
         self.assertNotIn('inputs', action)
         self.assertEqual(action['runs']['steps'][0]['run'], 'bash "$GITHUB_ACTION_PATH/install.sh"')
         run = (ROOT / '.github/actions/setup-gitleaks/install.sh').read_text().split('\n', 1)[1]
-        incoming = next(s['run'] for s in workflow()['jobs']['repository-secrets']['steps']
+        incoming = next(s['run'] for s in scanner()['steps']
                         if s.get('name') == 'Install checksum-pinned upstream Gitleaks')
         self.assertIn('bash \"$trusted/.github/actions/setup-gitleaks/install.sh\"', incoming)
         self.assertNotIn('curl ', incoming)
@@ -53,7 +57,7 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue(run.startswith('set -euo pipefail'))
 
     def test_incoming_uses_verified_base_and_never_candidate_installer(self):
-        steps = workflow()['jobs']['repository-secrets']['steps']
+        steps = scanner()['steps']
         checkout = next(s for s in steps if s.get('name') == 'Checkout protected base scanner tools')
         install = next(s for s in steps if s.get('name') == 'Install checksum-pinned upstream Gitleaks')
         self.assertNotIn('if', checkout)
@@ -104,7 +108,7 @@ class InstallerTests(unittest.TestCase):
         install = next(s for s in steps if s.get('name') == 'Install checksum-pinned upstream Gitleaks')
         self.assertEqual(install['uses'], '$/.github/actions/setup-gitleaks')
         # Incoming code comes from the exact event base, never the candidate action.
-        incoming = workflow()['jobs']['repository-secrets']
+        incoming = scanner()
         self.assertFalse(any('setup-gitleaks' in s.get('uses', '') for s in incoming['steps']))
         self.assertEqual(incoming['permissions']['contents'], 'read')
         self.assertLessEqual(set(incoming['permissions']), {'contents', 'actions'})
@@ -411,6 +415,40 @@ class RangeTests(unittest.TestCase):
 
 
 class NativeGateTests(unittest.TestCase):
+    def test_reusable_scan_has_no_independent_trigger_or_overridable_identity(self):
+        called = yaml.load((ROOT / '.github/workflows/incoming-secret-scan.yml').read_text(), Loader=yaml.BaseLoader)
+        self.assertEqual(called['on'], {'workflow_call': ''})
+        self.assertEqual(called['permissions'], {'contents': 'read'})
+        self.assertEqual(set(called['jobs']), {'scan'})
+        job = scanner()
+        self.assertNotIn('if', job)
+        self.assertEqual(job['timeout-minutes'], 25)
+        self.assertEqual(job['permissions'], {'contents': 'read'})
+        caller = workflow()['jobs']['incoming-scan']
+        self.assertEqual(caller, {
+            'name': 'Incoming secret scan',
+            'if': "github.event_name == 'pull_request' || github.event_name == 'merge_group'",
+            'permissions': {'contents': 'read'},
+            'uses': '$/.github/workflows/incoming-secret-scan.yml',
+        })
+
+    def test_compatibility_status_fails_closed_for_every_non_success_result(self):
+        job = workflow()['jobs']['repository-secrets']
+        self.assertEqual(job['needs'], ['incoming-scan'])
+        self.assertEqual(len(job['steps']), 1)
+        step = job['steps'][0]
+        self.assertEqual(step['env'], {'SCAN_RESULT': '${{ needs.incoming-scan.result }}'})
+        self.assertNotIn('continue-on-error', job)
+        self.assertNotIn('continue-on-error', step)
+        for state in ('success', 'failure', 'cancelled', 'skipped', 'pending', ''):
+            with self.subTest(state=state):
+                result = subprocess.run(['bash', '-euc', step['run']],
+                    env={**os.environ, 'SCAN_RESULT': state}, capture_output=True)
+                self.assertEqual(result.returncode == 0, state == 'success')
+        # always() prevents GitHub's implicit success() from silently skipping
+        # this compatibility status when the called workflow fails or cancels.
+        self.assertTrue(job['if'].startswith('always() && '))
+
     def needs(self):
         return {'repository-secrets': {'result': 'success'},
                 'impact': {'result': 'success', 'outputs': {'checks': 'false', 'nix': 'false', 'profiles': '[]'}},
@@ -442,14 +480,14 @@ class NativeGateTests(unittest.TestCase):
         jobs = workflow()['jobs']
         self.assertEqual(jobs['repository-secrets']['name'], 'Repository security audit')
         self.assertEqual(jobs['repository-secrets']['if'],
-                         "github.event_name == 'pull_request' || github.event_name == 'merge_group'")
+                         "always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group')")
         self.assertEqual(jobs['repository-secrets']['permissions'], {'contents': 'read'})
         self.assertIn('repository-secrets', jobs['gate']['needs'])
         self.assertEqual(jobs['gate']['name'], 'CI gate')
         self.assertEqual(jobs['gate']['if'], 'always()')
         self.assertEqual(jobs['gate']['env']['NEEDS'], '${{ toJSON(needs) }}')
         self.assertNotIn('uses', jobs['repository-secrets'])
-        steps = jobs['repository-secrets']['steps']
+        steps = scanner()['steps']
         checkout = steps[0]['with']
         self.assertEqual(checkout['ref'], '${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}')
         self.assertIs(checkout['persist-credentials'], False)
@@ -473,7 +511,7 @@ class NativeGateTests(unittest.TestCase):
             self.assertEqual(result.returncode, wanted)
 
     def test_scanner_has_no_candidate_execution_credentials_or_exclusions(self):
-        job = workflow()['jobs']['repository-secrets']
+        job = scanner()
         history = yaml.safe_load((ROOT / '.github/workflows/repository-secret-history.yml').read_text())
         self.assertEqual(history['permissions'], {'contents': 'read'})
         self.assertEqual(history['jobs']['history']['name'], 'Repository historical audit (nonblocking debt)')
@@ -727,7 +765,7 @@ class NewPacketTests(unittest.TestCase):
         marker = self.root / 'candidate-helper-executed'
         self.commit('scripts/ci/finding_id_packets.py', 'from pathlib import Path\nPath(' + repr(str(marker)) + ').touch()\n')
         head = self.git('rev-parse', 'HEAD')
-        step = next(s for s in workflow()['jobs']['repository-secrets']['steps'] if s.get('name') == 'Classify generated finding IDs')
+        step = next(s for s in scanner()['steps'] if s.get('name') == 'Classify generated finding IDs')
         result = subprocess.run(['bash', '-c', step['run']], cwd=self.repo,
             env={**self.env, 'RUNNER_TEMP': str(self.runtime), 'GITHUB_WORKSPACE': str(self.root),
                  'BASE_SHA': self.base, 'HEAD_SHA': head, 'BASE_REPOSITORY': 'closure-labs/finite',
@@ -767,7 +805,7 @@ class NewPacketTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'one immutable packet'):self.receipt()
 
     def test_workflow_credentials_belong_only_to_protected_base_verifier(self):
-        job = workflow()['jobs']['repository-secrets']
+        job = scanner()
         checkout = next(s for s in job['steps'] if s.get('name') == 'Checkout protected base scanner tools')
         self.assertEqual(checkout['with']['ref'], '${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}')
         self.assertIs(checkout['with']['persist-credentials'], False)
