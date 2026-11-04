@@ -9,6 +9,8 @@ import tempfile
 
 LIMIT = 2 * 1024 * 1024
 ERROR_ROW_LIMIT = 512
+PROCESS_STATES = frozenset('RSDZTtWXxKPI')
+DEAD_STATES = frozenset('ZXx')
 
 
 class ProcessObservationError(ValueError):
@@ -31,21 +33,43 @@ def command(args):
         return output.read().decode('utf-8')
 
 
-def observations(enforcement, kernel_enforcement, permissive, processes, listeners, profile):
+def observations(enforcement, kernel_enforcement, permissive, processes, listeners, profile, *, process_format='legacy'):
+    if process_format not in ('legacy', 'state-threads'):
+        raise ValueError('Unknown process observation format')
     if enforcement.strip() != 'Enforcing' or kernel_enforcement.strip() != '1':
         raise ValueError('Candidate SELinux is not enforcing in userspace and kernel')
     permissive_types = sorted(set(re.findall(r'\b[a-zA-Z0-9_]+_t\b', permissive)))
     if 'sshd_t' in permissive_types:
         raise ValueError('SSH fixture domain must enforce SELinux')
     rows = []
+    seen = set()
     for number, line in enumerate(processes.splitlines(), 1):
-        fields = line.split(None, 2)
-        if (len(fields) != 3 or not fields[1].isascii() or not fields[1].isdigit()
-                or not re.fullmatch(r'[^\s:]+:[^\s:]+:[A-Za-z0-9_]+_t:[^\s]+', fields[0])):
+        fields = line.split(None, 4 if process_format == 'state-threads' else 2)
+        if (len(fields) != (5 if process_format == 'state-threads' else 3)
+                or not fields[1].isascii() or not fields[1].isdigit()):
             raise ProcessObservationError(number, line)
-        rows.append({'pid': int(fields[1]), 'context': fields[0], 'command': fields[2]})
-    if (not rows or len(rows) > 8192 or not any(row['pid'] == 1 for row in rows)
-            or not any(row['command'] == 'sshd' and row['context'].split(':')[2] == 'sshd_t' for row in rows)):
+        row = {'pid': int(fields[1]), 'context': fields[0], 'command': fields[-1]}
+        labelled = re.fullmatch(r'[^\s:]+:[^\s:]+:[A-Za-z0-9_]+_t:[^\s]+', fields[0])
+        if process_format == 'state-threads':
+            if (not 0 < row['pid'] <= 2**31 - 1 or row['pid'] in seen
+                    or fields[2] not in PROCESS_STATES or not fields[3].isascii()
+                    or not fields[3].isdigit() or not 0 < int(fields[3]) <= 2**31 - 1):
+                raise ProcessObservationError(number, line)
+            row.update(state=fields[2], nlwp=int(fields[3]))
+            # A zombie group leader can still have live threads. Grant no
+            # exception unless the state is explicitly Z and only it remains.
+            exited = row['state'] == 'Z' and row['nlwp'] == 1 and row['context'] in ('-', '?')
+            if not labelled and not exited:
+                raise ProcessObservationError(number, line)
+        elif not labelled:
+            # Legacy receipts contain no state/thread proof: keep their strict
+            # label handling and never infer an exception from comm text.
+            raise ProcessObservationError(number, line)
+        seen.add(row['pid'])
+        rows.append(row)
+    live = [row for row in rows if row.get('state') not in DEAD_STATES]
+    if (not rows or len(rows) > 8192 or not any(row['pid'] == 1 for row in live)
+            or not any(row['command'] == 'sshd' and row['context'].split(':')[2] == 'sshd_t' for row in live)):
         raise ValueError('Candidate process inventory lacks init or confined SSH fixture')
     sockets = []
     for line in listeners.splitlines():
@@ -61,7 +85,7 @@ def observations(enforcement, kernel_enforcement, permissive, processes, listene
     # Historical labels are observed only on an installed upgrade predecessor.
     if profile not in ('finite', 'finite-dev', 'bluefin-generic', 'bluefin-dx-generic'):
         raise ValueError('Unknown guest profile')
-    return {'schema': 1, 'status': 'pass', 'profile': profile,
+    return {'schema': 2 if process_format == 'state-threads' else 1, 'status': 'pass', 'profile': profile,
             'checks': {'selinuxEnforcing': True, 'permissiveDomainsCollected': True,
                        'processDomainsCollected': True, 'listenersCollected': True, 'sshConfined': True},
             'selinux': {'mode': 'Enforcing', 'kernelEnforce': 1, 'permissiveDomains': permissive_types},
@@ -78,9 +102,10 @@ def main():
     try:
         result = observations(command(['getenforce']), Path('/sys/fs/selinux/enforce').read_text(),
                               command(['semanage', 'permissive', '-l']),
-                              command(['ps', '-e', '-o', 'label=,pid=,comm=']),
+                              command(['ps', '-e', '-o', 'label=,pid=,state=,nlwp=,comm=']),
                               command(['ss', '-H', '-lntup']),
-                              Path('/usr/share/finite/build-profile').read_text().strip())
+                              Path('/usr/share/finite/build-profile').read_text().strip(),
+                              process_format='state-threads')
         print(json.dumps(result, sort_keys=True))
         return 0
     except (OSError, ValueError, subprocess.SubprocessError) as error:

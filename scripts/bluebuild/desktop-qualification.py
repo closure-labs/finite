@@ -24,10 +24,17 @@ def read(path):
 
 
 def validate_observations(value, profile):
-    processes = '\n'.join(f"{r['context']} {r['pid']} {r['command']}" for r in value['processes'])
+    if type(value.get('schema')) is not int or value['schema'] not in (1, 2):
+        raise ValueError('Unknown VM observation schema')
+    fields = ('context', 'pid', 'command') if value['schema'] == 1 else ('context', 'pid', 'state', 'nlwp', 'command')
+    if (not isinstance(value.get('processes'), list) or not 0 < len(value['processes']) <= 8192
+            or any(not isinstance(row, dict) or set(row) != set(fields) for row in value['processes'])):
+        raise ValueError('Invalid process observation fields')
+    processes = '\n'.join(' '.join(str(row[key]) for key in fields) for row in value['processes'])
     listeners = '\n'.join(f"{r['protocol']} {r['state']} 0 0 {r['local']} {r['peer']} {r['owners']}" for r in value['listeners'])
     expected = guest.observations(value['selinux']['mode'], str(value['selinux']['kernelEnforce']),
-                                  '\n'.join(value['selinux']['permissiveDomains']), processes, listeners, profile)
+                                  '\n'.join(value['selinux']['permissiveDomains']), processes, listeners, profile,
+                                  process_format='legacy' if value['schema'] == 1 else 'state-threads')
     if value != expected:
         raise ValueError('VM observations are incomplete or inconsistent')
 
