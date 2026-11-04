@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "fedora": 44,
-  "sourceImage": "ghcr.io/closure-labs/finite@sha256:302f05b64f6d38ce3747de84342fedd519495efa6b195f5f0dccfbe887f25d8d",
-  "sourceRun": 38290632761,
+  "sourceImage": "ghcr.io/closure-labs/finite@sha256:be6a183d919d69070cbfd958072ff9db4ca9790ed58a364f70543f2bfc3c7a69",
+  "sourceRun": 41868131416,
   "packages": {
     "hplip": {
       "minimumEVR": "0:3.26.6-1.fc44",
@@ -178,6 +178,32 @@
         "CVE-2026-18924"
       ],
       "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-8efcd7a2a0"
+    },
+    "python3-pillow": {
+      "minimumEVR": "0:12.3.0-7.fc44",
+      "advisories": [
+        "CVE-2026-112393",
+        "CVE-2026-112398",
+        "CVE-2026-112900"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-719fffc96a"
+    },
+    "libsoup3": {
+      "minimumEVR": "0:3.6.6-11.fc44",
+      "advisories": [
+        "CVE-2026-102560",
+        "CVE-2026-102559",
+        "CVE-2026-102558",
+        "CVE-2026-102555",
+        "CVE-2026-102556",
+        "CVE-2026-102557",
+        "CVE-2026-85197",
+        "CVE-2026-103399",
+        "CVE-2026-85534",
+        "CVE-2026-3633",
+        "CVE-2026-3099"
+      ],
+      "source": "https://bodhi.fedoraproject.org/updates/FEDORA-2026-f06a7887af"
     }
   }
 }
