@@ -50,6 +50,7 @@ class Remediation(unittest.TestCase):
             'libX11', 'libX11-common', 'libX11-xcb',
             'tesseract-common', 'tesseract-libs', 'freerdp-libs', 'libwinpr',
             'sudo', 'sudo-python-plugin', 'curl', 'libcurl', 'libcurl-minimal',
+            'python3-pillow', 'libsoup3',
         })
 
     def exercise(self, after=None, current='0:3.14.7-1.fc44', failure=False):
@@ -107,6 +108,43 @@ class Remediation(unittest.TestCase):
     def test_no_network_if_current(self):
         self.assertEqual(len(self.exercise(current='0:3.14.8-1.fc44')), 1)
 
+    def test_pillow_and_soup_floors_preserve_signed_stable_repositories_and_architectures(self):
+        expected = {'python3-pillow': '0:12.3.0-7.fc44', 'libsoup3': '0:3.6.6-11.fc44'}
+        self.assertEqual({name: POLICY['packages'][name]['minimumEVR'] for name in expected}, expected)
+        before = {'python3-pillow': [('0:12.3.0-4.fc44', 'x86_64')],
+                  'libsoup3': [('0:3.6.6-10.fc44', 'i686'), ('0:3.6.6-10.fc44', 'x86_64')],
+                  'kernel-core': [('0:7.2.9-201.fc44', 'x86_64')]}
+        fixed = {name: [(expected[name], arch) for _, arch in values] if name in expected else values
+                 for name, values in before.items()}
+        commands = []
+        def run(args):
+            commands.append(args)
+            return '44' if args == ['rpm', '--eval', '%{fedora}'] else ''
+        def attempt(after):
+            with patch.object(mod, 'run', run), patch.object(mod, 'inventory', side_effect=[before, after]), \
+                    patch.object(mod, 'compare', lambda a, b: (a > b) - (a < b)):
+                mod.remediate(POLICY)
+        attempt(fixed)
+        command = commands[-1]
+        for name, floor in expected.items():
+            self.assertIn(f'{name} >= {floor}', command)
+        for flag in ('--refresh', '--disable-repo=*', '--enable-repo=fedora', '--enable-repo=updates',
+                     '--setopt=gpgcheck=1', '--setopt=*.gpgcheck=1', '--setopt=*.skip_if_unavailable=False',
+                     '--no-allow-downgrade', '--exclude=kernel*,bootc*,rpm-ostree*,ostree*'):
+            self.assertIn(flag, command)
+        self.assertEqual([arg for arg in command if ' >= ' in arg],
+                         ['libsoup3 >= 0:3.6.6-11.fc44', 'python3-pillow >= 0:12.3.0-7.fc44'])
+        for name in expected:
+            old = copy.deepcopy(fixed); old[name] = before[name]
+            with self.subTest(package=name, failure='old'), self.assertRaisesRegex(ValueError, 'floor not satisfied'):
+                attempt(old)
+            missing = copy.deepcopy(fixed); del missing[name]
+            with self.subTest(package=name, failure='missing'), self.assertRaisesRegex(ValueError, 'floor not satisfied'):
+                attempt(missing)
+        reduced = copy.deepcopy(fixed); reduced['libsoup3'] = [('0:3.6.6-11.fc44', 'x86_64')]
+        with self.assertRaisesRegex(ValueError, 'installed architectures'):
+            attempt(reduced)
+
     def test_missing_package_fails(self):
         with self.assertRaisesRegex(ValueError, 'floor not satisfied'):
             self.exercise(after={'kernel-core': [('0:7.2.5-200.fc44', 'x86_64')]})
@@ -160,6 +198,8 @@ class Remediation(unittest.TestCase):
         self.assertEqual(mod.compare('0:1.9.17-8.p2.fc44', '0:1.9.17-10.p2.fc44'), -1)
         self.assertEqual(mod.compare('10:1-1.fc44', '2:99-1.fc44'), 1)
         self.assertEqual(mod.compare('0:1.0~rc1-1.fc44', '0:1.0-1.fc44'), -1)
+        self.assertEqual(mod.compare('0:12.3.0-4.fc44', '0:12.3.0-7.fc44'), -1)
+        self.assertEqual(mod.compare('0:3.6.6-10.fc44', '0:3.6.6-11.fc44'), -1)
 
 
 unittest.main()
