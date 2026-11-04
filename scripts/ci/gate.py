@@ -6,12 +6,14 @@ import os
 from impact import PROFILES
 
 
-def failures(needs, publish, event):
+def failures(needs, publish, event, resume=False):
     errors = []
     if event not in ('pull_request', 'merge_group', 'push', 'schedule', 'workflow_dispatch'):
         return [f'Unsupported validation event: {event!r}']
     if publish and event in ('pull_request', 'merge_group'):
         return ['Premerge validation cannot authorize publication']
+    if type(resume) is not bool or (resume and (not publish or event != 'workflow_dispatch')):
+        return ['Candidate resume requires the trusted manual publication path']
     # Native needs binds this real job to the same workflow execution/head.
     # A separate run, old receipt or historical scan cannot satisfy it.
     scan = needs.get('repository-secrets', {}).get('result')
@@ -57,8 +59,11 @@ def failures(needs, publish, event):
             raise ValueError('Image inputs require Nix/runtime checks')
     except (KeyError, TypeError, ValueError) as error:
         errors.append(f'Missing or invalid image selection: {error}')
+    if resume and not images:
+        errors.append('Candidate resume requires a selected image')
     expected = {
         'checks': checks,
+        'payload': images and event != 'pull_request' and not resume,
         # The protected merge queue owns premerge OS assembly/installation.
         # PR updates still validate the complete Nix/runtime aggregate and
         # selection; they do not duplicate the queue's disposable image jobs.
@@ -67,7 +72,7 @@ def failures(needs, publish, event):
     }
     for job, required in expected.items():
         wanted = 'success' if required else 'skipped'
-        actual = needs[job]['result']
+        actual = needs.get(job, {}).get('result')
         if actual != wanted:
             errors.append(f'{job}: expected {wanted}, got {actual}')
     return errors
@@ -75,7 +80,8 @@ def failures(needs, publish, event):
 
 if __name__ == '__main__':
     errors = failures(json.loads(os.environ['NEEDS']), os.environ['TRUSTED_PUBLICATION'] == 'true',
-                      os.environ.get('GITHUB_EVENT_NAME', ''))
+                      os.environ.get('GITHUB_EVENT_NAME', ''),
+                      os.environ['RESUME_CANDIDATE'] == 'true')
     for error in errors:
         print(f'::error::{error}')
     raise SystemExit(bool(errors))

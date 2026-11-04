@@ -453,6 +453,7 @@ class NativeGateTests(unittest.TestCase):
         return {'repository-secrets': {'result': 'success'},
                 'impact': {'result': 'success', 'outputs': {'checks': 'false', 'nix': 'false', 'profiles': '[]'}},
                 'docs': {'result': 'success'}, 'checks': {'result': 'skipped'},
+                'payload': {'result': 'skipped'},
                 'images': {'result': 'skipped'}, 'publish': {'result': 'skipped'}}
 
     def test_scan_required_even_for_docs_and_no_images(self):

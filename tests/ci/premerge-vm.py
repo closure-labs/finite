@@ -137,7 +137,7 @@ class Premerge(unittest.TestCase):
         self.assertEqual(images['with']['vm_validation'], "${{ needs.impact.outputs.vm == 'true' }}")
         self.assertFalse(images['with']['publish'])
         self.assertNotIn('secrets', images)
-        self.assertEqual(images['permissions'], {'contents': 'read', 'pull-requests': 'read', 'packages': 'read'})
+        self.assertEqual(images['permissions'], {'contents': 'read', 'pull-requests': 'read', 'packages': 'read', 'actions': 'read'})
         steps = workflow('image')['jobs']['build']['steps']
         vm = next(step for step in steps if step.get('name', '').startswith('Boot the exact local'))
         self.assertEqual(vm['if'], 'inputs.vm_validation && !inputs.publish')
@@ -149,6 +149,7 @@ class Premerge(unittest.TestCase):
                  'docs': {'result': 'success'}, 'checks': {'result': 'success', 'outputs': {'images': 'true',
                     'matrix': json.dumps({'include': [{'profile': 'finite', 'channel': 'finite'}]})}},
                  'repository-secrets': {'result': 'success'},
+                 'payload': {'result': 'success'},
                  'images': {'result': 'success'}, 'publish': {'result': 'skipped'}}
         self.assertTrue(gate.failures(needs, False, 'merge_group'))
         matrix = {'include': [{'profile': profile, 'channel': profile} for profile in ('finite', 'finite-dev')]}

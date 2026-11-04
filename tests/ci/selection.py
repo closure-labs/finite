@@ -366,6 +366,7 @@ class Gate(unittest.TestCase):
             'docs': {'result': 'success'},
             'repository-secrets': {'result': 'skipped' if publish else 'success'},
             'checks': {'result': 'success' if checks else 'skipped', 'outputs': {'images': str(bool(selected)).lower(), 'matrix': json.dumps(matrix)} if checks else {}},
+            'payload': {'result': 'success' if selected else 'skipped'},
             'images': {'result': 'success' if selected and not publish else 'skipped'},
             'publish': {'result': 'success' if selected and publish else 'skipped'},
         }
@@ -378,7 +379,7 @@ class Gate(unittest.TestCase):
     def test_failed_cancelled_or_unexpectedly_skipped_jobs_block(self):
         for publish in (False, True):
             good = self.needs(True, sorted(impact.PROFILES), publish)
-            for job in ('impact', 'docs', 'checks', 'publish' if publish else 'images'):
+            for job in ('impact', 'docs', 'checks', 'payload', 'publish' if publish else 'images'):
                 for result in ('failure', 'cancelled', 'skipped'):
                     needs = copy.deepcopy(good)
                     needs[job]['result'] = result
@@ -403,6 +404,7 @@ class Gate(unittest.TestCase):
         for checks, selected in [(False, []), (True, []), (True, ['finite']), (True, sorted(impact.PROFILES))]:
             needs = self.needs(checks, selected)
             needs['images']['result'] = 'skipped'
+            needs['payload']['result'] = 'skipped'
             self.assertEqual(gate.failures(needs, False, 'pull_request'), [])
             if selected:
                 self.assertTrue(gate.failures(needs, False, 'merge_group'))
@@ -424,6 +426,34 @@ class Gate(unittest.TestCase):
             self.assertTrue(gate.failures(self.needs(False, []), False, event))
         for event in ('pull_request', 'merge_group'):
             self.assertTrue(gate.failures(self.needs(True, sorted(impact.PROFILES), True), True, event))
+
+    def test_missing_payload_or_unselected_extra_payload_blocks(self):
+        for selected in ([], ['finite'], sorted(impact.PROFILES)):
+            needs = self.needs(True, selected)
+            needs.pop('payload')
+            self.assertTrue(gate.failures(needs, False, 'merge_group'))
+        needs = self.needs(True, [])
+        for result in ('success', 'failure', 'cancelled'):
+            needs['payload']['result'] = result
+            self.assertTrue(gate.failures(needs, False, 'merge_group'))
+
+    def test_resume_skips_only_payload_and_still_requires_successful_publication(self):
+        needs = self.needs(True, ['finite'], True)
+        needs['payload']['result'] = 'skipped'
+        self.assertEqual(gate.failures(needs, True, 'workflow_dispatch', True), [])
+        for job in ('impact', 'docs', 'checks', 'publish'):
+            for result in ('failure', 'cancelled', 'skipped'):
+                bad = copy.deepcopy(needs); bad[job]['result'] = result
+                self.assertTrue(gate.failures(bad, True, 'workflow_dispatch', True))
+        for result in ('success', 'failure', 'cancelled'):
+            bad = copy.deepcopy(needs); bad['payload']['result'] = result
+            self.assertTrue(gate.failures(bad, True, 'workflow_dispatch', True))
+        for event in ('push', 'schedule', 'pull_request', 'merge_group'):
+            self.assertTrue(gate.failures(needs, True, event, True))
+        self.assertTrue(gate.failures(needs, False, 'workflow_dispatch', True))
+        self.assertTrue(gate.failures(self.needs(False, [], True), True, 'workflow_dispatch', True))
+        for malformed in ('true', 1, None):
+            self.assertTrue(gate.failures(needs, True, 'workflow_dispatch', malformed))
 
     def test_updater_authentication_and_preflight(self):
         import yaml
