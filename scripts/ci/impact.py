@@ -110,6 +110,7 @@ QUALIFICATION_ONLY = {
 # Read-only host secret scanning is not an image/payload input. Keep this an
 # exact inventory: unknown siblings and mixed image inputs stay conservative.
 HOST_SCANNER_ONLY = frozenset({
+    '.github/workflows/incoming-secret-scan.yml',
     '.github/actions/setup-gitleaks/action.yml',
     '.github/actions/setup-gitleaks/install.sh',
     '.github/workflows/finding-id-fixtures.yml',

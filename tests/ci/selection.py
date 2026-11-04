@@ -46,13 +46,16 @@ class Selection(unittest.TestCase):
                          {'checks': True, 'nix': True, 'profiles': []})
 
     def test_scanner_dependencies_remain_host_only(self):
-        allowed = {('build.yml', 'repository-secrets'),
+        allowed = {('incoming-secret-scan.yml', 'scan'),
                    ('finding-id-fixtures.yml', 'fixtures'),
                    ('repository-secret-history.yml', 'history')}
         needle = '.github/actions/setup-gitleaks'
         for path in (ROOT/'.github/workflows').glob('*.yml'):
             value = yaml.safe_load(path.read_text())
             for name, job in value.get('jobs', {}).items():
+                if 'incoming-secret-scan.yml' in job.get('uses', ''):
+                    self.assertEqual((path.name, name), ('build.yml', 'incoming-scan'))
+                    self.assertNotIn('secrets', job)
                 if needle in str(job):
                     self.assertIn((path.name, name), allowed)
                     permissions = job.get('permissions', value.get('permissions', {}))
@@ -68,6 +71,31 @@ class Selection(unittest.TestCase):
                     self.assertFalse(any(marker in data for marker in markers), str(path))
         payload = (ROOT/'lib/image-payload.nix').read_bytes()
         self.assertFalse(any(marker in payload for marker in markers))
+
+    def test_reusable_scanner_skips_vms_but_extraction_and_vm_controls_do_not(self):
+        spec = importlib.util.spec_from_file_location('vm_selection_scanner', ROOT / 'scripts/ci/vm-selection.py')
+        vm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(vm)
+        scanner = '.github/workflows/incoming-secret-scan.yml'
+        self.assertIn(scanner, impact.HOST_SCANNER_ONLY)
+        cases = [([scanner], set()),
+                 ([scanner, 'tests/ci/gitleaks-workflow.py'], set())]
+        for control in ('.github/workflows/build.yml', '.github/workflows/image.yml',
+                        '.github/workflows/qualification.yml', 'scripts/ci/vm-selection.py',
+                        'scripts/bluebuild/vm-acceptance.sh', 'recipes/finite.yml',
+                        'files/system/usr/libexec/finite/example'):
+            cases.append(([scanner, control], set(impact.PROFILES)))
+        for changed, expected in cases:
+            with self.subTest(changed=changed):
+                plan = impact.classify(changed)
+                output = run_script('payloads.py', {}, GITHUB_EVENT_NAME='merge_group', GITHUB_SHA='a' * 40,
+                    IMPACT=json.dumps({key: json.dumps(plan[key]) for key in ('nix', 'profiles')}),
+                    VM_VALIDATION=str(vm.required(changed)).lower())
+                self.assertEqual({row['profile'] for row in json.loads(output['matrix'])['include']}, expected)
+                self.assertEqual(vm.required(changed), bool(expected))
+        # Unknown siblings still select both images; no directory-wide exemption.
+        self.assertEqual(set(impact.classify(['.github/workflows/incoming-secret-scan-new.yml'])['profiles']),
+                         set(impact.PROFILES))
 
     def test_documentation_and_mixed_changes(self):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})

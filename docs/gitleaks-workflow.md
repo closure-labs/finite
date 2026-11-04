@@ -1,9 +1,11 @@
 # Repository secret scanning
 
-Every pull request and merge group runs the real `Repository security audit`
-job (`repository-secrets`) in `Build Finite`, including documentation-only
-changes. The existing native required `CI gate` depends on that job and requires
-success. Missing, skipped, cancelled or failed scans block the gate. No new
+Every pull request and merge group calls `incoming-secret-scan.yml` from
+`Build Finite`, including documentation-only changes. The existing
+`Repository security audit` job (`repository-secrets`) preserves its status name
+and succeeds only when that same run's reusable scan succeeds. The native required
+`CI gate` still depends on it. Missing, skipped, cancelled or failed scans block
+both statuses. No new
 repository setting, status publisher, App credential or authority controller is
 needed. Historical auditing cannot satisfy this dependency.
 
@@ -20,17 +22,21 @@ GitHub reported clean merge eligibility when inspected. The upstream
 Finite already admits the native `build.yml` PR execution by immutable
 repository, workflow, branch and current head. Keeping the scan inside that
 execution covers ordinary contributors and Dependabot without extending the
-execution-approval allowlist. Existing author, reviewer and execution-approval
+execution-approval allowlist. The reusable workflow has only `workflow_call`, no
+identity inputs or inherited secrets; it uses the caller's exact event head/base.
+Existing author, reviewer and execution-approval
 requirements still apply. Gitleaks executes no candidate scripts or local actions,
 and receives no persisted checkout credentials, secrets, write or OIDC grants.
 The job needs only `contents: read`; finding-ID classification uses no API token
 or registry download. Governance covers the workflow and gate implementation.
 
-The gate consumes GitHub's same-run `needs.repository-secrets.result`, rather
-than searching for another run by name. An unrelated workflow, historical job,
+The compatibility job checks GitHub's native `needs.incoming-scan.result`
+with no checkout or setup, then CI gate consumes `needs.repository-secrets.result`.
+Its `always()` condition evaluates failed, skipped and cancelled scan results
+instead of letting an implicit success condition skip the check. It runs only on
+PR/merge-group events, as before. An unrelated workflow, historical job,
 saved success or stale head cannot supply that dependency. The native required
-check remains `CI gate`, whose success now includes the actual scanner job.
-This is not a synthetic successful scanner status or a settings bypass.
+check remains `CI gate`, whose success includes the actual scanner job.
 
 Unlike XO, Finite has no protected-base scanner config to preserve. The workflow
 writes a fixed temporary config extending all upstream default rules. Candidate
