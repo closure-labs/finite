@@ -4,6 +4,7 @@ import copy
 import importlib.util
 from pathlib import Path
 import subprocess
+import re
 import unittest
 from unittest.mock import patch
 
@@ -12,6 +13,13 @@ spec = importlib.util.spec_from_file_location('remediate', ROOT / 'files/scripts
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 POLICY = mod.load_policy(ROOT / 'files/scripts/security-remediation.json')
+
+
+def fixture_compare(a, b):
+    # These fixtures share epoch/release/suffix; native RPM covers the full EVR
+    # grammar independently. Numeric components make 3.14.10 newer than 3.14.8.
+    key = lambda value: tuple(map(int, re.findall(r'\d+', value)))
+    return (key(a) > key(b)) - (key(a) < key(b))
 
 
 class Remediation(unittest.TestCase):
@@ -57,7 +65,7 @@ class Remediation(unittest.TestCase):
         before = {'python3': [(current, 'x86_64')], 'kernel-core': [('0:7.2.5-200.fc44', 'x86_64')]}
         if after is None:
             after = copy.deepcopy(before)
-            after['python3'] = [('0:3.14.8-1.fc44', 'x86_64')]
+            after['python3'] = [('0:3.14.10-1.fc44', 'x86_64')]
         commands = []
         def run(args):
             commands.append(args)
@@ -67,15 +75,13 @@ class Remediation(unittest.TestCase):
                 return ''
             self.assertEqual(args, ['rpm', '--eval', '%{fedora}'])
             return '44'
-        # These fixture versions differ only at one numeric component. Real RPM
-        # comparator is independently exercised below when RPM is available.
-        with patch.object(mod, 'run', run), patch.object(mod, 'inventory', side_effect=[before, after]), patch.object(mod, 'compare', lambda a, b: (a > b) - (a < b)):
+        with patch.object(mod, 'run', run), patch.object(mod, 'inventory', side_effect=[before, after]), patch.object(mod, 'compare', fixture_compare):
             mod.remediate(POLICY)
         return commands
 
     def test_installed_only_bounded_transaction(self):
         command = self.exercise()[-1]
-        self.assertIn('python3 >= 0:3.14.8-1.fc44', command)
+        self.assertIn('python3 >= 0:3.14.10-1.fc44', command)
         self.assertFalse(any(arg.startswith('hplip ') for arg in command))
         for arg in ('--disable-repo=*', '--enable-repo=fedora', '--enable-repo=updates', '--setopt=*.gpgcheck=1', '--setopt=*.skip_if_unavailable=False', '--no-allow-downgrade', '--exclude=kernel*,bootc*,rpm-ostree*,ostree*'):
             self.assertIn(arg, command)
@@ -106,7 +112,7 @@ class Remediation(unittest.TestCase):
             mod.remediate(POLICY)
 
     def test_no_network_if_current(self):
-        self.assertEqual(len(self.exercise(current='0:3.14.8-1.fc44')), 1)
+        self.assertEqual(len(self.exercise(current='0:3.14.10-1.fc44')), 1)
 
     def test_pillow_and_soup_floors_preserve_signed_stable_repositories_and_architectures(self):
         expected = {'python3-pillow': '0:12.3.0-7.fc44', 'libsoup3': '0:3.6.6-11.fc44'}
@@ -145,6 +151,51 @@ class Remediation(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'installed architectures'):
             attempt(reduced)
 
+    def test_python_family_floor_applies_to_both_profiles_and_fails_closed(self):
+        names = ('python-unversioned-command', 'python3', 'python3-libs')
+        floor = '0:3.14.10-1.fc44'
+        for name in names:
+            self.assertEqual(POLICY['packages'][name]['minimumEVR'], floor)
+            self.assertIn('CVE-2026-12345', POLICY['packages'][name]['advisories'])
+            self.assertIn('CVE-2026-19445', POLICY['packages'][name]['advisories'])
+            self.assertEqual(POLICY['packages'][name]['source'],
+                             'https://bodhi.fedoraproject.org/updates/FEDORA-2026-2a34d74310')
+        self.assertIn('security-remediate.py', (ROOT/'recipes/shared/base.yml').read_text())
+        for profile in ('finite', 'finite-dev'):
+            self.assertIn('from-file: shared/base.yml', (ROOT/f'recipes/{profile}.yml').read_text())
+            for old in ('0:3.14.8-1.fc44', '0:3.14.9-1.fc44'):
+                before = {'python-unversioned-command': [(old, 'noarch')],
+                          'python3': [(old, 'x86_64')],
+                          'python3-libs': [(old, 'i686'), (old, 'x86_64')],
+                          'kernel-core': [('0:7.2.11-200.fc44', 'x86_64')]}
+                fixed = {name: [(floor, arch) for _,arch in values] if name in names else values
+                         for name,values in before.items()}
+                commands = []
+                def run(args):
+                    commands.append(args)
+                    return '44' if args == ['rpm', '--eval', '%{fedora}'] else ''
+                def attempt(after):
+                    with patch.object(mod, 'run', run), patch.object(mod, 'inventory', side_effect=[before,after]), \
+                            patch.object(mod, 'compare', fixture_compare):
+                        mod.remediate(POLICY)
+                with self.subTest(profile=profile, old=old):
+                    attempt(fixed)
+                    command = commands[-1]
+                    self.assertEqual([arg for arg in command if ' >= ' in arg],
+                                     [f'{name} >= {floor}' for name in names])
+                    for flag in ('--refresh', '--disable-repo=*', '--enable-repo=fedora', '--enable-repo=updates',
+                                 '--setopt=gpgcheck=1', '--setopt=*.gpgcheck=1', '--setopt=*.skip_if_unavailable=False',
+                                 '--no-allow-downgrade', '--exclude=kernel*,bootc*,rpm-ostree*,ostree*'):
+                        self.assertIn(flag, command)
+                    for name in names:
+                        stale = copy.deepcopy(fixed); stale[name] = before[name]
+                        with self.assertRaisesRegex(ValueError, 'floor not satisfied'): attempt(stale)
+                        absent = copy.deepcopy(fixed); del absent[name]
+                        with self.assertRaisesRegex(ValueError, 'floor not satisfied'): attempt(absent)
+                    reduced = copy.deepcopy(fixed); reduced['python3-libs'] = [(floor, 'x86_64')]
+                    with self.assertRaisesRegex(ValueError, 'installed architectures'): attempt(reduced)
+        self.assertEqual(len(self.exercise(current='0:3.14.11-1.fc44')), 1)
+
     def test_missing_package_fails(self):
         with self.assertRaisesRegex(ValueError, 'floor not satisfied'):
             self.exercise(after={'kernel-core': [('0:7.2.5-200.fc44', 'x86_64')]})
@@ -155,12 +206,12 @@ class Remediation(unittest.TestCase):
 
     def test_boot_stack_changed_fails(self):
         with self.assertRaisesRegex(ValueError, 'protected boot stack'):
-            self.exercise(after={'python3': [('0:3.14.8-1.fc44', 'x86_64')]})
+            self.exercise(after={'python3': [('0:3.14.10-1.fc44', 'x86_64')]})
 
     def test_new_vulnerable_family_dependency_fails(self):
         with self.assertRaisesRegex(ValueError, 'floor not satisfied for dependency'):
             self.exercise(after={
-                'python3': [('0:3.14.8-1.fc44', 'x86_64')],
+                'python3': [('0:3.14.10-1.fc44', 'x86_64')],
                 'kernel-core': [('0:7.2.5-200.fc44', 'x86_64')],
                 'python3-libs': [('0:3.14.7-1.fc44', 'x86_64')],
             })
@@ -200,6 +251,10 @@ class Remediation(unittest.TestCase):
         self.assertEqual(mod.compare('0:1.0~rc1-1.fc44', '0:1.0-1.fc44'), -1)
         self.assertEqual(mod.compare('0:12.3.0-4.fc44', '0:12.3.0-7.fc44'), -1)
         self.assertEqual(mod.compare('0:3.6.6-10.fc44', '0:3.6.6-11.fc44'), -1)
+        for old in ('0:3.14.8-1.fc44', '0:3.14.9-1.fc44'):
+            self.assertEqual(mod.compare(old, '0:3.14.10-1.fc44'), -1)
+        self.assertEqual(mod.compare('0:3.14.10-1.fc44', '0:3.14.10-1.fc44'), 0)
+        self.assertEqual(mod.compare('0:3.14.11-1.fc44', '0:3.14.10-1.fc44'), 1)
 
 
 unittest.main()
