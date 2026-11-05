@@ -26,6 +26,21 @@ on:
       diagnostic_security:
         type: boolean
         default: false
+      payload_artifact_id:
+        type: string
+        default: ""
+      payload_sha256:
+        type: string
+        default: ""
+      payload_revision:
+        type: string
+        default: ""
+      payload_run:
+        type: string
+        default: ""
+      payload_attempt:
+        type: string
+        default: ""
     outputs:
       digest:
         value: ${{ jobs.build.outputs.digest }}
@@ -59,6 +74,11 @@ jobs:
       CHANNEL: ${{ inputs.channel }}
       FINITE_QUALIFICATION_MODE: enforce
       FORCE_QUALIFICATION: ${{ inputs.force_qualification }}
+      PAYLOAD_ID: ${{ inputs.payload_artifact_id }}
+      PAYLOAD_SHA256: ${{ inputs.payload_sha256 }}
+      PAYLOAD_REVISION: ${{ inputs.payload_revision }}
+      PAYLOAD_RUN: ${{ inputs.payload_run }}
+      PAYLOAD_ATTEMPT: ${{ inputs.payload_attempt }}
     steps:
       - name: Monitor hosted runner (Community)
         uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
@@ -84,6 +104,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           FINITE_REVIEW_BOT_LOGIN: ${{ vars.FINITE_REVIEW_BOT_LOGIN }}
         run: python3 scripts/ci/validation-preflight.py
+      - name: Validate same-run payload outputs before setup or download
+        if: inputs.resume_run == '' && inputs.resume_digest == ''
+        run: |
+          python3 scripts/bluebuild/shared-payload.py validate \
+            --artifact-id "$PAYLOAD_ID" --sha256 "$PAYLOAD_SHA256" --revision "$PAYLOAD_REVISION" \
+            --run "$PAYLOAD_RUN" --attempt "$PAYLOAD_ATTEMPT"
       - uses: $/.github/actions/setup-nix
         with:
           job-profile: image
@@ -155,9 +181,23 @@ jobs:
           bluebuild validate "recipes/$PROFILE.yml"
           bluebuild generate --registry ghcr.io --registry-namespace closure-labs \
             -o ".bluebuild/$PROFILE.Containerfile" "recipes/$PROFILE.yml"
+      - name: Download this run's exact shared payload
+        if: inputs.resume_run == '' && inputs.resume_digest == ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          artifact-ids: ${{ inputs.payload_artifact_id }}
+          path: .bluebuild/shared-payload
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          run-id: ${{ github.run_id }}
       - name: Stage pinned payload
         if: inputs.resume_run == '' && inputs.resume_digest == ''
-        run: python3 scripts/bluebuild/measure.py payload-staging bash scripts/bluebuild/stage.sh "$PROFILE"
+        run: |
+          set -o pipefail
+          python3 scripts/bluebuild/measure.py payload-staging \
+            python3 scripts/bluebuild/shared-payload.py stage .bluebuild/shared-payload/payload.tar \
+              --artifact-id "$PAYLOAD_ID" --sha256 "$PAYLOAD_SHA256" --revision "$PAYLOAD_REVISION" \
+              --run "$PAYLOAD_RUN" --attempt "$PAYLOAD_ATTEMPT" | tee .bluebuild/shared-payload.json
       - name: Set up the BlueBuild builder
         if: inputs.resume_run == '' && inputs.resume_digest == ''
         # CLI v0.9.37 omits --load in Actions. Its named builder can opt in;
@@ -206,7 +246,11 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: image-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .bluebuild/
+          # The immutable producer artifact is retained once, not uploaded
+          # again inside each profile's evidence archive.
+          path: |
+            .bluebuild/
+            !.bluebuild/shared-payload/**
           include-hidden-files: true
           retention-days: 14
       - name: Diagnose the assembled unpublished candidate

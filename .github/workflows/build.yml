@@ -229,9 +229,75 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+  payload:
+    name: Stage shared image payload
+    needs: [impact, docs, checks]
+    if: needs.checks.outputs.images == 'true' && github.event_name != 'pull_request' && (inputs.resume_run || '') == '' && (inputs.resume_digest || '') == ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
+      revision: ${{ steps.pack.outputs.revision }}
+      run: ${{ steps.pack.outputs.runId }}
+      attempt: ${{ steps.pack.outputs.runAttempt }}
+    steps:
+      - name: Monitor hosted runner (Community)
+        uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
+      - name: Make room for the native payload build
+        uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - name: Build the common locked payload once
+        run: |
+          mkdir -p .bluebuild
+          python3 scripts/bluebuild/measure.py payload-build bash -euo pipefail -c '
+            nix build --impure --accept-flake-config --no-update-lock-file --no-write-lock-file \
+              --file lib/ci-payload.nix payload --no-link --print-out-paths >.bluebuild/payload-path
+          '
+      - name: Archive the exact same-run payload
+        id: pack
+        run: |
+          set -o pipefail
+          python3 scripts/bluebuild/measure.py payload-archive \
+            python3 scripts/bluebuild/shared-payload.py create \
+              "$(cat .bluebuild/payload-path)" .bluebuild/payload.tar | tee .bluebuild/payload-archive.json
+      - name: Upload one immutable payload artifact
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: image-payload-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/payload.tar
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain payload build and archive measurements
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: payload-observations-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/ci-timings.jsonl
+            .bluebuild/nix-setup.json
+            .bluebuild/payload-archive.json
+            .bluebuild/payload-path
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
+
   images:
     name: Validate (${{ matrix.profile }})
-    needs: [impact, docs, checks]
+    needs: [impact, docs, checks, payload]
     # The protected merge queue runs the complete premerge OS checks once.
     # Ordinary PR updates retain the full Nix/runtime aggregate above.
     if: ${{ github.event_name != 'pull_request' && needs.checks.outputs.images == 'true' && !(github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')) }}
@@ -239,6 +305,7 @@ jobs:
       contents: read
       pull-requests: read
       packages: read
+      actions: read
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.checks.outputs.matrix || '{"include":[]}') }}
@@ -249,11 +316,25 @@ jobs:
       publish: false
       vm_validation: ${{ needs.impact.outputs.vm == 'true' }}
       diagnostic_security: ${{ inputs.diagnostic_security || false }}
+      payload_artifact_id: ${{ needs.payload.outputs.artifact_id }}
+      payload_sha256: ${{ needs.payload.outputs.sha256 }}
+      payload_revision: ${{ needs.payload.outputs.revision }}
+      payload_run: ${{ needs.payload.outputs.run }}
+      payload_attempt: ${{ needs.payload.outputs.attempt }}
 
   publish:
     name: Publish (${{ matrix.profile }})
-    needs: [impact, docs, checks]
-    if: needs.checks.outputs.images == 'true' && github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    needs: [impact, docs, checks, payload]
+    # Explicit status handling permits a successful carried candidate resume
+    # without a new payload, while every real prerequisite remains required.
+    if: >-
+      ${{ !cancelled() && needs.impact.result == 'success' && needs.docs.result == 'success' &&
+          needs.checks.result == 'success' && needs.checks.outputs.images == 'true' &&
+          github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' &&
+          (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') &&
+          ((needs.payload.result == 'success' && (inputs.resume_run || '') == '' &&
+            (inputs.resume_digest || '') == '') || (needs.payload.result == 'skipped' &&
+            (inputs.resume_run || '') != '' && (inputs.resume_digest || '') != '')) }}
     permissions:
       contents: read
       packages: write
@@ -275,16 +356,22 @@ jobs:
       force_qualification: ${{ inputs.qualify || needs.impact.outputs.release == 'true' }}
       resume_run: ${{ inputs.resume_run || '' }}
       resume_digest: ${{ inputs.resume_digest || '' }}
+      payload_artifact_id: ${{ needs.payload.outputs.artifact_id }}
+      payload_sha256: ${{ needs.payload.outputs.sha256 }}
+      payload_revision: ${{ needs.payload.outputs.revision }}
+      payload_run: ${{ needs.payload.outputs.run }}
+      payload_attempt: ${{ needs.payload.outputs.attempt }}
 
   gate:
     name: CI gate
     if: always()
-    needs: [impact, docs, checks, images, publish, repository-secrets]
+    needs: [impact, docs, checks, payload, images, publish, repository-secrets]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     env:
       NEEDS: ${{ toJSON(needs) }}
       TRUSTED_PUBLICATION: ${{ github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+      RESUME_CANDIDATE: ${{ (inputs.resume_run || '') != '' || (inputs.resume_digest || '') != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

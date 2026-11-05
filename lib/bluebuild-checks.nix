@@ -171,6 +171,7 @@ in {
     python3 tests/ci/approved-baseline.py
     python3 tests/ci/local-candidate-evidence.py
     python3 tests/bluebuild/contracts.py
+    python3 tests/bluebuild/shared-payload.py
     python3 tests/bluebuild/desktop-integration.py
     python3 tests/workstation/password-manager-setup.py
     python3 tests/bluebuild/build.py

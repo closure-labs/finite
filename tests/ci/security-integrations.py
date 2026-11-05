@@ -66,8 +66,9 @@ class Integrations(unittest.TestCase):
         self.assertEqual(build['permissions'], {'contents': 'read'})
         events = build.get('on', build.get(True))
         self.assertIn('pull_request', events)
-        # All PR-reachable jobs, including the optional native benchmark.
-        for name in ('impact', 'docs', 'checks', 'gate', 'vm-tools-benchmark', 'repository-secrets', 'incoming-scan'):
+        # All PR-reachable jobs and the read-only shared payload producer,
+        # including the optional native benchmark.
+        for name in ('impact', 'docs', 'checks', 'payload', 'gate', 'vm-tools-benchmark', 'repository-secrets', 'incoming-scan'):
             job = jobs[name]
             self.assertTrue(all(value == 'read' for value in job.get('permissions', {}).values()), name)
             self.assertNotIn('secrets.', str(job), name)
@@ -83,7 +84,7 @@ class Integrations(unittest.TestCase):
                       "github.event_name == 'workflow_dispatch'"):
             self.assertIn(guard, jobs['publish']['if'])
         self.assertEqual(jobs['gate']['if'], 'always()')
-        self.assertEqual(set(jobs['gate']['needs']), {'impact', 'docs', 'checks', 'images', 'publish', 'repository-secrets'})
+        self.assertEqual(set(jobs['gate']['needs']), {'impact', 'docs', 'checks', 'payload', 'images', 'publish', 'repository-secrets'})
         scanner = document('incoming-secret-scan')
         self.assertEqual(scanner['permissions'], {'contents': 'read'})
         self.assertNotIn('secrets.', str(scanner))

@@ -99,6 +99,7 @@ class ReleaseSelection(unittest.TestCase):
             'repository-secrets': {'result': 'skipped'},
             'checks': {'result': 'success', 'outputs': {'images': 'true',
                        'matrix': json.dumps({'include': [{'profile': profile, 'channel': channel}]})}},
+            'payload': {'result': 'success'},
             'images': {'result': 'skipped' if publish else 'success'},
             'publish': {'result': 'success' if publish else 'skipped'},
         }

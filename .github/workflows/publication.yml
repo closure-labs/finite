@@ -17,6 +17,21 @@ on:
       resume_digest:
         type: string
         default: ""
+      payload_artifact_id:
+        type: string
+        default: ""
+      payload_sha256:
+        type: string
+        default: ""
+      payload_revision:
+        type: string
+        default: ""
+      payload_run:
+        type: string
+        default: ""
+      payload_attempt:
+        type: string
+        default: ""
     secrets:
       DECIDER_KEY:
         required: false
@@ -48,6 +63,11 @@ jobs:
       force_qualification: ${{ inputs.force_qualification }}
       resume_run: ${{ inputs.resume_run }}
       resume_digest: ${{ inputs.resume_digest }}
+      payload_artifact_id: ${{ inputs.payload_artifact_id }}
+      payload_sha256: ${{ inputs.payload_sha256 }}
+      payload_revision: ${{ inputs.payload_revision }}
+      payload_run: ${{ inputs.payload_run }}
+      payload_attempt: ${{ inputs.payload_attempt }}
 
   security:
     needs: build
