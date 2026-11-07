@@ -336,3 +336,24 @@ The composite delegates to its own `install.sh` via `GITHUB_ACTION_PATH`; the sa
 script is also invoked from the exact protected incoming base. No manifest
 parser or candidate local action is needed. See GitHub's
 [self-repository reference](https://github.blog/changelog/2026-07-30-reference-same-repository-actions-with-self-repository-syntax/).
+
+## Reviewed Nix fixture label
+
+The current-history audits on November 6 and 7, 2026 each reported one remaining
+unclassified generic-key match. An exact recorded-ref replay of run
+[42367789819](https://github.com/closure-labs/finite/actions/runs/42367789819)
+identified the public Nix signing-key name `finite-nar416-fixture` at line 68 of
+`scripts/bluebuild/check-native-nix-nars.py` in commit
+`6afe1d9cc4d7dabd15c2cec3541a59c5e2e66758`. This is the name passed to Nix's key
+generation command, not private key bytes. The fixture generates keys in a
+throwaway directory and restricts its private-key file to mode 0600.
+
+A separate exact source proof checks the immutable Git blob, full-blob SHA256,
+complete line, identifier digest and parsed command structure. It contributes
+only a native generic-rule AND allowance for that commit, path and whole line
+when the commit is reachable. Modified lines, copied labels in new commits and
+other rules remain scanned. The original 719-entry catalog and frozen baseline
+are unchanged; this later commit is not required in that older snapshot. The
+manifest's effective-config digest and verified-identifier count include the
+additional proof when used. This does not waive credentials or certify other
+history clean.

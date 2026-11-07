@@ -91,6 +91,49 @@ class RealScanner(unittest.TestCase):
             'lineSha256':identifiers.digest(line.encode()),'identifierSha256':identifiers.digest((identifier or self.public).encode()),
             'shape':shape,'binding':{'kind':kind}}}
 
+    def fixture_label(self):
+        _, initial = self.scan()
+        policy = self.policy(initial[0])
+        command = '--generate-' + 'binary-cache-key'
+        text = "checked([store, %r, 'finite-nar416-fixture', str(private), str(public)])\n" % command
+        self.commit('fixture.py', text)
+        _, found = self.scan()
+        finding = next(row for row in found if row['File'] == 'fixture.py')
+        extra = self.policy(finding, 'finite-nar416-fixture',
+            'python-generated-key-label', 'public-nix-fixture-label')
+        with patch.object(identifiers, 'FIXTURE_LABEL_POLICY', extra):
+            config, counts = identifiers.native_config(self.repo, policy, require_complete=True)
+        self.config.write_bytes(config)
+        return text, extra, policy, counts
+
+    def test_public_generated_key_label_is_exactly_allowed(self):
+        _, _, _, counts = self.fixture_label()
+        self.assertEqual(counts['verifiedExactIdentifierCount'], 2)
+        self.assertEqual(self.scan(), (0, []))
+
+    def test_public_generated_key_label_copied_to_new_commit_still_fails(self):
+        text, _, _, _ = self.fixture_label()
+        self.commit('fixture.py', '# removed\n')
+        revision = self.commit('fixture.py', text)
+        _, found = self.scan()
+        self.assertTrue(any(row['Commit'] == revision for row in found))
+
+    def test_credential_added_to_fixture_line_still_fails(self):
+        text, _, _, _ = self.fixture_label()
+        # Synthetic fixture only; no real credential is used or printed.
+        token = 'ghp_' + '9F0r2JtQ6Lw8aD3sG7hK1mN5pR4vXyZcBeTu'
+        revision = self.commit('fixture.py', text.rstrip() + "; token = '" + token + "'\n")
+        _, found = self.scan()
+        self.assertTrue(any(row['Commit'] == revision and row['RuleID'] == 'github-pat'
+                            for row in found))
+
+    def test_fixture_label_changed_source_proof_fails_closed(self):
+        _, extra, policy, _ = self.fixture_label()
+        next(iter(extra.values()))['blobSha256'] = '0' * 64
+        with patch.object(identifiers, 'FIXTURE_LABEL_POLICY', extra):
+            with self.assertRaises(identifiers.Invalid):
+                identifiers.native_config(self.repo, policy)
+
     def test_native_and_allowlist_accepts_only_verified_complete_line(self):
         _, found = self.scan()
         policy = self.policy(found[0])

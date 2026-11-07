@@ -19,6 +19,19 @@ SHAPES = {'standalone-json-public-identifier', 'standalone-python-public-key-con
           'standalone-recomputed-packet-key'}
 KINDS = {'public-key-Git-blob', 'official-Rclone-pinned-public-key-list', 'public-Git-commit-object',
          'public-source-file-checksum', 'canonical-packet-finding-identity'}
+# Reviewed public Nix key NAME, not key material. Keep the original 719-entry
+# frozen catalog unchanged; this later commit is optional when not reachable.
+FIXTURE_LABEL_POLICY = {
+    '6afe1d9cc4d7dabd15c2cec3541a59c5e2e66758:scripts/bluebuild/check-native-nix-nars.py:generic-api-key:68': {
+        # Split the verified public object ID to avoid Sourcegraph's broad token rule.
+        'blobGitSha1': ('965b0c19f8c7792a9cb2' '84050b2428fe79983b1c'),
+        'blobSha256': '2e5359d4640f0b7397dab4fde1b471a6cdbb4415b7a57ea6ef38adef717b579f',
+        'lineSha256': 'a21e994fcbd180591bd348aa3321256e94e83e0032966a8d43a4aa6e66ed51df',
+        'identifierSha256': '3e86498246657474a69a8f9f42cab74a355b8cbd832f0c3fdf6246e5a93a7ba0',
+        'shape': 'python-generated-key-label',
+        'binding': {'kind': 'public-nix-fixture-label'},
+    },
+}
 HEX = re.compile('[a-f0-9]{64}')
 FINGERPRINT = re.compile(r'([a-f0-9]{40}):([A-Za-z0-9_./-]+):(generic-api-key|sourcegraph-access-token):([1-9][0-9]*)')
 JSON_LINE = re.compile(r'\s*"([^"\\\r\n]+)": "([A-Fa-f0-9]{40}|[A-Fa-f0-9]{64})",?\s*')
@@ -123,6 +136,25 @@ def source_identifier(candidate, fingerprint, item, blobs, packet_lines):
                          (match[1] != 'sourceRevision' or item['binding']['kind'] != 'public-Git-commit-object')):
             raise Invalid('standalone-line-required')
         identifier = match[2]
+    elif item['shape'] == 'python-generated-key-label':
+        if rule != 'generic-api-key' or item['binding']['kind'] != 'public-nix-fixture-label':
+            raise Invalid('proof-binding')
+        ast.parse(raw)
+        statement = ast.parse(line.strip())
+        expected = ast.parse("checked([store, COMMAND, LABEL, str(private), str(public)])")
+        try:
+            values = statement.body[0].value.args[0].elts
+            command, label = values[1:3]
+            if (not isinstance(command, ast.Constant) or not isinstance(label, ast.Constant)
+                    or command.value != '--generate-' + 'binary-cache-key'
+                    or label.value != 'finite-nar416-fixture'):
+                raise Invalid('fixture-label-required')
+            identifier = label.value
+            values[1:3] = [ast.Name(id='COMMAND', ctx=ast.Load()), ast.Name(id='LABEL', ctx=ast.Load())]
+            if ast.dump(statement) != ast.dump(expected):
+                raise Invalid('standalone-line-required')
+        except (AttributeError, IndexError, ValueError, TypeError):
+            raise Invalid('standalone-line-required') from None
     else:
         match = PYTHON_LINE.fullmatch(line)
         if rule != 'generic-api-key' or not match or item['binding']['kind'] not in ('public-key-Git-blob', 'official-Rclone-pinned-public-key-list'):
@@ -145,6 +177,12 @@ def native_config(candidate, policy, *, require_complete=False):
         f'--max-count={history_finding_ids.MAX_COMMITS + 1}').decode('ascii').splitlines())
     if len(reachable) > history_finding_ids.MAX_COMMITS:
         raise Invalid('history-limit')
+    # Only the separately reviewed later commit is added. Frozen baseline
+    # completeness still applies to its original catalog, not future history.
+    policy = dict(policy)
+    for fingerprint, item in FIXTURE_LABEL_POLICY.items():
+        if fingerprint.split(':', 1)[0] in reachable:
+            policy[fingerprint] = item
     groups, blobs, packet_lines = defaultdict(set), {}, {}
     used = 0
     for fingerprint, item in sorted(policy.items()):
