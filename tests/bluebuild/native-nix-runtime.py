@@ -1,5 +1,8 @@
-"""Offline migration boundaries; native store/NAR behavior is a hosted gate."""
+"""Offline migration/guest boundaries; native store/NAR behavior is a hosted gate."""
+from contextlib import redirect_stdout
+import errno
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -7,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -111,6 +115,139 @@ class Migration(unittest.TestCase):
         self.runtime.mkdir(); (self.runtime/'marker').write_text('preserve')
         self.assertNotEqual(self.run_migration().returncode, 0)
         self.assertEqual((self.runtime/'marker').read_text(), 'preserve')
+
+
+class GuestCheck(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.runtime = self.root/'nix/store'/('a'*32+'-determinate-nix-3.24.1')
+        self.binary = self.runtime/'bin/nix'
+        self.library = self.root/'nix/store'/('b'*32+'-library/lib/libnixstore.so')
+        for path, data in ((self.binary, b'fixed Nix binary'), (self.library, b'fixed library')):
+            path.parent.mkdir(parents=True)
+            path.write_bytes(data)
+        self.manifest = {'schema': 1, 'runtime': str(self.runtime), 'library': str(self.library),
+            'binarySha256': hashlib.sha256(self.binary.read_bytes()).hexdigest(),
+            'librarySha256': hashlib.sha256(self.library.read_bytes()).hexdigest(),
+            'sourceRevision': 'c'*40, 'patchedSourceSha256': 'd'*64}
+        manifest = self.root/'usr/lib/finite/nix-runtime/runtime.json'
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(json.dumps(self.manifest))
+        profile = self.root/'nix/var/nix/profiles/default/bin/nix'
+        profile.parent.mkdir(parents=True)
+        profile.symlink_to(self.binary)
+        self.cgroup = self.root/'sys/fs/cgroup/system.slice/nix-daemon.service/cgroup.procs'
+        self.cgroup.parent.mkdir(parents=True)
+        self.cgroup.write_text('100\n200\n')
+        for pid in ('100', '200'):
+            process = self.root/'proc'/pid
+            process.mkdir(parents=True)
+            (process/'exe').symlink_to(self.binary)
+            (process/'maps').write_text(str(self.library)+'\n')
+        self.verified = self.root/'var/lib/finite-vm/native-nix-verified'
+        self.verified.parent.mkdir(parents=True)
+        source = ROOT/'scripts/bluebuild/check-native-nix-guest.py'
+        text = source.read_text()
+        # Run the actual guest checker against an isolated filesystem fixture.
+        for path in ('/usr/lib/finite/nix-runtime/runtime.json', '/nix/var/nix/profiles/default/bin/nix',
+                     '/sys/fs/cgroup', '/proc', '/var/home/nix/finite-predecessor-fixture',
+                     '/var/lib/finite-vm/native-nix-verified'):
+            text = text.replace(repr(path), repr(str(self.root/path.lstrip('/'))))
+        self.checker = compile(text, str(source), 'exec')
+
+    def check_output(self, command, **kwargs):
+        self.assertEqual(kwargs, {'text': True})
+        if command[0] in ('matchpathcon', 'stat'):
+            self.assertIn(command[-1], (str(self.binary), str(self.library)))
+            return 'system_u:object_r:nix_store_t:s0\n'
+        if command == ['systemctl', 'show', '--property=ControlGroup', '--value', 'nix-daemon.service']:
+            return '/system.slice/nix-daemon.service\n'
+        if command == ['journalctl', '-b', '-u', 'finite-nix-runtime.service', '--output=cat', '--no-pager']:
+            return 'Prior native Nix: '+str(self.binary)+'\n'
+        self.fail('Unexpected guest command: '+repr(command))
+
+    def run_guest(self, method='read_text', target=None, error=None):
+        original = getattr(Path, method)
+
+        def read(path, *args, **kwargs):
+            if path == target:
+                raise error
+            return original(path, *args, **kwargs)
+
+        self.verified.unlink(missing_ok=True)
+        self.output = io.StringIO()
+        with patch.object(Path, method, read), patch('subprocess.check_output', self.check_output), \
+                patch('subprocess.run') as ping, redirect_stdout(self.output):
+            exec(self.checker, {'__name__': '__main__'})
+        ping.assert_called_once_with([str(self.binary), '--extra-experimental-features',
+            'nix-command', '--store', 'daemon', 'store', 'ping'], check=True, capture_output=True, timeout=30)
+        receipt = json.loads(self.output.getvalue())
+        self.assertEqual(receipt['status'], 'pass')
+        self.assertTrue(receipt['runningDaemonMatched'])
+        self.assertEqual(receipt['binarySha256'], self.manifest['binarySha256'])
+        self.assertEqual(receipt['librarySha256'], self.manifest['librarySha256'])
+        self.assertTrue(self.verified.exists())
+
+    def assert_failed(self):
+        self.assertEqual(self.output.getvalue(), '')
+        self.assertFalse(self.verified.exists())
+
+    def test_live_daemon_passes(self):
+        self.run_guest()
+
+    def test_disappearing_member_still_requires_verified_live_daemon(self):
+        for method, name in (('resolve', 'exe'), ('read_text', 'maps'), ('read_bytes', 'exe')):
+            for code in (errno.ENOENT, errno.ESRCH):
+                for pids in ('100\n200\n', '200\n100\n'):
+                    with self.subTest(method=method, errno=code, pids=pids):
+                        self.cgroup.write_text(pids)
+                        self.run_guest(method, self.root/'proc/100'/name, OSError(code, os.strerror(code)))
+
+    def test_all_daemons_disappearing_fails_closed(self):
+        self.cgroup.write_text('100\n')
+        for code in (errno.ENOENT, errno.ESRCH):
+            with self.subTest(errno=code):
+                with self.assertRaisesRegex(AssertionError, 'No running fixed Nix daemon'):
+                    self.run_guest(target=self.root/'proc/100/maps', error=OSError(code, os.strerror(code)))
+                self.assert_failed()
+
+    def test_empty_or_unrelated_cgroup_fails_closed(self):
+        executable = self.root/'proc/100/exe'
+        executable.unlink()
+        executable.symlink_to('/unrelated-program')
+        for pids in ('', '100\n'):
+            with self.subTest(pids=pids):
+                self.cgroup.write_text(pids)
+                with self.assertRaisesRegex(AssertionError, 'No running fixed Nix daemon'):
+                    self.run_guest()
+                self.assert_failed()
+
+    def test_unexpected_proc_errors_fail_even_after_a_verified_daemon(self):
+        for method, name in (('resolve', 'exe'), ('read_text', 'maps'), ('read_bytes', 'exe')):
+            for code in (errno.EACCES, errno.EIO):
+                with self.subTest(method=method, errno=code):
+                    with self.assertRaises(OSError) as raised:
+                        self.run_guest(method, self.root/'proc/200'/name, OSError(code, os.strerror(code)))
+                    self.assertEqual(raised.exception.errno, code)
+                    self.assert_failed()
+
+    def test_daemon_library_mismatch_fails_even_with_a_verified_daemon(self):
+        (self.root/'proc/200/maps').write_text('/wrong-library\n')
+        with self.assertRaises(AssertionError):
+            self.run_guest()
+        self.assert_failed()
+
+    def test_daemon_binary_mismatch_fails_even_with_a_verified_daemon(self):
+        read_bytes = Path.read_bytes
+
+        def tampered(path):
+            return b'tampered daemon' if path == self.root/'proc/200/exe' else read_bytes(path)
+
+        with patch.object(Path, 'read_bytes', tampered), self.assertRaises(AssertionError):
+            self.run_guest()
+        self.assert_failed()
 
 
 if __name__ == '__main__': unittest.main()
