@@ -19,6 +19,7 @@
         "sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6",
         "slsa-framework/slsa-verifier/actions/installer@ea584f4502babc6f60d9bc799dbbb13c1caa9ee6",
         "github/codeql-action/*@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee",
+        "step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43",
         "step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2"
       ],
       "verified_allowed": false
