@@ -33,7 +33,8 @@ for pid in pids:
         assert str(library) in (process/'maps').read_text()
         assert digest(process/'exe') == manifest['binarySha256']
         matched.append(pid)
-    except FileNotFoundError:
+    except (FileNotFoundError, ProcessLookupError):
+        # A cgroup member can exit while its procfs files are being inspected.
         continue
 assert matched, 'No running fixed Nix daemon found in its service cgroup'
 journal = subprocess.check_output(['journalctl', '-b', '-u', 'finite-nix-runtime.service',
