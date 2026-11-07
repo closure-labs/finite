@@ -1,12 +1,12 @@
 {
   "compatibility": 1,
-  "narHash": "sha256-7iVfBLDiKHysnCakFmqC4ftkqTgB0Kvm2fA0Ur7wzGU=",
-  "rev": "7a58c945d464c32ae1a86d07a75cce495076a752",
+  "narHash": "sha256-oJt4NPrga7f0zTUHGexFEd8uAvPcnJYc/vCbayHCJQg=",
+  "rev": "0715d5823b453f4b8d5a2fa4aaa368ef669a2796",
   "schema": 1,
   "upstreamCI": {
     "runAttempt": 1,
-    "runId": 40983309337,
-    "url": "https://github.com/closure-labs/foundation/actions/runs/40983309337",
+    "runId": 42109056802,
+    "url": "https://github.com/closure-labs/foundation/actions/runs/42109056802",
     "workflow": ".github/workflows/check.yml"
   },
   "version": "0.5.1"
