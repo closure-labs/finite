@@ -286,6 +286,53 @@ class Costs(unittest.TestCase):
     def observe(self):
         return costs.observe(self.run, self.api, self.now)
 
+    def payload_costs(self):
+        self.job['name'] = 'Stage shared image payload'
+        artifact = {'id': 20, 'name': 'payload-observations-10-1', 'expired': False,
+                    'digest': 'sha256:' + 'c' * 64, 'size_in_bytes': 1000,
+                    'workflow_run': {'id': 10, 'head_sha': 'a' * 40}}
+        value = {'schema': 1, 'kind': 'finite-stage-timing', 'authorizesPublication': False,
+                 'repository': costs.REPOSITORY, 'runId': '10', 'runAttempt': '1',
+                 'revision': 'a' * 40, 'jobName': 'payload', 'profile': 'ci',
+                 'stage': 'payload-build', 'seconds': 30.5, 'status': 1,
+                 'startedAt': '2026-10-23T10:01:01Z'}
+        return artifact, value
+
+    def test_payload_receipts_are_selected_and_costs_remain_nested(self):
+        artifact, value = self.payload_costs()
+        report = self.observe()
+        self.assertEqual(report['jobs'][0]['role'], 'payload')
+        self.assertEqual(report['jobs'][0]['profile'], 'shared_or_unknown')
+        cost_receipts.join(report, [artifact, artifact], self.scanner_reader(value, 'ci-timings.jsonl'))
+        self.assertEqual(len(report['jobs'][0]['stages']), 1)
+        self.assertTrue(report['jobs'][0]['stages'][0]['nested'])
+        self.assertEqual(costs.aggregate([report])[0]['runnerSeconds'], 120)
+        self.assertEqual(costs.stage_opportunities([report])[0]['failedSamples'], 1)
+        self.assertEqual(cost_receipts.select(report, [{**artifact, 'name': 'image-payload-10-1'}]), [])
+
+    def test_payload_receipts_reject_wrong_identity_duration_and_interval(self):
+        artifact, value = self.payload_costs()
+        for field, bad in [('schema', True), ('authorizesPublication', True), ('repository', 'fork/finite'),
+                           ('runId', '11'), ('runAttempt', '2'), ('revision', 'b' * 40),
+                           ('profile', 'finite'), ('jobName', 'build'), ('stage', 'other'),
+                           ('seconds', float('inf')), ('seconds', -1), ('seconds', True),
+                           ('status', True), ('startedAt', '2026-10-23T10:00:00Z'), ('seconds', 200)]:
+            with self.subTest(field=field, bad=bad), self.assertRaises(ValueError):
+                cost_receipts.join(self.observe(), [artifact],
+                    self.scanner_reader({**value, field: bad}, 'ci-timings.jsonl'))
+
+    def test_payload_wrong_attempt_is_unknown_and_conflicts_rejected(self):
+        artifact, value = self.payload_costs()
+        report = self.observe()
+        cost_receipts.join(report, [{**artifact, 'name': 'payload-observations-10-2'}],
+                           self.scanner_reader({**value, 'runAttempt': '2'}, 'ci-timings.jsonl'))
+        self.assertEqual(report['receiptCoverage']['unmatched'], 1)
+        self.assertEqual(report['jobs'][0]['stages'], [])
+        seen = set()
+        cost_receipts.payload_receipt(report, artifact, value, seen)
+        with self.assertRaisesRegex(ValueError, 'Conflicting'):
+            cost_receipts.payload_receipt(report, artifact, {**value, 'seconds': 31}, seen)
+
     def test_reused_native_job_is_charged_once_with_failed_work(self):
         report = self.observe()
         self.assertEqual(len(report['attempts']), 2)
