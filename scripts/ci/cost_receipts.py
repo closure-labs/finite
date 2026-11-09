@@ -348,10 +348,50 @@ def predecessor_reuse_receipt(run, artifact, value, seen):
                                          'artifactSha256': artifact['digest']}
 
 
+def payload_receipt(run, artifact, value, seen):
+    """Join existing shared payload measurements without adding runner cost."""
+    from workflow_costs import timestamp
+    attempt = artifact['name'].rsplit('-', 1)[1]
+    if (not isinstance(value, dict) or type(value.get('schema')) is not int or value['schema'] != 1
+            or value.get('kind') != 'finite-stage-timing' or value.get('authorizesPublication') is not False
+            or value.get('repository') != run['repository'] or str(value.get('runId')) != str(run['runId'])
+            or value.get('revision') != run['sourceRevision'] or str(value.get('runAttempt')) != attempt
+            or value.get('jobName') != 'payload' or value.get('profile') != 'ci'
+            or value.get('stage') not in ('payload-build', 'payload-archive')
+            or run['workflow'] != '.github/workflows/build.yml'):
+        raise ValueError('Payload timing differs from native producer')
+    elapsed = value.get('seconds')
+    if (type(elapsed) not in (int, float) or not math.isfinite(elapsed) or not 0 <= elapsed <= 86400
+            or type(value.get('status')) is not int):
+        raise ValueError('Invalid payload timing duration/status')
+    jobs = [j for j in run['jobs'] if j['role'] == 'payload'
+            and j['name'] == 'Stage shared image payload' and str(j['runAttempt']) == attempt]
+    if len(jobs) != 1:
+        run['receiptCoverage']['unmatched'] += 1
+        return
+    job = jobs[0]
+    start = timestamp(value.get('startedAt'))
+    # Native timestamps have second precision. Partial/failed commands remain
+    # valid observations, but receipts outside their producer are not timings.
+    if (not job.get('startedAt') or not job.get('completedAt')
+            or (start - timestamp(job['startedAt'])).total_seconds() < -1
+            or (start - timestamp(job['completedAt'])).total_seconds() + elapsed > 1):
+        raise ValueError('Payload timing falls outside native job')
+    binding = ('payload', job['jobId'], value['stage'], value['startedAt'])
+    fingerprint = json.dumps(value, sort_keys=True, allow_nan=False)
+    previous = next((entry[4] for entry in seen if entry[:4] == binding), None)
+    if previous is not None:
+        if previous != fingerprint:
+            raise ValueError('Conflicting payload timing observations')
+        return
+    seen.add((*binding, fingerprint))
+    job['stages'].append({**value, 'nested': True})
+
+
 def select(run, artifacts):
     """Plan the same complete run set that the authenticated reader consumes."""
     return [a for a in artifacts if re.fullmatch(
-        r'(?:(?:image|security(?:-costs)?)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks|reconciliation-costs)-'
+        r'(?:(?:image|security(?:-costs)?)-finite(?:-dev)?|qualification-phase-finite(?:-dev)?-(?:fresh|upgrade)|source-checks|payload-observations|reconciliation-costs)-'
         + str(run['runId']) + r'-[1-9][0-9]*', a.get('name', ''))]
 
 
@@ -381,6 +421,14 @@ def join(run, artifacts, reader=bounded_reader):
                         'reconciliation-costs.json' if reconciliation else 'phase-timings.json']:
                     raise ValueError('Missing or unexpected compact cost member')
                 for name, entry in entries:
+                    if artifact['name'].startswith('payload-observations-'):
+                        if name != 'ci-timings.jsonl':
+                            continue
+                        if entry.file_size > 65536:
+                            raise ValueError('Oversized payload timing receipt')
+                        for line in b''.join(chunks(zipped, entry)).splitlines():
+                            payload_receipt(run, artifact, decode_json(line), seen)
+                        continue
                     if reconciliation:
                         reconciliation_receipt(run, artifact, json.loads(b''.join(chunks(zipped, entry))), seen)
                         continue
