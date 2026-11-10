@@ -90,7 +90,8 @@ def job_role(name, workflow=None):
         return 'decision-event-collection'
     # Resolve exact native display names before reusable job suffixes.
     source_roles = {'Nix and runtime contracts': 'checks', 'Documentation checks': 'docs',
-                    'Select checks': 'selection', 'CI gate': 'gate'}
+                    'Select checks': 'selection', 'CI gate': 'gate',
+                    'Stage shared image payload': 'payload'}
     if name in source_roles:
         return source_roles[name]
     for role in ('fresh', 'upgrade'):

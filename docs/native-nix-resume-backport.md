@@ -13,7 +13,7 @@ the released fix and its guest behavior are verified.
 
 ## Source and runtime
 
-The source is revision `240bbbcb10d3fc4bce957fafc1000b85ffb004d0`, with its own
+The 3.24.2 candidate source is revision `f43bee4f45c2d42e7d1f4e37908ec5c7bb0fdba1`, with its own
 locked Nixpkgs graph. The existing component API overrides only libnixstore's
 patch phase. It verifies both original and patched source hashes. The patched source bytes match the successful controlled native run
 <https://github.com/closure-labs/finite/actions/runs/41370314883>.
@@ -60,6 +60,18 @@ These are isolated guest validations, not signed production OS-upgrade,
 deployment or kernel-transition proof. Production signing and promotion remain
 subject to the existing independent gates. An updated PR head requires fresh
 human review; retained results do not replace that authority.
+
+## 3.24.2 coordinated candidate
+
+The installer and native runtime pins move together to 3.24.2. The upstream
+completed-resume fix is not yet merged, so the backport remains. The 3.24.2
+filetransfer.cc bytes match the original guarded hash, and the unchanged patch
+still produces the guarded patched hash. Both version/revision assertions and
+all migration, signature and guest checks remain required.
+
+The hosted evidence above is historical 3.24.1 evidence, not validation of this
+candidate. Fresh installation, preserved-state migration and all signed-NAR
+controls must pass for this new runtime before merge is recommended.
 
 ## Host-space handling
 
