@@ -24,8 +24,8 @@
     }
   );
 in
-  assert (builtins.fromJSON (builtins.readFile ../sources/determinate-nix.json)).version == "3.24.1";
-  assert upstream.rev == "240bbbcb10d3fc4bce957fafc1000b85ffb004d0"; {
+  assert (builtins.fromJSON (builtins.readFile ../sources/determinate-nix.json)).version == "3.24.2";
+  assert upstream.rev == "f43bee4f45c2d42e7d1f4e37908ec5c7bb0fdba1"; {
     runtime = components.nix-cli;
     library = components.nix-store;
     closure = pkgs.closureInfo {rootPaths = [components.nix-cli];};

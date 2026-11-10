@@ -47,7 +47,7 @@
       "binarySha256": digest("${native.runtime}/bin/nix"),
       "library": "${native.library}/lib/libnixstore.so",
       "librarySha256": digest("${native.library}/lib/libnixstore.so"),
-      "sourceRevision": "240bbbcb10d3fc4bce957fafc1000b85ffb004d0",
+      "sourceRevision": "f43bee4f45c2d42e7d1f4e37908ec5c7bb0fdba1",
       "patchedSourceSha256": "0f7106c425f195a69f31a602670231b14fc0fa2c0b31bc89506004764e276432",
       "patchSha256": digest("${native.patch}")
     }, indent=2) + "\n")
