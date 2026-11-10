@@ -28,6 +28,15 @@ pkgs.writeShellApplication {
         jq -e '.draft == false and .prerelease == false' <<<"''${release}" >/dev/null
         tag="$(jq -er '.tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))' <<<"''${release}")"
         version="''${tag#v}"
+        # The native runtime is deliberately coupled to the current installer.
+        # A coordinated backport retirement/rebase must be reviewed separately.
+        if [[ -f "''${repo_root}/lib/native-nix-backport.nix" ]]; then
+          current_version="$(jq -er '.version | select(type == "string" and test("^[0-9]+[.][0-9]+[.][0-9]+$"))' "''${lock}")"
+          if [[ "''${version}" != "''${current_version}" ]]; then
+            echo "Determinate Nix ''${version} requires a coordinated native runtime update (currently ''${current_version}). See docs/native-nix-resume-backport.md." >&2
+            exit 5
+          fi
+        fi
         asset="$(jq -ec '[.assets[] | select(.name == "nix-installer-x86_64-linux")] | select(length == 1) | .[0]' <<<"''${release}")"
         installer_url="$(jq -er --arg tag "''${tag}" '.browser_download_url | select(. == ("https://github.com/DeterminateSystems/nix-installer/releases/download/" + $tag + "/nix-installer-x86_64-linux"))' <<<"''${asset}")"
         digest="$(jq -er '.digest | select(test("^sha256:[0-9a-f]{64}$"))' <<<"''${asset}")"
