@@ -21,7 +21,7 @@
   inputs = {
     # Foundation owns the Home Manager dependency graph; do not add follows here.
     # Temporary native upstream backport; remove when a released fix is verified.
-    native-nix.url = "github:DeterminateSystems/nix-src/240bbbcb10d3fc4bce957fafc1000b85ffb004d0";
+    native-nix.url = "github:DeterminateSystems/nix-src/f43bee4f45c2d42e7d1f4e37908ec5c7bb0fdba1";
     foundation.url = "github:closure-labs/foundation/main";
     # Update Den and the gen hub together: newer Den APIs may require a newer schema.
     den.url = "github:denful/den/90c303be407632d3983fb619e714c53b2349b8e6";
