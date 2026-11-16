@@ -4,6 +4,7 @@ import contextlib
 import importlib.util
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -14,7 +15,14 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 ACTION = ROOT / '.github/actions/setup-cosign'
-PIN = 'sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6'
+INSTALLER = 'sigstore/cosign-installer'
+
+
+def pinned_installer(value):
+    # Dependabot owns the immutable revision in action.yml. Keep this contract
+    # independent of its version while rejecting tags and other action sources.
+    return isinstance(value, str) and re.fullmatch(
+        re.escape(INSTALLER) + r'@[0-9a-f]{40}', value) is not None
 
 
 class DownloadTests(unittest.TestCase):
@@ -78,12 +86,25 @@ class DownloadTests(unittest.TestCase):
             self.assertEqual(result.returncode, 22)
             self.assertEqual(requests, [504] * 4)
 
+    def test_installer_reference_requires_exact_upstream_and_full_sha(self):
+        for sha in ('6f9f17788090df1f26f669e9d70d6ae9567deba6',
+                    '756fe2d284c7292c4e9b62c8a28f1e5629c59532'):
+            with self.subTest(sha=sha):
+                self.assertTrue(pinned_installer(f'{INSTALLER}@{sha}'))
+        for value in (None, '', f'{INSTALLER}@v4.1.3', f'{INSTALLER}@main',
+                      f'{INSTALLER}@756fe2d', f'{INSTALLER}@' + 'a' * 41,
+                      f'{INSTALLER}@' + 'g' * 40,
+                      'other/cosign-installer@' + 'a' * 40,
+                      f'{INSTALLER}/subaction@' + 'a' * 40):
+            with self.subTest(value=value):
+                self.assertFalse(pinned_installer(value))
+
     def test_upstream_verification_is_preserved_and_configuration_is_scoped(self):
         action = yaml.safe_load((ACTION / 'action.yml').read_text())
         self.assertEqual(action['inputs']['cosign-release']['default'], 'v3.0.6')
         steps = action['runs']['steps']
         self.assertEqual(len(steps), 1)
-        self.assertEqual(steps[0]['uses'], PIN)
+        self.assertTrue(pinned_installer(steps[0]['uses']), steps[0]['uses'])
         self.assertEqual(steps[0]['with'], {'cosign-release': '${{ inputs.cosign-release }}'})
         self.assertEqual(steps[0]['env'], {'CURL_HOME': '${{ github.action_path }}/download'})
         self.assertNotIn('continue-on-error', steps[0])
@@ -97,7 +118,7 @@ class DownloadTests(unittest.TestCase):
             workflow = yaml.safe_load(path.read_text())
             for job_name, job in workflow.get('jobs', {}).items():
                 for step in job.get('steps', []):
-                    self.assertNotEqual(step.get('uses'), PIN)
+                    self.assertFalse(str(step.get('uses', '')).startswith(INSTALLER + '@'))
                     if step.get('uses') == '$/.github/actions/setup-cosign':
                         calls.append((path.name, job_name, step))
                         self.assertNotIn('continue-on-error', step)
