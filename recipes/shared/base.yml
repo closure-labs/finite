@@ -53,6 +53,7 @@ modules:
         - pcscd.socket
         - wifi-ac-power.timer
         - finite-firstboot-rpm-ostree.service
+        - finite-efi-update.service
     user:
       enabled:
         - finite-home-first-login.service

@@ -337,6 +337,17 @@ class Controller(unittest.TestCase):
             mod.request_consolidation(ORIGIN)
         api.assert_not_called()
 
+    def test_native_build_completion_requires_both_build_and_signer(self):
+        prefix = 'Publish (finite) / build / '
+        root = {'name': prefix + 'root / build', 'status': 'completed', 'conclusion': 'success'}
+        seal = {**root, 'name': prefix + 'seal / seal'}
+        self.assertTrue(mod.completed_publication_build([root, seal], 'finite'))
+        for jobs in [[root], [seal], [root, seal, seal],
+                     [root, {**seal, 'conclusion': 'failure'}],
+                     [root, seal, {**root, 'name': prefix + 'build'}]]:
+            with self.subTest(jobs=jobs):
+                self.assertFalse(mod.completed_publication_build(jobs, 'finite'))
+
     def test_covered_single_profile_reuse_does_not_dispatch_another_build(self):
         jobs = [{'run_id': 7, 'run_attempt': 2, 'head_sha': HEAD, 'status': 'completed', 'conclusion': 'success',
                  'name': f'Publish (finite) / {name}'} for name in ('build / build', 'security')]

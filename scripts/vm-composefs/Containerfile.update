@@ -1,0 +1,4 @@
+ARG ROOTFS_IMAGE=localhost/finite-composefs-rootfs:base
+FROM ${ROOTFS_IMAGE}
+LABEL org.opencontainers.image.version="finite-composefs-vm-update"
+RUN printf 'update\n' > /usr/share/finite-vm/revision

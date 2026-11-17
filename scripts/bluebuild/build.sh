@@ -18,7 +18,7 @@ unset SOURCE_DATE_EPOCH
 
 # Use the CLI installed from sources/bluebuild-cli.json and the flake's cosign.
 # Explicit flags avoid clap's surprising treatment of false boolean env values.
-unset COSIGN_PRIVATE_KEY BB_BUILD_PUSH BB_BUILD_NO_SIGN BB_SQUASH BB_BUILD_CHUNKAH BB_BUILD_CHUNKED_OCI BB_BUILD_RECHUNK
+unset COSIGN_PRIVATE_KEY FINITE_BOOT_SIGNING_KEY BB_BUILD_PUSH BB_BUILD_NO_SIGN BB_SQUASH BB_BUILD_CHUNKAH BB_BUILD_CHUNKED_OCI BB_BUILD_RECHUNK
 args=(build -v --build-driver docker --run-driver docker --signing-driver cosign
   --registry ghcr.io --registry-namespace closure-labs --cache-layers --no-sign)
 if [[ $publish == true ]]; then

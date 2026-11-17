@@ -1,0 +1,7 @@
+{
+  "version": "1.17.1",
+  "revision": "d01e723ae9480fa53aa9db09a7eff0439548e9f6",
+  "sourceHash": "sha256-o5R2CIvOJy34eNw2VPbWWIMz3CXQtOYeY9I82lvTfqA=",
+  "cargoHash": "sha256-LkUBGWUULRF/CuWgqzzhCo/qIamGRwsxnT+0nhPWnLM=",
+  "purpose": "Canonical OCI importer for the native sealing toolchain; not the installed OS bootc package"
+}

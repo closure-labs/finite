@@ -1,0 +1,11 @@
+# Opt-in preparation module for the systemd-boot branch. Not a migration:
+# signing, storage layout, and the bootc backend must be resolved first.
+modules:
+  - type: dnf@v1
+    install:
+      packages:
+        - systemd-boot-unsigned
+        - systemd-ukify
+        - sbsigntools
+        - mokutil
+        - efibootmgr

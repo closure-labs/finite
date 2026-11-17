@@ -1,0 +1,19 @@
+modules:
+  - type: files@v1
+    files:
+      - source: bootc-runtime
+        destination: /usr/lib/finite/bootc-build
+  - type: dnf@v1
+    install:
+      packages:
+        - systemd-boot-unsigned
+        - mokutil
+        - efibootmgr
+        - sbsigntools
+    remove:
+      packages:
+        - bootupd
+  - type: script@v1
+    scripts:
+      - install-native-bootc.sh
+      - native-initramfs.sh

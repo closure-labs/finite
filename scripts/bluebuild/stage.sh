@@ -5,6 +5,7 @@ case "$profile" in
 finite|finite-dev) ;;
 *) echo "Unknown image profile: $profile" >&2; exit 2 ;;
 esac
+python3 scripts/bluebuild/stage-bootc-runtime.py
 payload=$(nix build --impure --accept-flake-config --no-update-lock-file --no-write-lock-file \
   --file lib/ci-payload.nix payload --no-link --print-out-paths)
 test -d "$payload/home-manager-template"

@@ -51,7 +51,7 @@ permissions:
   actions: read
 jobs:
   build:
-    uses: $/.github/workflows/image.yml
+    uses: $/.github/workflows/native-image.yml
     permissions:
       contents: read
       packages: write
@@ -59,7 +59,6 @@ jobs:
     with:
       profile: ${{ inputs.profile }}
       channel: ${{ inputs.channel }}
-      publish: true
       force_qualification: ${{ inputs.force_qualification }}
       resume_run: ${{ inputs.resume_run }}
       resume_digest: ${{ inputs.resume_digest }}

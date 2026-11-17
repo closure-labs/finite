@@ -38,6 +38,10 @@ class BluefinTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         shutil.copytree(ROOT / 'recipes', self.root / 'recipes')
+        # Historical publication fixtures predate native sealing. The native
+        # trust boundary has dedicated raw/sealed handoff and promotion tests.
+        for path in (self.root / 'recipes').glob('finite*.yml'):
+            path.write_text(path.read_text().replace('  io.finite.boot-architecture: native-composefs\n', ''))
         security = patch.object(publication.security, 'verify')
         security.start()
         self.addCleanup(security.stop)
@@ -658,7 +662,7 @@ class DeterministicIdentity(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        for directory in ('recipes', 'files', 'sources', 'scripts', '.github'):
+        for directory in ('recipes', 'files', 'sources', 'scripts', '.github', 'lib'):
             shutil.copytree(ROOT / directory, self.root / directory,
                             ignore=shutil.ignore_patterns('payload', '__pycache__', '*.pyc', '*.pyo'))
         shutil.copy2(ROOT / 'cosign.pub', self.root / 'cosign.pub')

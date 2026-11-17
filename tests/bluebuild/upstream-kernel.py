@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import struct
 import unittest
 from unittest.mock import patch
 import sys
@@ -52,6 +53,42 @@ class Preservation(unittest.TestCase):
 
     def verify(self):
         return kernel.verify(self.receipt, self.modules, self.rpm)
+
+    def sealed_uki(self, linux=b'vmlinuz'):
+        sections = [(b'.linux', linux), (b'.uname', RELEASE.encode() + b'\0'), (b'.initrd', b'native encrypted-root archive')]
+        data = bytearray(512 * (len(sections) + 1))
+        data[:2] = b'MZ'
+        struct.pack_into('<I', data, 60, 128)
+        data[128:132] = b'PE\0\0'
+        struct.pack_into('<H', data, 134, len(sections))
+        for index, (name, value) in enumerate(sections):
+            header, position = 152 + index * 40, 512 * (index + 1)
+            data[header:header + len(name)] = name
+            struct.pack_into('<IIII', data, header + 8, len(value), position, 512, position)
+            data[position:position + len(value)] = value
+        path = self.root / 'kernel.efi'
+        path.write_bytes(data)
+        return path
+
+    def test_sealed_kernel_matches_original_bytes_and_extracts_only_verified_payload(self):
+        expected = self.snapshot()
+        uki = self.sealed_uki()
+        (self.tree / 'vmlinuz').unlink()
+        (self.tree / 'initramfs.img').unlink()
+        extracted = self.root / 'extracted'
+        extracted.mkdir(mode=0o700)
+        self.assertEqual(kernel.verify(self.receipt, self.modules, self.rpm, uki=uki, extract_to=extracted), expected)
+        self.assertEqual((extracted / RELEASE / 'vmlinuz').read_bytes(), b'vmlinuz')
+        self.assertEqual((extracted / RELEASE / 'initramfs.img').read_bytes(), b'native encrypted-root archive')
+
+    def test_changed_sealed_kernel_or_module_cannot_satisfy_preservation(self):
+        self.snapshot()
+        (self.tree / 'vmlinuz').unlink()
+        with self.assertRaisesRegex(ValueError, 'Sealed UKI changed'):
+            kernel.verify(self.receipt, self.modules, self.rpm, uki=self.sealed_uki(b'modified kernel'))
+        self.write('extra/zfs/zfs.ko.xz', 'modified module')
+        with self.assertRaisesRegex(ValueError, 'kernel/module/storage'):
+            kernel.verify(self.receipt, self.modules, self.rpm, uki=self.sealed_uki())
 
     def test_preserves_zfs_camera_kernel_and_development_packages(self):
         value = self.snapshot()

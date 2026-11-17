@@ -1,0 +1,41 @@
+# Disposable native-composefs fixture. This does not change production recipes.
+ARG BASE_IMAGE=quay.io/fedora/fedora-bootc@sha256:f8170dc0b8b3b48c14d0b52ee51b926642a377414757af581cd9dc0cbb8a0605
+ARG ROOTFS_IMAGE=localhost/finite-composefs-rootfs:base
+FROM ${BASE_IMAGE} AS rootfs
+ARG REVISION=base
+LABEL org.opencontainers.image.version="finite-composefs-vm-${REVISION}"
+RUN dnf -y install systemd-boot-unsigned systemd-ukify sbsigntools openssh-server python3 /usr/bin/virt-fw-vars && dnf -y remove bootupd && dnf clean all
+COPY ssh-key.pub /usr/share/finite-vm/ssh-key.pub
+COPY provision.sh install.sh /usr/libexec/finite-vm/
+COPY finite-vm-provision.service finite-vm-install.service /usr/lib/systemd/system/
+RUN chmod 755 /usr/libexec/finite-vm/*.sh && \
+    mkdir -p /var/roothome /usr/lib/composefs /usr/lib/bootc/kargs.d /usr/lib/bootc/install/systemd-boot && \
+    touch /usr/lib/composefs/setup-root-conf.toml && \
+    rm -f /usr/lib/ostree/prepare-root.conf /etc/ostree/prepare-root.conf && \
+    printf 'kargs = ["rw", "console=ttyS0,115200n8", "rd.plymouth=0", "plymouth.enable=0"]\n' > /usr/lib/bootc/kargs.d/90-vm.toml && \
+    printf 'timeout 5\neditor no\nsecure-boot-enroll off\n' > /usr/lib/bootc/install/systemd-boot/loader.conf && \
+    printf '%s\n' "$REVISION" > /usr/share/finite-vm/revision && \
+    systemctl enable sshd.service finite-vm-provision.service finite-vm-install.service && \
+    systemctl set-default multi-user.target && \
+    kver=$(ls /usr/lib/modules) && \
+    dracut --force --no-hostonly --omit ostree --add bootc /usr/lib/modules/$kver/initramfs.img "$kver"
+RUN --mount=type=secret,id=secureboot_key --mount=type=secret,id=secureboot_cert \
+    sbsign --key /run/secrets/secureboot_key --cert /run/secrets/secureboot_cert \
+      --output /usr/lib/systemd/boot/efi/systemd-bootx64.efi.signed \
+      /usr/lib/systemd/boot/efi/systemd-bootx64.efi
+
+FROM ${ROOTFS_IMAGE} AS split
+RUN mkdir /kernel && bootc container split-kernel-and-rootfs --rootfs / --output /kernel
+
+FROM ${ROOTFS_IMAGE} AS sealed-uki
+RUN --mount=type=bind,from=split,target=/target \
+    --mount=type=bind,from=split,source=/kernel,target=/kernel \
+    --mount=type=secret,id=secureboot_key --mount=type=secret,id=secureboot_cert \
+    mkdir /out && kver=$(ls /kernel) && \
+    bootc container ukify --rootfs /target --kernel-dir /kernel/$kver -- \
+      --output /out/$kver.efi --signtool sbsign \
+      --secureboot-private-key /run/secrets/secureboot_key \
+      --secureboot-certificate /run/secrets/secureboot_cert
+
+FROM split AS candidate
+COPY --from=sealed-uki /out/ /boot/EFI/Linux/

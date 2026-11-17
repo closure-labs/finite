@@ -15,7 +15,7 @@ CONTENTS = f'lrwxrwxrwx 1 root root 23 init -> usr/lib/systemd/systemd\nusr/lib/
 
 
 class Initramfs(unittest.TestCase):
-    def check(self, *, missing=None, empty=False, modules=MODULES, contents=CONTENTS, unreadable=False):
+    def check(self, *, missing=None, empty=False, modules=MODULES, contents=CONTENTS, unreadable=False, backend='ostree'):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             kernel = root / 'modules' / RELEASE
@@ -29,13 +29,19 @@ class Initramfs(unittest.TestCase):
             tool.write_text('#!' + shutil.which('bash') + '\n' + ('exit 1\n' if unreadable else
                             'if [[ $1 == -m ]]; then cat "$FIXTURE/included"; else cat "$FIXTURE/contents"; fi\n'))
             tool.chmod(0o755)
-            return subprocess.run(['bash', str(SCRIPT), RELEASE, str(root / 'modules')],
+            return subprocess.run(['bash', str(SCRIPT), RELEASE, str(root / 'modules'), backend],
                                   env={**os.environ, 'PATH': str(root) + ':' + os.environ['PATH'],
                                        'FIXTURE': str(root)}, capture_output=True, text=True)
 
     def test_complete_boot_payload(self):
         result = self.check()
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_native_backend_requires_bootc_and_rejects_ostree(self):
+        native = ['bootc', 'crypt', 'systemd-cryptsetup', 'fido2']
+        self.assertEqual(self.check(modules=native, backend='native').returncode, 0)
+        self.assertNotEqual(self.check(backend='native').returncode, 0)
+        self.assertNotEqual(self.check(modules=[*native, 'ostree'], backend='native').returncode, 0)
 
     def test_missing_or_empty_boot_payload(self):
         for missing in ('vmlinuz', 'initramfs.img'):

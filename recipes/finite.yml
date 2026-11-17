@@ -16,6 +16,7 @@ labels:
   io.finite.profile: finite
   io.finite.foundation: bluefin
   io.finite.hardware: generic-x86_64
+  io.finite.boot-architecture: native-composefs
 modules:
   - type: script@v1
     snippets:
@@ -25,8 +26,8 @@ modules:
   - type: script@v1
     snippets:
       - bash "$CONFIG_DIRECTORY/scripts/profile.sh" finite bluefin generic-x86_64 finite
-  # Rebuild only the derived boot archive for encrypted-root/FIDO2 support.
-  - type: initramfs@v1
+  # Native bootc initramfs; sealing happens in the isolated boot signer.
+  - from-file: shared/native-root.yml
   - type: script@v1
     snippets:
       - python3 /usr/libexec/finite/check-upstream-kernel verify

@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "environment": "boot-signing",
+  "secret": "FINITE_BOOT_SIGNING_KEY",
+  "repository": "closure-labs/finite",
+  "certificate": "files/system/usr/share/finite/secure-boot/finite-boot.pem",
+  "certificateDerSha256": "e545db8651b876da5a0b21782bf47a0f5365652354435e7b2398b00ac0b67db2",
+  "recovery": "SSH-encrypted escrow; recover the SSH key from the verified passphrase-encrypted backup",
+  "qualified": false
+}

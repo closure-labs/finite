@@ -3,6 +3,15 @@
 set -euo pipefail
 release="${1:?kernel release required}"
 modules="${2:-/usr/lib/modules}"
+backend="${3:-auto}"
+if [[ $backend == auto ]]; then
+  if [[ -f /usr/lib/composefs/setup-root-conf.toml ]]; then backend=native; else backend=ostree; fi
+fi
+case "$backend" in
+  native) root_module=bootc ;;
+  ostree) root_module=ostree ;;
+  *) echo 'Unknown initramfs backend' >&2; exit 2 ;;
+esac
 image="$modules/$release/initramfs.img"
 for file in "$modules/$release/vmlinuz" "$image"; do
   if [[ ! -s $file ]]; then
@@ -11,12 +20,16 @@ for file in "$modules/$release/vmlinuz" "$image"; do
   fi
 done
 included=$(lsinitrd -m "$image")
-for module in ostree crypt systemd-cryptsetup fido2; do
+for module in "$root_module" crypt systemd-cryptsetup fido2; do
   if ! grep -Fx "$module" <<<"$included" >/dev/null; then
     echo "Initramfs for $release lacks required dracut module: $module" >&2
     exit 1
   fi
 done
+if [[ $backend == native ]] && grep -Fx ostree <<<"$included" >/dev/null; then
+  echo 'Native initramfs must not include the OSTree root setup module' >&2
+  exit 1
+fi
 contents=$(lsinitrd "$image")
 grep -E ' init( -> .*)?$' <<<"$contents" >/dev/null || {
   echo "Initramfs for $release lacks /init" >&2
