@@ -370,6 +370,7 @@ def run_checks(repository, run_id, expected_bot, app_id, github=None, api_post=N
             summary, conclusion = 'Maintainer decision required: ' + str(error), 'failure'
             state = ('review-required' if isinstance(error, authority.HumanDecisionRequired) else
                      'technical-error' if isinstance(error.__cause__, authority.GitHubReadError) else 'invalid')
+            result['authorityState'] = state
         if expected is not None:
             latest = api(f'repos/{repository}/pulls/{number}')
             if (latest.get('state') != 'open' or latest.get('base', {}).get('ref') != 'main'
@@ -426,8 +427,15 @@ def main():
                       run_checks(args.repository, args.collector_run, args.bot_login, args.app_id,
                                  expected=worker if args.pull_request is not None else None))
         print(json.dumps(result))
-        if args.recovery_run is not None and not args.resolve_targets:
-            return 1 if any(row['status'] == 'review-required' for row in result['checks']) else 0
+        if not args.resolve_targets:
+            # A published human-review rejection is a successful observation,
+            # not approval. The App-bound check remains failure until approved.
+            # Invalid inputs and technical failures must still fail the worker.
+            return 1 if any(
+                row['status'] not in ('authorized', 'not-required', 'obsolete')
+                and not (row['status'] == 'review-required'
+                         and row.get('authorityState') == 'review-required')
+                for row in result['checks']) else 0
         return 0
     except (authority.AuthorityError, ValueError, TypeError, KeyError, OSError, subprocess.SubprocessError) as error:
         print(json.dumps({'status': 'unauthorized', 'error': str(error)}))

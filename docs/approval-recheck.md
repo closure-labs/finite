@@ -10,7 +10,11 @@ requires a new review. Dismissals, withdrawal comments, changes requested and
 lost eligibility retain their existing effect.
 
 A PR review normally triggers the event collector and a fresh maintainer
-authority check. An older failed Actions run remains historical. Look at the
+authority check. A successfully published missing-approval verdict is a successful controller
+observation, while the required App-owned authority check remains failed.
+Invalid authority inputs, metadata failures and failed check publication still
+fail the controller. Older failed Actions runs remain historical; they are not
+deleted or rewritten by this distinction. Look at the
 current required **Maintainer decision authority** result and its linked
 verification run to see whether the latest review has been validated.
 

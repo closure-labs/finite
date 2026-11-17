@@ -188,6 +188,7 @@ class Checks(unittest.TestCase):
             return {'app': {'id': 123}}
         result = mod.run_checks(REPO, 1, BOT, 123, api, post)
         self.assertEqual(result['checks'][0]['status'], 'review-required')
+        self.assertEqual(result['checks'][0]['authorityState'], 'review-required')
         self.assertEqual(calls[0][1]['conclusion'], 'failure')
         with self.assertRaises(mod.authority.AuthorityError):
             mod.run_checks(REPO, 1, BOT, 999, api, post)
@@ -475,7 +476,8 @@ class ApprovalRecovery(unittest.TestCase):
                 except mod.authority.GitHubReadError as error:
                     raise mod.authority.AuthorityError('metadata unavailable') from error
             return self.api(endpoint)
-        self.worker(api=unavailable)
+        result = self.worker(api=unavailable)
+        self.assertEqual(result['checks'][0]['authorityState'], 'technical-error')
         self.assertEqual(self.posts[0]['conclusion'], 'failure')
         self.assertTrue(self.posts[0]['external_id'].endswith(':technical-error'))
 
@@ -506,19 +508,48 @@ class ApprovalRecovery(unittest.TestCase):
         row['conclusion'] = 'failure'
         self.assertEqual(len(self.targets()['include']), 1)
 
-    def test_recovery_cli_reports_rejected_live_authority_as_failure(self):
+    def test_cli_distinguishes_published_review_rejection_from_worker_failure(self):
         import io
         from contextlib import redirect_stdout
         env = {'GITHUB_REPOSITORY': REPO, 'GITHUB_RUN_ID': '55',
                'GITHUB_WORKFLOW_REF': REPO + '/' + mod.CONTROLLER + '@refs/heads/main',
                'FINITE_REVIEW_BOT_LOGIN': BOT, 'FINITE_REVIEW_APP_ID': '123'}
-        for status, expected in (('review-required', 1), ('authorized', 0)):
-            with self.subTest(status=status), mock.patch.dict(mod.os.environ, env), \
-                    mock.patch.object(sys, 'argv', ['check', '--recovery-run', '55', '--pull-request', '7',
-                        '--expected-head', HEAD, '--target-sha', HEAD]), \
-                    mock.patch.object(mod, 'run_checks', return_value={'checks': [{'status': status}]}), \
-                    redirect_stdout(io.StringIO()):
-                self.assertEqual(mod.main(), expected)
+        for source in ('--recovery-run', '--collector-run'):
+            for status, authority_state, expected in (
+                    ('review-required', 'review-required', 0),
+                    ('review-required', 'technical-error', 1),
+                    ('review-required', 'invalid', 1),
+                    ('review-required', None, 1), ('unknown', None, 1),
+                    ('authorized', None, 0), ('not-required', None, 0),
+                    ('obsolete', None, 0)):
+                with self.subTest(status=status), mock.patch.dict(mod.os.environ, env), \
+                        mock.patch.object(sys, 'argv', ['check', source, '55', '--pull-request', '7',
+                            '--expected-head', HEAD, '--target-sha', HEAD]), \
+                        mock.patch.object(mod, 'run_checks', return_value={'checks': [{'status': status, 'authorityState': authority_state}]}), \
+                        redirect_stdout(io.StringIO()):
+                    self.assertEqual(mod.main(), expected)
+
+    def test_cli_review_observation_preserves_app_failure_and_publication_errors(self):
+        import io
+        from contextlib import redirect_stdout
+        real_run = mod.run_checks
+        self.api.reviews = []
+        env = {'GITHUB_REPOSITORY': REPO, 'GITHUB_RUN_ID': '55',
+               'GITHUB_WORKFLOW_REF': REPO + '/' + mod.CONTROLLER + '@refs/heads/main',
+               'FINITE_REVIEW_BOT_LOGIN': BOT, 'FINITE_REVIEW_APP_ID': '123'}
+        def run(*args, **kwargs):
+            return real_run(*args, **kwargs, github=self.api, api_post=self.post)
+        with mock.patch.dict(mod.os.environ, env), \
+                mock.patch.object(sys, 'argv', ['check', '--recovery-run', '55',
+                    '--pull-request', '7', '--expected-head', HEAD, '--target-sha', HEAD]), \
+                mock.patch.object(mod, 'run_checks', side_effect=run), redirect_stdout(io.StringIO()):
+            self.assertEqual(mod.main(), 0)
+            self.assertEqual(self.posts[-1]['name'], mod.CHECK_NAME)
+            self.assertEqual(self.posts[-1]['conclusion'], 'failure')
+            self.assertTrue(self.posts[-1]['external_id'].endswith(':review-required'))
+            with mock.patch.object(self, 'post', side_effect=OSError('publication unavailable')):
+                self.assertEqual(mod.main(), 2)
+            self.assertEqual(len(self.posts), 1)
 
     def test_direct_native_target_event_uses_one_live_head_without_collector(self):
         self.api.pr['head'].update(ref='feature', repo={'full_name': REPO})
