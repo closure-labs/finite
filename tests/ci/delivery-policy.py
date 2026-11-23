@@ -51,6 +51,23 @@ class DeliveryPolicy(unittest.TestCase):
                     self.assertRegex(action, r'@[0-9a-f]{40}$')
                     self.assertTrue(action_allowed(action, selected), action)
 
+    def test_selected_third_party_updates_remain_exact_pins(self):
+        selected = json.loads((ROOT / 'automation/github/repository-security.json').read_text())['actions']['selected_actions']
+        pins = {
+            'step-security/harden-runner': ('46b06cea07f9e64621fdf066ba77ac6915163d43',
+                                            '1d88384fd173af6ecb012dfd0264a306b711241a'),
+            'sigstore/cosign-installer': ('6f9f17788090df1f26f669e9d70d6ae9567deba6',
+                                         '756fe2d284c7292c4e9b62c8a28f1e5629c59532'),
+        }
+        for action, refs in pins.items():
+            for ref in refs:
+                with self.subTest(action=action, ref=ref):
+                    self.assertTrue(action_allowed(action + '@' + ref, selected))
+                    self.assertFalse(action_allowed('untrusted/' + action.split('/')[1] + '@' + ref, selected))
+            for ref in ('a' * 40, 'v2', 'main', refs[-1][:12]):
+                with self.subTest(action=action, rejected_ref=ref):
+                    self.assertFalse(action_allowed(action + '@' + ref, selected))
+
     def test_github_owned_actions_require_exact_owner(self):
         selected = {'github_owned_allowed': True, 'patterns_allowed': []}
         sha = '9b3254085494b55a0f7c4c2b3d2d52cc712ce370'
