@@ -86,9 +86,18 @@ class TailscaleSecurity(unittest.TestCase):
             with self.subTest(before=before):
                 self.assertEqual(len(self.exercise(before=before)), 2)
 
-    def test_unreviewed_fedora(self):
-        with self.assertRaisesRegex(ValueError, 'Fedora release'):
-            self.exercise(fedora='45')
+    def test_upstream_fedora_base_selects_dependency_repositories(self):
+        for fedora in ('44', '45', '46'):
+            with self.subTest(fedora=fedora):
+                commands = self.exercise(fedora=fedora)
+                command = next(c for c in commands if c[0] == 'dnf5')
+                self.assertIn('--releasever=' + fedora, command)
+                self.assertTrue(any('--checksig' in c for c in commands))
+
+    def test_invalid_base_release(self):
+        for fedora in ('%{fedora}', '', '45;evil', '045', 'rawhide'):
+            with self.subTest(fedora=fedora), self.assertRaisesRegex(ValueError, 'Fedora release'):
+                self.exercise(fedora=fedora)
 
     def test_unreviewed_installed_architecture(self):
         for before in (OLD.replace('x86_64', 'aarch64'), OLD + '\ntailscale\t0:1.102.5-1\taarch64'):
@@ -138,7 +147,7 @@ class TailscaleSecurity(unittest.TestCase):
             self.exercise(after=NEW.replace('tailscale\t0:1.104.1-1\tx86_64', 'tailscale\t0:1.104.1-1\taarch64'))
 
     def test_strict_policy(self):
-        mutations = [lambda p: p.update(schema=True), lambda p: p.update(fedora=45),
+        mutations = [lambda p: p.update(schema=True), lambda p: p.update(fedora=True),
                      lambda p: p.update(package='kernel-core'), lambda p: p.update(arch='aarch64'),
                      lambda p: p.update(minimumEVR='1:1.104.1-1'), lambda p: p.update(minimumEVR='";evil'),
                      lambda p: p.update(sha256='f' * 63), lambda p: p.update(keyFingerprint='f' * 40),

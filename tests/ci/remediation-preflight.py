@@ -16,6 +16,23 @@ SPEC.loader.exec_module(mod)
 
 
 class Preflight(unittest.TestCase):
+    def test_probe_follows_each_recipes_exact_stable_digest(self):
+        for profile, base in (('finite', 'bluefin'), ('finite-dev', 'bluefin-dx')):
+            with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                (root / 'recipes').mkdir()
+                recipe = root / 'recipes' / (profile + '.yml')
+                source = (ROOT / 'recipes' / (profile + '.yml')).read_text()
+                recipe.write_text(source)
+                self.assertRegex(mod.upstream_image(profile, root),
+                                 '^ghcr.io/ublue-os/' + base + r'@sha256:[0-9a-f]{64}$')
+                for changed in (source.replace('image-version: stable@', 'image-version: stable # '),
+                                source + '\nbase-image: ghcr.io/untrusted/image\n',
+                                source.replace('ghcr.io/ublue-os/' + base, 'ghcr.io/untrusted/image')):
+                    recipe.write_text(changed)
+                    with self.assertRaises(ValueError):
+                        mod.upstream_image(profile, root)
+
     def test_command_is_read_only_and_restricts_repositories(self):
         command = mod.command({'python3', 'sudo'})
         self.assertIn('repoquery', command)
@@ -52,7 +69,7 @@ class Preflight(unittest.TestCase):
 
     def test_hosted_container_boundary_and_metadata_only_execution(self):
         policy = {'fedora': 44, 'sourceImage': 'fixture', 'packages': {'python3': {'minimumEVR': '0:3.14.8-1.fc44'}}}
-        for image in (mod.FEDORA_IMAGE, 'fedora:44'):
+        for image in (mod.upstream_image(), 'fedora:44'):
             calls = []
             def run(args):
                 calls.append(args)
@@ -60,7 +77,8 @@ class Preflight(unittest.TestCase):
                     return json.dumps([{'Config': {'Image': image}, 'State': {'Running': True}}])
                 self.assertEqual(args[:3], ['docker', 'exec', 'finite-fedora-probe'])
                 command = args[3:]
-                if command == ['cat', '/etc/os-release']: return 'ID=fedora\nVERSION_ID="44"'
+                if command == ['cat', '/etc/os-release']: return 'ID=fedora\nVERSION_ID="45"'
+                if command == ['rpm', '--eval', '%{fedora}']: return '45'
                 if command[0] == 'dnf5' and 'repoquery' in command:
                     return 'python3\t3.14.8-1.fc44\tx86_64\tupdates\tpython3-0:3.14.8-1.fc44.x86_64'
                 if command[:2] == ['rpm', '-qa']: return 'gpg-pubkey\t0:38ab71f4-60242b08\t(none)'
@@ -74,12 +92,14 @@ class Preflight(unittest.TestCase):
                      patch.object(mod, 'load_prerequisites', return_value={**policy, 'packages': {}}), patch('builtins.print'):
                     code = mod.main(['--container', 'finite-fedora-probe', '--output', str(output)])
                 report = json.loads(output.read_text())
-                self.assertEqual(code, 0 if image == mod.FEDORA_IMAGE else 2)
+                self.assertEqual(code, 0 if image == mod.upstream_image() else 2)
                 self.assertEqual(report['scannerResolution'], 'unknown')
-                if image != mod.FEDORA_IMAGE:
+                if image != mod.upstream_image():
                     self.assertEqual(len(calls), 1)
                 else:
                     self.assertEqual(report['status'], 'available')  # Missing observational extras do not claim failure/clearance.
+                    self.assertEqual(report['fedora'], 45)
+                    self.assertEqual(report['sourceFedora'], 44)
 
     def test_prerequisites_block_even_when_all_package_floors_are_available(self):
         policy = {'fedora': 44, 'sourceImage': 'fixture', 'packages': {'sudo': {'minimumEVR': '0:1.9.17-10.p2.fc44'}}}

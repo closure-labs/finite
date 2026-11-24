@@ -39,7 +39,7 @@ def load_policy(path):
               'keySHA256', 'keyFingerprint', 'keySource'}
     if (not isinstance(policy, dict) or set(policy) != fields
             or type(policy['schema']) is not int or policy['schema'] != 1
-            or type(policy['fedora']) is not int or policy['fedora'] != 44
+            or type(policy['fedora']) is not int or not 1 <= policy['fedora'] <= 999
             or policy['package'] != 'tailscale' or policy['arch'] != 'x86_64'
             or not isinstance(policy['minimumEVR'], str)
             or not re.fullmatch(r'0:[0-9]+\.[0-9]+\.[0-9]+-[0-9]+', policy['minimumEVR'])
@@ -84,8 +84,7 @@ def remediate(policy, key, runner=None, downloader=None, comparator=None):
     runner = runner or run
     downloader = downloader or download
     comparator = comparator or rpm.compare
-    if runner(['rpm', '--eval', '%{fedora}']) != str(policy['fedora']):
-        raise ValueError('Tailscale remediation requires the reviewed Fedora release')
+    fedora = rpm.base_fedora(runner)
     before = rpm.inventory(runner)
     installed = before.get(policy['package'], [])
     if not installed:
@@ -112,7 +111,7 @@ def remediate(policy, key, runner=None, downloader=None, comparator=None):
         # The isolated database established trust independently of existing keys.
         # DNF independently checks the local payload signature using this key.
         runner(['rpmkeys', '--import', str(key)])
-        runner(['dnf5', '-y', '--refresh', '--disable-repo=*', '--enable-repo=fedora',
+        runner(['dnf5', '-y', '--refresh', '--releasever=' + fedora, '--disable-repo=*', '--enable-repo=fedora',
                 '--enable-repo=updates', '--setopt=gpgcheck=1', '--setopt=*.gpgcheck=1',
                 '--setopt=localpkg_gpgcheck=1', '--setopt=*.skip_if_unavailable=False',
                 '--setopt=install_weak_deps=False', '--exclude=' + ','.join(rpm.PROTECTED),

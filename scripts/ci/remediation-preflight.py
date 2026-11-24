@@ -20,8 +20,17 @@ SECURITY_SPEC.loader.exec_module(security)
 OBSERVE = ('python3-anyio', 'python3-msgpack', 'rclone', 'yq', 'podman', 'buildah', 'skopeo',
            'cosign', 'tailscale', 'gum', 'glow', 'toolbox', 'restic', 'containerd', 'runc', 'ipp-usb', 'uupd', 'curl', 'libcurl', 'libcurl-minimal',
            'httpd', 'httpd-core', 'httpd-tools', 'mod_lua')
-FEDORA_IMAGE = 'registry.fedoraproject.org/fedora@sha256:1ff9eb02e4e2d7fb1175becac7139b2960c4fdcccedce81c86ec25b98ef3124d'
 FORMAT = '%{name}\t%{evr}\t%{arch}\t%{repoid}\t%{full_nevra}\n'
+
+
+def upstream_image(profile='finite', root=ROOT):
+    base = {'finite': 'bluefin', 'finite-dev': 'bluefin-dx'}[profile]
+    recipe = (root / 'recipes' / (profile + '.yml')).read_text()
+    repositories = re.findall(r'^base-image: (\S+)$', recipe, re.M)
+    versions = re.findall(r'^image-version: stable@(sha256:[0-9a-f]{64})$', recipe, re.M)
+    if repositories != ['ghcr.io/ublue-os/' + base] or len(versions) != 1:
+        raise ValueError('Preflight requires the exact stable Bluefin recipe digest')
+    return repositories[0] + '@' + versions[0]
 
 
 def run(args):
@@ -63,7 +72,7 @@ def load_prerequisites(path):
     policy = json.loads(path.read_text())
     if (set(policy) != {'schema', 'fedora', 'sourceImage', 'packages'} or
             type(policy['schema']) is not int or policy['schema'] != 1 or
-            type(policy['fedora']) is not int or policy['fedora'] != 44 or
+            type(policy['fedora']) is not int or not 1 <= policy['fedora'] <= 999 or
             not re.fullmatch(r'ghcr\.io/closure-labs/finite@sha256:[a-f0-9]{64}', policy['sourceImage']) or
             not isinstance(policy['packages'], dict) or not policy['packages']):
         raise ValueError('Invalid scan-readiness prerequisites')
@@ -137,11 +146,18 @@ def probe(policy, prerequisites, runner=None, risk_policy=None):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--output', type=Path)
     parser.add_argument('--policy', type=Path, default=ROOT / 'files/scripts/security-remediation.json')
     parser.add_argument('--prerequisites', type=Path, default=ROOT / 'scripts/ci/remediation-prerequisites.json')
-    parser.add_argument('--container', required=True, help='Already-running pinned Fedora container ID or name')
+    parser.add_argument('--container', help='Already-running pinned Bluefin container ID or name')
+    parser.add_argument('--profile', choices=('finite', 'finite-dev'), default='finite')
+    parser.add_argument('--print-base-image', action='store_true')
     args = parser.parse_args(argv)
+    if args.print_base_image:
+        print(upstream_image(args.profile))
+        return 0
+    if args.output is None or args.container is None:
+        parser.error('--container and --output are required for a repository probe')
     report = {'schema': 1, 'status': 'error', 'scannerResolution': 'unknown'}
     code = 2
     try:
@@ -150,15 +166,17 @@ def main(argv=None):
         if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}', args.container):
             raise ValueError('Invalid Fedora container identifier')
         details = json.loads(run(['docker', 'inspect', args.container]))
-        if (len(details) != 1 or details[0]['Config']['Image'] != FEDORA_IMAGE or
+        image = upstream_image(args.profile)
+        if (len(details) != 1 or details[0]['Config']['Image'] != image or
                 details[0]['State']['Running'] is not True):
-            raise ValueError('Preflight requires the exact pinned running Fedora container')
+            raise ValueError('Preflight requires the exact pinned running Bluefin base')
         runner = lambda command: run(['docker', 'exec', args.container, *command])
         release = dict(line.split('=', 1) for line in runner(['cat', '/etc/os-release']).splitlines()
                        if '=' in line and not line.startswith('#'))
+        fedora = remediation.base_fedora(runner)
         if (shlex.split(release.get('ID', '')) != ['fedora'] or
-                shlex.split(release.get('VERSION_ID', '')) != ['44']):
-            raise ValueError('Preflight requires Fedora 44')
+                shlex.split(release.get('VERSION_ID', '')) != [fedora]):
+            raise ValueError('Preflight requires a consistent upstream Fedora base')
         installed = remediation.inventory(runner)
         policy = remediation.load_policy(args.policy)
         prerequisites = load_prerequisites(args.prerequisites)
@@ -166,7 +184,9 @@ def main(argv=None):
             raise ValueError('Prerequisites do not match the reviewed remediation baseline')
         risk_policy = security.load_policy(ROOT / 'automation/security/image-policy.json')
         report = probe(policy, prerequisites, runner, risk_policy)
-        report['containerImage'] = FEDORA_IMAGE
+        report['sourceFedora'] = policy['fedora']
+        report['fedora'] = int(fedora)
+        report['containerImage'] = image
         report['inventoryPackages'] = sum(len(records) for records in installed.values())
         report['inventoryParser'] = 'passed'
         report['rpmVersion'] = runner(['rpm', '--version'])
