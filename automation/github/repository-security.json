@@ -41,6 +41,25 @@
     "secret_scanning_push_protection": true
   },
   "environments": {
+    "boot-signing": {
+      "can_admins_bypass": false,
+      "protection_rules": [
+        {
+          "type": "branch_policy"
+        }
+      ],
+      "deployment_branch_policy": {
+        "protected_branches": false,
+        "custom_branch_policies": true
+      },
+      "deployment_branches": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "custom_protection_rules": []
+    },
     "package-cleanup": {
       "can_admins_bypass": false,
       "protection_rules": [

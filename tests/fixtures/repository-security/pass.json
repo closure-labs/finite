@@ -33,6 +33,25 @@
     }
   },
   "environments": {
+    "boot-signing": {
+      "can_admins_bypass": false,
+      "custom_protection_rules": [],
+      "deployment_branch_policy": {
+        "custom_branch_policies": true,
+        "protected_branches": false
+      },
+      "deployment_branches": [
+        {
+          "name": "main",
+          "type": "branch"
+        }
+      ],
+      "protection_rules": [
+        {
+          "type": "branch_policy"
+        }
+      ]
+    },
     "image-signing": {
       "can_admins_bypass": false,
       "custom_protection_rules": [],
