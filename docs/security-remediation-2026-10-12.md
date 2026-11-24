@@ -35,6 +35,18 @@ an unsatisfied floor fails the build. Absent optional packages are not installed
 Kernel and boot-stack packages remain outside this transaction. The full native
 image scan remains authoritative for publication.
 
+The selected digest-pinned stable Bluefin image determines the Fedora release.
+The policy's `fedora` field records the historical source of its fixed EVRs;
+it does not pin the operating system. Transactions read `%{fedora}` from that
+base and set DNF's `--releasever` to the same value, using only its Fedora and
+updates repositories. Existing minimum EVRs remain comparison floors, including
+their original distribution suffixes; they do not request exact Fedora 44 RPMs.
+Newer installed versions need no transaction. Tailscale keeps its reviewed
+vendor payload and key checks while resolving dependencies for the base release.
+The metadata probe uses the recipe's exact Bluefin digest and checks agreement
+between `/etc/os-release` and RPM's Fedora macro. A base upgrade still requires
+the complete image build, native scan and publication admission checks.
+
 These floors come from the recorded Fedora vulnerability feed. Live Bodhi pages
 were unavailable during this review. A hosted Fedora 44 metadata probe now
 confirms all 16 floors are available; actual transaction and image validation

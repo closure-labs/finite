@@ -23,6 +23,10 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 
 ### Fixed
 
+- Follow the Fedora release in the selected stable Bluefin base for RPM and
+  Tailscale dependency transactions and remediation metadata probes. Keep
+  recorded package floors, signature checks and boot-stack protections.
+
 - Skip bound unsuccessful historical qualification aggregates during reuse discovery;
   retain exact-attempt success and corrupt-evidence rejection.
 

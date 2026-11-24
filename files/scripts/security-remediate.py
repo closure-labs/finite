@@ -28,7 +28,7 @@ def load_policy(path):
     policy = json.loads(Path(path).read_text())
     if (set(policy) != {'schema', 'fedora', 'sourceImage', 'sourceRun', 'packages'}
             or type(policy['schema']) is not int or policy['schema'] != 1
-            or type(policy['fedora']) is not int or policy['fedora'] != 44
+            or type(policy['fedora']) is not int or not 1 <= policy['fedora'] <= 999
             or type(policy['sourceRun']) is not int or policy['sourceRun'] <= 0
             or not re.fullmatch(r'ghcr\.io/closure-labs/finite@sha256:[a-f0-9]{64}', policy['sourceImage'])
             or not isinstance(policy['packages'], dict) or not policy['packages']):
@@ -38,7 +38,7 @@ def load_policy(path):
                 or not isinstance(entry, dict)
                 or set(entry) != {'minimumEVR', 'advisories', 'source'}
                 or not isinstance(entry['minimumEVR'], str) or not EVR.fullmatch(entry['minimumEVR'])
-                or not entry['minimumEVR'].endswith('.fc44')
+                or not entry['minimumEVR'].endswith(f".fc{policy['fedora']}")
                 or not isinstance(entry['advisories'], list) or not entry['advisories']
                 or any(not isinstance(a, str) or not re.fullmatch(r'(?:CVE-\d{4}-\d+|FEDORA-\d{4}-[a-f0-9]+)', a) for a in entry['advisories'])
                 or not isinstance(entry['source'], str)
@@ -77,9 +77,17 @@ def compare(actual, floor):
     return int(value)
 
 
+def base_fedora(runner=None):
+    # The selected, digest-pinned Bluefin base owns the target release. Policy
+    # `fedora` records the source of its security floors, not an OS release pin.
+    value = (runner or run)(['rpm', '--eval', '%{fedora}'])
+    if not re.fullmatch(r'[1-9][0-9]{0,2}', value):
+        raise ValueError('Upstream base must identify a Fedora release')
+    return value
+
+
 def remediate(policy):
-    if run(['rpm', '--eval', '%{fedora}']) != str(policy['fedora']):
-        raise ValueError('Security remediation requires the reviewed Fedora release')
+    fedora = base_fedora()
     before = inventory()
     targets = {name: entry['minimumEVR'] for name, entry in policy['packages'].items() if name in before}
     outdated = {name: floor for name, floor in targets.items() if any(compare(evr, floor) < 0 for evr, _ in before[name])}
@@ -87,7 +95,7 @@ def remediate(policy):
         print('Reviewed security RPM floors already satisfied; no repository access required')
         return
     # Fedora repositories only, including dependencies; retain upstream boot stack.
-    run(['dnf5', '-y', '--refresh', '--disable-repo=*', '--enable-repo=fedora',
+    run(['dnf5', '-y', '--refresh', '--releasever=' + fedora, '--disable-repo=*', '--enable-repo=fedora',
          '--enable-repo=updates', '--setopt=gpgcheck=1', '--setopt=*.gpgcheck=1',
          '--setopt=*.skip_if_unavailable=False', '--setopt=install_weak_deps=False',
          '--exclude=' + ','.join(PROTECTED), 'upgrade', '--no-allow-downgrade',

@@ -61,11 +61,12 @@ class Remediation(unittest.TestCase):
             'python3-pillow', 'libsoup3',
         })
 
-    def exercise(self, after=None, current='0:3.14.7-1.fc44', failure=False):
+    def exercise(self, after=None, current='0:3.14.7-1.fc44', failure=False, fedora='44'):
+        current = current.replace('.fc44', '.fc' + fedora)
         before = {'python3': [(current, 'x86_64')], 'kernel-core': [('0:7.2.5-200.fc44', 'x86_64')]}
         if after is None:
             after = copy.deepcopy(before)
-            after['python3'] = [('0:3.14.10-1.fc44', 'x86_64')]
+            after['python3'] = [('0:3.14.10-1.fc' + fedora, 'x86_64')]
         commands = []
         def run(args):
             commands.append(args)
@@ -74,7 +75,7 @@ class Remediation(unittest.TestCase):
                     raise subprocess.CalledProcessError(1, args)
                 return ''
             self.assertEqual(args, ['rpm', '--eval', '%{fedora}'])
-            return '44'
+            return fedora
         with patch.object(mod, 'run', run), patch.object(mod, 'inventory', side_effect=[before, after]), patch.object(mod, 'compare', fixture_compare):
             mod.remediate(POLICY)
         return commands
@@ -236,9 +237,21 @@ class Remediation(unittest.TestCase):
         with patch.object(mod, 'run', return_value='unexpected'), self.assertRaises(ValueError):
             mod.compare('0:1-1.fc44', '0:2-1.fc44')
 
-    def test_fedora_drift_fails(self):
-        with patch.object(mod, 'run', return_value='45'), self.assertRaises(ValueError):
-            mod.remediate(POLICY)
+    def test_upstream_base_selects_repository_release_without_rewriting_security_floors(self):
+        for fedora in ('44', '45', '46'):
+            with self.subTest(fedora=fedora):
+                command = self.exercise(fedora=fedora)[-1]
+                self.assertIn('--releasever=' + fedora, command)
+                self.assertIn('python3 >= ' + POLICY['packages']['python3']['minimumEVR'], command)
+                self.assertEqual(len(self.exercise(current='0:3.15.0-1.fc44', fedora=fedora)), 1)
+
+    def test_invalid_base_release_fails_before_inventory_or_transaction(self):
+        for fedora in ('%{fedora}', '', '45;evil', '45\n46', '045', 'rawhide'):
+            with self.subTest(fedora=fedora), patch.object(mod, 'run', return_value=fedora) as run, \
+                    patch.object(mod, 'inventory') as inventory, self.assertRaises(ValueError):
+                mod.remediate(POLICY)
+            inventory.assert_not_called()
+            self.assertEqual(run.call_count, 1)
 
     def test_native_rpm_comparison_if_available(self):
         import shutil
