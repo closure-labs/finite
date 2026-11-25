@@ -80,6 +80,7 @@ def stage(engine, output, archive=None, memory_mib=2048):
             command += ['--root', os.environ['FINITE_PODMAN_ROOT'], '--runroot', os.environ['FINITE_PODMAN_RUNROOT'],
                         '--storage-driver', 'overlay']
         subprocess.run([*command, 'build', '--memory', str(memory_mib) + 'm', '--memory-swap', str(memory_mib) + 'm',
+                        '--file', str(work / 'Containerfile'),
                         '--build-arg', 'BUILD_BASE=' + pin['buildBase'], '--tag', tag, str(work)], check=True)
         container = subprocess.check_output([*command, 'create', tag, '/unused'], text=True).strip()
         try:
