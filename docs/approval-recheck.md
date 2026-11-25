@@ -1,9 +1,9 @@
 # Recheck a pull-request approval
 
 Approvals have no ten-minute expiry. Cached authority observations do: the
-periodic controller revalidates observations aged ten minutes or more so an
+daily controller run revalidates observations aged ten minutes or more so an
 unchanged review cannot indefinitely hide team or permission loss. This is a
-scheduled backstop, not instantaneous revocation; execution admission and new
+scheduled backstop (up to a day late), not instantaneous revocation; execution admission and new
 queue authority checks still re-read current eligibility. A review must cover the exact current PR
 head and come from a currently eligible Super Admin. Pushing a new head still
 requires a new review. Dismissals, withdrawal comments, changes requested and
@@ -42,7 +42,8 @@ intentional retry after correction.
 
 ## Automatic recovery
 
-A periodic metadata probe runs at minutes 7, 22, 37 and 52. It reads bounded
+A periodic metadata probe runs once a day at 06:07 UTC; review and workflow-run
+events still trigger checks immediately. It reads bounded
 native open-PR, review, current queue-reference and App-origin check inventories.
 Only missing or stale review checks become worker targets. Discovery needs no
 Nix setup or App credentials; unchanged checks produce an empty matrix and no

@@ -23,7 +23,7 @@ October 27 01:30:00 UTC, with the end excluded. It counts each selected run's fu
 native job lifetime, rather than clipping execution at the time-window boundary.
 The complete inventory was checked again after collection and remained stable.
 
-The [compressed census](ci-recent-census-2026-10-27.json.gz) retains 159 runs and
+The [compressed census](../archive/evidence/ci-recent-census-2026-10-27.json.gz) retains 159 runs and
 377 native job observations. Of those jobs, 207 used runner time; skipped jobs
 retain zero occupancy. Native and grouped occupancy both equal 36,246 seconds,
 with zero unknown job durations. The runs concluded with 96 successes, 61 skips

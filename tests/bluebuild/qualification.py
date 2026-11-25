@@ -1065,46 +1065,34 @@ class ExecutionGate(unittest.TestCase):
     def setUp(self):
         self.revision = 'a' * 40
         self.env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
-            'GITHUB_SHA': self.revision, 'GITHUB_REF': 'refs/heads/ci/qualification-benchmark',
-            'GITHUB_EVENT_NAME': 'workflow_dispatch', 'FINITE_VALIDATION_ONLY': 'true', 'PREVIOUS_DIGEST': 'sha256:'+'e'*64,
-            'GITHUB_WORKFLOW_REF': 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/ci/qualification-benchmark'}
+            'GITHUB_SHA': self.revision, 'GITHUB_REF': 'refs/heads/main', 'GITHUB_EVENT_NAME': 'push'}
 
-    def test_only_explicit_manual_branch_benchmark_authorizes_diagnostics(self):
-        with patch.object(preflight.production, 'require_current') as main:
+    def test_main_path_retains_existing_eligibility_rule(self):
+        with patch.object(preflight.production, 'require_current', return_value=self.revision) as main:
             result = preflight.require_eligible(self.revision, self.env)
-            self.assertEqual(result, {'validationOnly': True, 'revision': self.revision})
-            main.assert_not_called()
+            self.assertEqual(result, {'validationOnly': False, 'revision': self.revision, 'main': self.revision})
+            main.assert_called_once_with(self.revision)
 
-    def test_main_pr_fork_other_workflow_and_wrong_checkout_are_rejected(self):
-        mutations = [('GITHUB_REF', 'refs/heads/main'), ('GITHUB_REF', 'refs/tags/test'),
-            ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_EVENT_NAME', 'push'),
-            ('GITHUB_REPOSITORY', 'other/finite'), ('GITHUB_ACTIONS', 'false'),
-            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/build.yml@refs/heads/ci/qualification-benchmark'),
-            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/main'),
-            ('GITHUB_SHA', 'b' * 40), ('FINITE_VALIDATION_ONLY', 'yes')]
+    def test_branch_fork_and_wrong_checkout_are_rejected(self):
+        mutations = [('GITHUB_REF', 'refs/heads/ci/qualification-benchmark'), ('GITHUB_REF', 'refs/tags/test'),
+            ('GITHUB_REPOSITORY', 'other/finite'), ('GITHUB_ACTIONS', 'false'), ('GITHUB_SHA', 'b' * 40)]
         with patch.object(preflight.production, 'require_current') as main:
             for key, value in mutations:
                 with self.subTest(key=key, value=value), self.assertRaises(ValueError):
                     preflight.require_eligible(self.revision, {**self.env, key: value})
             main.assert_not_called()
 
-    def test_default_main_path_retains_existing_eligibility_rule_and_branch_cannot_opt_out(self):
-        default = {**self.env, 'FINITE_VALIDATION_ONLY': 'false'}
-        with patch.object(preflight.production, 'require_current', return_value=self.revision) as main:
-            with self.assertRaisesRegex(ValueError, 'Production qualification'):
-                preflight.require_eligible(self.revision, default)
-            main.assert_not_called()
-            default['GITHUB_REF'] = 'refs/heads/main'
-            result = preflight.require_eligible(self.revision, default)
-            self.assertFalse(result['validationOnly'])
-            main.assert_called_once_with(self.revision)
-
-    def test_compression_is_manual_diagnostic_only_and_unknown_modes_fail_closed(self):
-        with patch.object(preflight.production,'require_current') as main:
-            self.assertTrue(preflight.require_eligible(self.revision,{**self.env,'FINITE_INSTALLER_COMPRESSION':'zstd'})['validationOnly'])
-            for changes in ({'FINITE_VALIDATION_ONLY':'false'}, {'GITHUB_REF':'refs/heads/main'}, {'GITHUB_EVENT_NAME':'pull_request'}, {'GITHUB_WORKFLOW_REF':'closure-labs/finite/.github/workflows/build.yml@refs/heads/ci/qualification-benchmark'}, {'FINITE_INSTALLER_COMPRESSION':'lz4'}, {'PREVIOUS_DIGEST':''}, {'PREVIOUS_DIGEST':'mutable:tag'}):
-                with self.subTest(changes=changes),self.assertRaises(ValueError):
-                    preflight.require_eligible(self.revision,{**self.env,'FINITE_INSTALLER_COMPRESSION':'zstd',**changes})
+    def test_archived_diagnostics_and_experiments_fail_closed_even_on_main(self):
+        benchmark = {'FINITE_VALIDATION_ONLY': 'true', 'GITHUB_REF': 'refs/heads/ci/qualification-benchmark',
+            'GITHUB_EVENT_NAME': 'workflow_dispatch', 'PREVIOUS_DIGEST': 'sha256:' + 'e' * 64,
+            'GITHUB_WORKFLOW_REF': 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/ci/qualification-benchmark'}
+        with patch.object(preflight.production, 'require_current') as main:
+            for changes in ({'FINITE_VALIDATION_ONLY': 'true'}, {'FINITE_VALIDATION_ONLY': 'yes'},
+                            {'FINITE_INSTALLER_COMPRESSION': 'zstd'}, {'FINITE_INSTALLER_COMPRESSION': 'lz4'},
+                            {'FINITE_INSTALLER_BENCHMARK': '{}'}, benchmark,
+                            {**benchmark, 'FINITE_INSTALLER_COMPRESSION': 'zstd'}):
+                with self.subTest(changes=changes), self.assertRaises(ValueError):
+                    preflight.require_eligible(self.revision, {**self.env, **changes})
             main.assert_not_called()
 
     def test_diagnostic_iso_size_is_measured_without_changing_production_binding(self):
@@ -1119,18 +1107,12 @@ class ExecutionGate(unittest.TestCase):
                 self.assertEqual(diagnostic['sizeBytes'],9)
                 self.assertEqual({k:v for k,v in diagnostic.items() if k!='sizeBytes'},baseline)
 
-    def test_compression_variants_have_different_context_identities(self):
-        original_sha=q.sha
-        def digest(path):
-            return original_sha(path) if Path(path).name=='lorax-zstd.conf' else 'a'*64
-        with patch.object(q,'validate_certificate'),patch.object(q,'source_inputs',return_value={}),patch.object(q,'sha',side_effect=digest),patch.object(q.vm_tools,'identity',return_value={'schema':1}),patch.dict(os.environ,FINITE_VM_TOOLS_MANIFEST='fixture',FINITE_INSTALLER_COMPRESSION='default'):
-            baseline=q.context()
-            self.assertNotIn('installerCompression',baseline)
-            with patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION='zstd'):
-                diagnostic=q.context()
-            self.assertNotEqual(q.identity(baseline),q.identity(diagnostic))
-            self.assertEqual(diagnostic['installerCompression']['presetSha256'],original_sha(ROOT/'files/installer/lorax-zstd.conf'))
-            with patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION='unknown'),self.assertRaises(ValueError):q.context()
+    def test_only_the_default_installer_compression_has_a_context(self):
+        with patch.object(q,'validate_certificate'),patch.object(q,'source_inputs',return_value={}),patch.object(q,'sha',return_value='a'*64),patch.object(q.vm_tools,'identity',return_value={'schema':1}),patch.dict(os.environ,FINITE_VM_TOOLS_MANIFEST='fixture',FINITE_INSTALLER_COMPRESSION='default'):
+            self.assertNotIn('installerCompression',q.context())
+            for compression in ('zstd','unknown'):
+                with self.subTest(compression=compression),patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION=compression),self.assertRaises(ValueError):
+                    q.context()
 
     def test_functional_job_is_required_and_preserves_native_producer_contract(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
@@ -1146,40 +1128,34 @@ class ExecutionGate(unittest.TestCase):
         call = workflow.get('on', workflow.get(True))['workflow_call']
         self.assertEqual(call['outputs']['evidence']['value'], '${{ jobs.functional.outputs.evidence }}')
 
-    def test_workflow_diagnostic_artifacts_and_cache_gates_are_distinct(self):
+    def test_workflow_is_production_only_with_distinct_cache_gates(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
         call = workflow.get('on', workflow.get(True))['workflow_call']
-        self.assertFalse(call['inputs']['validation_only']['default'])
-        self.assertEqual(call['inputs']['installer_compression']['default'],'default')
-        for name in ('prepare','phase','functional'):
-            self.assertEqual(workflow['jobs'][name]['env']['FINITE_INSTALLER_COMPRESSION'],'${{ inputs.installer_compression }}')
+        for archived in ('validation_only', 'installer_benchmark', 'installer_compression'):
+            self.assertNotIn(archived, call['inputs'])
+        text = (ROOT / '.github/workflows/qualification.yml').read_text()
+        for archived in ('FINITE_VALIDATION_ONLY', 'FINITE_INSTALLER_BENCHMARK', 'FINITE_INSTALLER_COMPRESSION',
+                         'benchmark-controls.py', 'benchmark-image-tools.yml', 'qualification-diagnostic'):
+            self.assertNotIn(archived, text)
         for name in ('prepare','functional'):
             setup = next(step for step in workflow['jobs'][name]['steps'] if step.get('uses') == '$/.github/actions/setup-nix')
-            self.assertEqual(setup['if'], '${{ !inputs.validation_only }}')
-        phase_steps = workflow['jobs']['phase']['steps']
-        gate_index = next(i for i,step in enumerate(phase_steps) if step.get('id') == 'benchmark')
-        setup_index = next(i for i,step in enumerate(phase_steps) if step.get('uses') == '$/.github/actions/setup-nix')
-        self.assertLess(gate_index,setup_index)
+            self.assertNotIn('if', setup)
         retention = next(step for step in workflow['jobs']['functional']['steps'] if step.get('name') == 'Save qualification evidence')
-        self.assertEqual(retention['with']['retention-days'], '${{ inputs.validation_only && 14 || 90 }}')
+        self.assertEqual(retention['with']['retention-days'], 90)
         prepare = workflow['jobs']['prepare']
-        self.assertIn('benchmark-image-tools.yml', prepare['if'])
+        self.assertIn("github.ref == 'refs/heads/main'", prepare['if'])
         reuse = next(step for step in prepare['steps'] if step.get('id') == 'reuse')
-        self.assertIn('!inputs.validation_only', reuse['if'])
         self.assertIn("env.FINITE_QUALIFICATION_REUSE == 'true'", reuse['if'])
         self.assertIn('!inputs.force_qualification', reuse['if'])
         phase = workflow['jobs']['phase']
-        # Only explicit controlled trials may stop sibling VM phases early.
-        self.assertEqual(phase['strategy']['fail-fast'], "${{ inputs.validation_only && inputs.installer_benchmark != '' }}")
+        self.assertIs(phase['strategy']['fail-fast'], False)
         preserved = next(step for step in phase['steps'] if step.get('name') == 'Preserve pristine qualified candidate ISO for the pilot')
-        self.assertIn('!inputs.validation_only', preserved['if'])
         self.assertIn("steps.acceptance.outputs.functional_passed == 'true'", preserved['if'])
         self.assertIn("contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))", preserved['if'])
-        for job, prefix in [('phase', 'qualification-diagnostic-phase'), ('functional', 'qualification-diagnostic')]:
+        for job, prefix in [('phase', 'qualification-phase-'), ('functional', 'qualification-')]:
             upload = next(step for step in workflow['jobs'][job]['steps']
                           if step.get('name') == ('Save phase evidence' if job == 'phase' else 'Save qualification evidence'))
-            self.assertIn(prefix, upload['with']['name'])
-            self.assertIn('inputs.validation_only', upload['with']['name'])
+            self.assertTrue(upload['with']['name'].startswith(prefix))
 
 
 class IsoScope(unittest.TestCase):

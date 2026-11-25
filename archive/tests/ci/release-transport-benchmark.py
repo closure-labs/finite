@@ -89,39 +89,6 @@ class Benchmark(unittest.TestCase):
         self.assertNotIn('failed-or-inconsistent-samples', report['gateFailures'])
         self.assertIn('incomplete-sample-set', report['gateFailures'])
 
-    def test_diagnostic_matches_publishers_final_approved_asset_hash_pass(self):
-        spec = importlib.util.spec_from_file_location('benchmark_transport', ROOT / 'scripts/ci/benchmark-release-transport.py')
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        from release_set import prepare
-        payload = {'version': '1.2.3', 'sourceRevision': 'a' * 40, 'channels': {}}
-        evidence = {}
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
-            for lane in ('finite', 'finite-dev'):
-                directory = root / ('release-' + lane)
-                directory.mkdir()
-                (directory / 'image.iso').write_bytes(lane.encode())
-                digest = hashlib.sha256(lane.encode()).hexdigest()
-                payload['channels'][lane] = {'tag': lane + '-1.2.3', 'imageDigest': 'sha256:' + digest,
-                                             'isoSha256': digest, 'assets': {'image.iso': digest}}
-                evidence[lane] = {'status': 'qualified', 'sourceRevision': 'a' * 40,
-                                  'imageDigest': 'sha256:' + digest, 'isoSha256': digest}
-            document = prepare(payload, evidence)
-            module.validate_products(root, document)
-            (root / 'release-finite/image.iso').write_bytes(b'altered')
-            with self.assertRaisesRegex(ValueError, 'approved asset hash mismatch'):
-                module.validate_products(root, document)
-
-    def test_workflow_runs_all_pairs_without_signing_or_decision_mutation(self):
-        data = yaml.safe_load((ROOT / '.github/workflows/benchmark-release-transport.yml').read_text())
-        rows = data['jobs']['consumer']['strategy']['matrix']['include']
-        self.assertEqual(len(rows), 12)
-        self.assertEqual(data['jobs']['producer']['permissions'], {'contents': 'read', 'actions': 'read', 'packages': 'write'})
-        text = (ROOT / '.github/workflows/benchmark-release-transport.yml').read_text()
-        self.assertNotIn('COSIGN_PRIVATE_KEY', text)
-        self.assertNotIn('decision-controller.py propose', text)
-
 
 class NativeCollection(unittest.TestCase):
     def setUp(self):

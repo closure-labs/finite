@@ -49,30 +49,19 @@ jobs:
           job-profile: controller
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
-      - name: Resolve declared review App credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite release authority verification' --format gha
       - name: Create repository-scoped authority token
         id: initial-authority-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-administration: read
-          permission-members: read
-          permission-actions: read
-          permission-contents: read
-          permission-pull-requests: read
-      - name: Clear App key before evidence processing
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite release authority verification
+          permissions: |
+            administration: read
+            members: read
+            actions: read
+            contents: read
+            pull-requests: read
       - name: Record publisher correlation before expensive preparation
         env:
           GH_TOKEN: ${{ steps.initial-authority-token.outputs.token }}
@@ -100,30 +89,19 @@ jobs:
           trap 'oras logout ghcr.io >/dev/null 2>&1 || true' EXIT
           python3 scripts/ci/execute-release-set.py stage --proposal-hash "$PROPOSAL_HASH" --packet-ref "$PACKET_REF"
           PREPARE
-      - name: Resolve fresh review App credentials after product transfers
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite release authority after product transfers' --format gha
       - name: Create fresh repository-scoped authority token
         id: authority-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-administration: read
-          permission-members: read
-          permission-actions: read
-          permission-contents: read
-          permission-pull-requests: read
-      - name: Clear fresh App key before scanning
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite release authority after product transfers
+          permissions: |
+            administration: read
+            members: read
+            actions: read
+            contents: read
+            pull-requests: read
       - name: Reauthenticate staged products and rescan both images
         id: prepare
         env:
@@ -185,38 +163,29 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
-        with:
-          skip-if-available: "80G"
+      - name: Free disk space without third-party code
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h
       - uses: $/.github/actions/setup-nix
         with:
           job-profile: controller
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
-      - name: Resolve declared review App credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite release authority verification' --format gha
       - name: Create repository-scoped authority token
         id: initial-authority-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-administration: read
-          permission-members: read
-          permission-actions: read
-          permission-contents: read
-          permission-pull-requests: read
-      - name: Clear App key before evidence processing
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite release authority verification
+          permissions: |
+            administration: read
+            members: read
+            actions: read
+            contents: read
+            pull-requests: read
       - name: Download authenticated exact producing attempt
         env:
           GH_TOKEN: ${{ steps.initial-authority-token.outputs.token }}
@@ -231,30 +200,19 @@ jobs:
           # Expand the executable and output path inside the realized tool shell.
           # shellcheck disable=SC2016
           nix develop --file lib/ci-tools.nix release --command bash -c 'dirname "$(command -v cosign)" >>"$GITHUB_PATH"'
-      - name: Resolve fresh review App credentials after artifact transfer
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite release authority verification' --format gha
       - name: Create fresh repository-scoped authority token
         id: authority-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-administration: read
-          permission-members: read
-          permission-actions: read
-          permission-contents: read
-          permission-pull-requests: read
-      - name: Clear fresh App key before authority checks
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite release authority verification
+          permissions: |
+            administration: read
+            members: read
+            actions: read
+            contents: read
+            pull-requests: read
       - name: Revalidate current human release and security authority before keys
         env:
           GH_TOKEN: ${{ steps.authority-token.outputs.token }}
@@ -312,30 +270,19 @@ jobs:
           job-profile: controller
       - name: Realize pinned release tools before authority credentials
         run: nix develop --file lib/ci-tools.nix release --command true
-      - name: Resolve declared review App credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite release authority verification' --format gha
       - name: Create repository-scoped authority token
         id: initial-authority-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-administration: read
-          permission-members: read
-          permission-actions: read
-          permission-contents: read
-          permission-pull-requests: read
-      - name: Clear App key before evidence processing
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite release authority verification
+          permissions: |
+            administration: read
+            members: read
+            actions: read
+            contents: read
+            pull-requests: read
       - name: Download authenticated signed producing attempt
         env:
           GH_TOKEN: ${{ steps.initial-authority-token.outputs.token }}
@@ -357,30 +304,19 @@ jobs:
           # Preserve the realized release tools without evaluating Nix with credentials.
           # shellcheck disable=SC2016
           nix develop --file lib/ci-tools.nix release --command bash -c 'tr ":" "\n" <<<"$PATH" >>"$GITHUB_PATH"'
-      - name: Resolve fresh review App credentials after artifact transfer
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite release authority verification' --format gha
       - name: Create fresh repository-scoped authority token
         id: authority-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-administration: read
-          permission-members: read
-          permission-actions: read
-          permission-contents: read
-          permission-pull-requests: read
-      - name: Clear fresh App key before authority checks
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite release authority verification
+          permissions: |
+            administration: read
+            members: read
+            actions: read
+            contents: read
+            pull-requests: read
       - name: Revalidate authority and stage both signed releases
         env:
           GH_TOKEN: ${{ steps.authority-token.outputs.token }}
@@ -389,30 +325,19 @@ jobs:
         run: >-
           finite-ci-secrets-run release-set-publishing --
           python3 scripts/ci/execute-release-set.py stage-publication --proposal-hash "$PROPOSAL_HASH"
-      - name: Resolve fresh review App credentials after asset staging
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite release authority verification' --format gha
       - name: Create fresh repository-scoped authority token
         id: commit-authority-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-administration: read
-          permission-members: read
-          permission-actions: read
-          permission-contents: read
-          permission-pull-requests: read
-      - name: Clear fresh App key before authority checks
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite release authority verification
+          permissions: |
+            administration: read
+            members: read
+            actions: read
+            contents: read
+            pull-requests: read
       - name: Revalidate current authority and commit both publications
         env:
           GH_TOKEN: ${{ steps.commit-authority-token.outputs.token }}

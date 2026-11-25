@@ -1,5 +1,12 @@
 # ISO runtime compression diagnostic, October 24, 2026 UTC
 
+**Archived (November 2026).** The experiment was retired without a successful
+comparison. Its helpers (`installer-compression.py`, `installer-provenance.py`),
+the `lorax-zstd.conf` preset, the tests and the manual benchmark workflow now
+live under `archive/`. Qualification preflight, installer preparation and the
+qualification context reject any non-default compression or validation-only
+request. The notes below describe the experiment as it was.
+
 Keep this prototype draft until hosted correctness and matched complete-job
 cost gates pass. No successful compression comparison has run and no speedup is claimed.
 Production retains the pinned installer's existing configuration.
@@ -9,7 +16,7 @@ Production retains the pinned installer's existing configuration.
 The [#247 protected queue](https://github.com/closure-labs/finite/actions/runs/40061504970)
 passed both profiles using Foundation v0.3.3. Its native receipts and bounded
 job-log marker intervals are retained in the
-[evidence snapshot](ci-iso-compression-diagnostic-2026-10-24.json.gz).
+[evidence snapshot](../archive/evidence/ci-iso-compression-diagnostic-2026-10-24.json.gz).
 
 | Profile | Native build job, seconds | ISO construction, seconds | Runtime-image interval, seconds |
 | --- | ---: | ---: | ---: |
@@ -76,7 +83,7 @@ Both profiles' first pilots stopped during installer preparation, before ISO
 construction or VM installation. The [standard run](https://github.com/closure-labs/finite/actions/runs/40072263880)
 cost 150 runner seconds and the [developer run](https://github.com/closure-labs/finite/actions/runs/40072341745)
 cost 178, including setup, failure retention and cleanup. The
-[retained failed-work record](ci-iso-compression-first-pilot-2026-10-24.json.gz)
+[retained failed-work record](../archive/evidence/ci-iso-compression-first-pilot-2026-10-24.json.gz)
 binds the exact producer inputs, native jobs and partial timing receipts.
 These 328 seconds remain diagnostic cost and are not successful performance
 samples.

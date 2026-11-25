@@ -1,0 +1,84 @@
+name: Mint a short-lived review App token
+description: >-
+  Resolve the declared review App credentials through SecretSpec, mint a
+  repository-scoped installation token with exactly the requested
+  permissions, and clear the App key from later steps.
+inputs:
+  client-id:
+    description: Review App client ID (vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT)
+    required: true
+  private-key:
+    description: Review App private key (secrets.DECIDER_KEY)
+    required: true
+  reason:
+    description: Audit reason recorded by SecretSpec for this credential use
+    required: true
+  permissions:
+    description: >-
+      Newline-separated "name: level" pairs, for example "contents: read".
+      Supported names are actions, administration, checks, contents, issues,
+      members and pull-requests; levels are read or write.
+    required: true
+outputs:
+  token:
+    description: Installation access token
+    value: ${{ steps.token.outputs.token }}
+  app-slug:
+    description: GitHub App slug
+    value: ${{ steps.token.outputs.app-slug }}
+runs:
+  using: composite
+  steps:
+    - name: Validate requested App permissions
+      id: permissions
+      shell: bash
+      env:
+        PERMISSIONS: ${{ inputs.permissions }}
+      run: |
+        python3 - <<'PY_PERMISSIONS'
+        import os
+        allowed = {'actions', 'administration', 'checks', 'contents', 'issues', 'members', 'pull-requests'}
+        requested = {}
+        for line in os.environ['PERMISSIONS'].splitlines():
+            if not line.strip():
+                continue
+            name, separator, level = (part.strip() for part in line.partition(':'))
+            if not separator or name not in allowed or level not in ('read', 'write') or name in requested:
+                raise SystemExit('Invalid review App permission request: ' + line.strip())
+            requested[name] = level
+        if not requested:
+            raise SystemExit('Review App token requires at least one permission')
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+            for name in sorted(allowed):
+                print(f'{name}={requested.get(name, "")}', file=output)
+        PY_PERMISSIONS
+    - name: Resolve declared review App credentials
+      shell: bash
+      env:
+        FINITE_REVIEW_CLIENT_ID: ${{ inputs.client-id }}
+        FINITE_REVIEW_PRIVATE_KEY: ${{ inputs.private-key }}
+        REASON: ${{ inputs.reason }}
+      run: >-
+        finite-ci-secrets-run review-app --
+        secretspec export --file secretspec.toml --profile review-app --provider github-actions
+        --scope review-app --reason "$REASON" --format gha
+    - name: Generate repository-scoped review token
+      id: token
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
+        private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+        repositories: ${{ github.event.repository.name }}
+        permission-actions: ${{ steps.permissions.outputs.actions }}
+        permission-administration: ${{ steps.permissions.outputs.administration }}
+        permission-checks: ${{ steps.permissions.outputs.checks }}
+        permission-contents: ${{ steps.permissions.outputs.contents }}
+        permission-issues: ${{ steps.permissions.outputs.issues }}
+        permission-members: ${{ steps.permissions.outputs.members }}
+        permission-pull-requests: ${{ steps.permissions.outputs.pull-requests }}
+    - name: Clear App private credentials
+      if: always()
+      shell: bash
+      run: | # zizmor: ignore[github-env]
+        printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"

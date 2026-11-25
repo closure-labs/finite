@@ -88,7 +88,7 @@ remain required.
 | Source resolver/cache or exact-source proof reuse | Requires measurement | Identify a validated avoidable component before changing required source execution. |
 | Installer/runtime and product transport alternatives | Deferred | Retain the stopped samples, failed transport gate, default compression and production ZIP verification. |
 
-The [frozen evidence](ci-immutable-documents-2026-10-25.json.gz) has SHA-256
+The [frozen evidence](../archive/evidence/ci-immutable-documents-2026-10-25.json.gz) has SHA-256
 `5fd2243f9fc9fbbc059b10fd30599a144034f2ed5d147ae048b3c402a7df3049`.
 Historical reports and the October 30 endpoint remain separate. No local Nix,
 image or VM run was used. Automatic Cachix writing and Grype database transport

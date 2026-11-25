@@ -3,7 +3,7 @@
 The [approved-source scheduled run](https://github.com/closure-labs/finite/actions/runs/40521333174)
 completed successfully at source `3125b26c6087b9394f8ff42a3120fd03a596289e`.
 Both profiles passed fresh-install and upgrade/rollback phases, independent
-aggregates and promotions. The [compressed evidence](ci-foundation-production-2026-10-27.json.gz)
+aggregates and promotions. The [compressed evidence](../archive/evidence/ci-foundation-production-2026-10-27.json.gz)
 retains native job accounting, bounded phase receipts and verified qualification/
 promotion archive digests. Both acceptance records confirm Secure Boot,
 encrypted root and the exact source/candidate binding. This closes the ordinary

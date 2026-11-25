@@ -164,7 +164,7 @@ unchanged. This change is stacked on #272 for one combined protected validation.
 
 ## Fork-origin lookup evidence
 
-A [read-only native snapshot](ci-fork-origin-2026-10-26.json) records an open
+A [read-only native snapshot](../archive/evidence/ci-fork-origin-2026-10-26.json) records an open
 [public fork PR](https://github.com/cli/cli/pull/14816) whose
 [workflow run](https://github.com/cli/cli/actions/runs/40157926064) has an empty PR
 association list. Its commit-to-PR lookup is also empty at the recorded head.

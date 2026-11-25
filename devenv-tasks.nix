@@ -40,13 +40,6 @@ in {
         nix shell --file "$DEVENV_ROOT/lib/ci-tools.nix" ci-secrets-options \
           -c finite-ci-secrets-options
     '';
-    "ci:cache:benchmark".exec = ''
-      # Summarize downloaded hosted measurements; do not turn local disk/cache
-      # state into a purported hosted baseline or invoke a remote workflow.
-      ${cleanEnvironment} python3 "$DEVENV_ROOT/scripts/ci/benchmark-ci-cache.py" summarize \
-        "''${FINITE_CACHE_BENCHMARK_DIR:-$DEVENV_ROOT/.bluebuild/cache-benchmarks}" \
-        "''${FINITE_CACHE_BENCHMARK_SUMMARY:-$DEVENV_ROOT/.bluebuild/cache-benchmark-summary.md}"
-    '';
     "ci:cache:writer:prepare".exec = ''
       ${runTools "ci-check" "finite-ci-check" "--no-write-lock-file"}
     '';

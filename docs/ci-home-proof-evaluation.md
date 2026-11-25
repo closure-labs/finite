@@ -3,7 +3,7 @@
 Retain serial evaluation. The completed hosted trial produced identical public
 aggregate derivations, check inventories and all twelve Home Manager proof
 paths in both strategies, but paired evaluation failed its performance gate.
-The [retained record](ci-home-proof-evaluation-2026-10-24.json.gz) includes the
+The [retained record](../archive/evidence/ci-home-proof-evaluation-2026-10-24.json.gz) includes the
 complete comparison, per-sample memory/timing data and failed setup attempts.
 
 ## Matched comparison

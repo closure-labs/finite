@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, edited]
     branches: [main]
   schedule:
-    - cron: '7,22,37,52 * * * *'
+    - cron: '7 6 * * *'
   workflow_dispatch:
     inputs:
       pull_request:
@@ -89,31 +89,20 @@ jobs:
       - uses: $/.github/actions/setup-nix
         with:
           job-profile: controller
-      - name: Resolve declared review App credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite human decision authority App' --format gha
       - name: Generate short-lived repository-scoped review token
         id: review-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: read
-          permission-pull-requests: read
-          permission-checks: write
-          permission-actions: read
-          permission-administration: read
-          permission-members: read
-      - name: Clear App private credentials
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite human decision authority App
+          permissions: |
+            contents: read
+            pull-requests: read
+            checks: write
+            actions: read
+            administration: read
+            members: read
       - name: Authenticate review and publish App-origin authority check
         env:
           GH_TOKEN: ${{ steps.review-token.outputs.token }}

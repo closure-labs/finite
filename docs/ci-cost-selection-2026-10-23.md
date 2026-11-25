@@ -5,7 +5,7 @@ The timing-reader correction in #242 passed the protected queue and merged at
 [queue run](https://github.com/closure-labs/finite/actions/runs/40038537380)
 selected image validation for both profiles, although its executable changes
 only read native metadata and retained receipts. No VM round was selected.
-The [companion record](ci-cost-selection-2026-10-23.json.gz) retains the native
+The [companion record](../archive/evidence/ci-cost-selection-2026-10-23.json.gz) retains the native
 job identities, timestamps and authenticated partial transport samples.
 
 | Queue image job | Job ID | Runner seconds |

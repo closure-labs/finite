@@ -5,7 +5,7 @@ The retained [baseline observation](ci-workflow-costs-2026-10-23.md) contains
 October 9, 03:55 UTC through October 23, 03:55 UTC. This report reclassifies
 the same observations; it does not recollect them. The original gzip remains
 unchanged at SHA-256 `36124a090ffdd37172c2ff28a516caa23b7bd5acdbb7f9b341e42d796f8fed32`.
-The [restatement record](ci-cost-roles-2026-10-24.json.gz) preserves exact
+The [restatement record](../archive/evidence/ci-cost-roles-2026-10-24.json.gz) preserves exact
 workflow/event/profile/source-revision cohorts, classification hashes and
 the before/after conservation check.
 

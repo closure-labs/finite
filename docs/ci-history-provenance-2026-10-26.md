@@ -13,7 +13,7 @@ across the two profiles' authority checks. Nested stages are already inside
 the job. There are eight security records, with seven historical ancestors
 requiring provenance and one current decision requiring live human authority.
 
-The [frozen record](ci-history-provenance-2026-10-26.json.gz) has SHA-256
+The [frozen record](../archive/evidence/ci-history-provenance-2026-10-26.json.gz) has SHA-256
 `0943fed01ebd3ae9ad82e624619cacc612c94d01097957b3016f5c35aab95ccf`.
 It retains the native projection, preregistered replay and all six samples.
 Native job cost remains 219 seconds; a local API replay cannot restate that cost.

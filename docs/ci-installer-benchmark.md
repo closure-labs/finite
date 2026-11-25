@@ -2,7 +2,7 @@
 
 The first corrected zstd and default controls passed both profiles' fresh-install
 and upgrade/rollback qualification. Their native aggregates and hash-bound
-desktop acceptance also passed. The [cold observation](ci-installer-cold-observation-2026-10-24.json.gz)
+desktop acceptance also passed. The [cold observation](../archive/evidence/ci-installer-cold-observation-2026-10-24.json.gz)
 preserves those results separately from the earlier incomplete and failed
 snapshots in the [diagnostic report](ci-iso-compression-diagnostic.md).
 
@@ -144,7 +144,7 @@ was assigned `20261012.334.1` for fresh install despite the plan requiring
 [zstd arm](https://github.com/closure-labs/finite/actions/runs/40110319161) had
 already started; both workflows were cancelled rather than continuing an
 ineligible pair. Complete native occupancy was 185 and 192 seconds, respectively.
-The [retained stop record](ci-installer-cohort-stop-2026-10-24.json.gz) binds the
+The [retained stop record](../archive/evidence/ci-installer-cohort-stop-2026-10-24.json.gz) binds the
 frozen plan, complete native job accounting, collector and rollout status.
 These **377 runner seconds** remain failed diagnostic cost. No developer, warm
 or replacement samples were launched, and no comparison or adoption gate passed.

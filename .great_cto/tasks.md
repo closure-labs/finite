@@ -141,8 +141,8 @@ before the final publication decision. See the run table in the v0.8 plan.
 - Current blockers: standard87pairs/266records; DX135pairs/481records; Next hold.
   Source/build PASS for PR147. Vulnerability clearance BLOCKED. Release INELIGIBLE.
 - Plan/evidence/owners: docs/release-eligibility-sequence.md,
-  docs/release-eligibility-evidence-2026-10-12.json,
-  docs/current-desktop-risk-blockers-2026-10-12.json. Reuse dated approved metadata;
+  archive/evidence/release-eligibility-evidence-2026-10-12.json,
+  archive/evidence/current-desktop-risk-blockers-2026-10-12.json. Reuse dated approved metadata;
   await concrete publisher fixes/rebuilds or complete specific artifact/resource proof.
 - Heavy work remains hosted; original user workspace preserved. No merge/release
   publication. Temporary read-only validation branch is removed after retaining
@@ -367,7 +367,7 @@ passed. [Retained policy reevaluation](https://github.com/closure-labs/finite/ac
 passed: unchanged observations now yield 71 standard and 119 development
 blocking pairs, down from 87 and 135 under the previous reviewed policy.
 Owners, unblock evidence and separate verdicts are retained in
-[the continuation ledger](../docs/desktop-applicability-continuation-2026-10-13.json).
+[the continuation ledger](../archive/evidence/desktop-applicability-continuation-2026-10-13.json).
 Compiler/cgo, unresolved network consumers, AnyIO, rclone and the Next source
 hold remain explicit. Release eligibility has not been established.
 

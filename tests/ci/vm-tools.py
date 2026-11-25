@@ -23,7 +23,6 @@ def load(name, path):
     return module
 
 
-benchmark = load('vm_benchmark_test', 'scripts/ci/benchmark-vm-tools.py')
 qualification = load('vm_qualification_test', 'scripts/bluebuild/qualification-context.py')
 
 
@@ -88,92 +87,13 @@ class Tools(unittest.TestCase):
         self.assertEqual(json.loads(context['packages']), value)
         self.assertEqual(str(sha.call_args_list[0].args[0]), '/fixture/fw/OVMF_CODE_4M.secboot.fd')
 
-    def test_workflows_share_tools_and_benchmark_is_read_only(self):
+    def test_workflows_share_tools(self):
         for name in ('image', 'qualification', 'vm-acceptance'):
             value = yaml.safe_load((ROOT / '.github/workflows' / (name + '.yml')).read_text())
             uses = [step.get('uses') for job in value['jobs'].values() for step in job.get('steps', [])]
             self.assertIn('$/.github/actions/setup-vm-tools', uses)
             self.assertIn('$/.github/actions/setup-nix', uses)
             self.assertNotIn('apt-get install', (ROOT / '.github/workflows' / (name + '.yml')).read_text())
-        value = yaml.safe_load((ROOT / '.github/workflows/benchmark-vm-tools.yml').read_text())
-        self.assertEqual(value['permissions'], {'contents': 'read', 'actions': 'read'})
-        self.assertEqual(len(value['jobs']['benchmark']['strategy']['matrix']['include']), 9)
-        self.assertNotIn('secrets.', (ROOT / '.github/workflows/benchmark-vm-tools.yml').read_text())
-        self.assertNotIn('ready_for_review', (ROOT / '.github/workflows/benchmark-vm-tools.yml').read_text())
-        for job in value['jobs'].values():
-            for step in job.get('steps', []):
-                if step.get('uses', '').startswith('actions/upload-artifact@'):
-                    self.assertTrue(step['with']['include-hidden-files'], 'Reports under .bluebuild must remain visible to uploads')
-
-
-class Measurements(unittest.TestCase):
-    def fixture(self, directory):
-        reports, jobs = [], []
-        for provider in benchmark.PROVIDERS:
-            for repetition in (1, 2, 3):
-                cold = {'apt': 100, 'apt-minimal': 90, 'nix': 40}[provider]
-                report = {'schema': 1, 'provider': provider, 'repetition': repetition, 'revision': 'a' * 40,
-                          'proposalRevision': 'b' * 40, 'runId': '123', 'runAttempt': '2', 'lockSha256': 'c' * 64,
-                          'nixVersion': 'Nix fixture', 'status': 'success',
-                          'runner': {'RUNNER_OS': 'Linux', 'RUNNER_ARCH': 'X64', 'ImageVersion': 'image-1'},
-                          'setup': {'seconds': 40}, 'passes': [
-                              {'phase': phase, 'seconds': cold if phase == 'cold' else 2,
-                               'identity': {'provider': provider}, 'transport': {'receivedBytes': 1000}}
-                              for phase in ('cold', 'warm')]}
-                reports.append(report)
-                jobs.append({'name': f'vm-tools-{provider}-{repetition}', 'status': 'completed', 'conclusion': 'success',
-                             'run_id': 123, 'run_attempt': 2, 'head_sha': 'b' * 40,
-                             'started_at': '2026-10-22T00:00:00Z',
-                             'completed_at': '2026-10-22T00:03:00Z' if provider == 'nix' else '2026-10-22T00:04:00Z'})
-        return reports, jobs
-
-    def summarize(self, mutate=lambda reports, jobs: None):
-        with tempfile.TemporaryDirectory() as temporary:
-            directory = Path(temporary)
-            reports, jobs = self.fixture(directory)
-            mutate(reports, jobs)
-            for index, report in enumerate(reports):
-                path = directory / str(index) / 'benchmark.json'
-                path.parent.mkdir()
-                path.write_text(json.dumps(report))
-            metadata = directory / 'jobs'
-            metadata.write_text(json.dumps([{'jobs': jobs}]))
-            with patch.dict(os.environ, {}, clear=True):
-                return benchmark.summarize(directory, metadata, directory / 'summary.md')
-
-    def test_complete_material_improvement_is_eligible(self):
-        self.assertTrue(self.summarize()['faster'])
-        def reusable(reports, jobs):
-            for job in jobs:
-                job['name'] = 'VM tool provisioning trial / ' + job['name']
-        self.assertTrue(self.summarize(reusable)['faster'])
-
-    def test_slow_or_marginal_nix_stays_draft(self):
-        def slow(reports, jobs):
-            for report in reports:
-                if report['provider'] == 'nix': report['passes'][0]['seconds'] = 89
-        self.assertFalse(self.summarize(slow)['faster'])
-        def longer(reports, jobs):
-            for job in jobs:
-                if 'nix' in job['name']: job['completed_at'] = '2026-10-22T00:05:00Z'
-        self.assertFalse(self.summarize(longer)['faster'])
-
-    def test_different_runner_images_cannot_authorize_rollout(self):
-        self.assertFalse(self.summarize(lambda reports, jobs: reports[-1]['runner'].update(ImageVersion='image-2'))['faster'])
-
-    def test_incomplete_failed_foreign_or_inconsistent_reports_are_terminal(self):
-        cases = [lambda reports, jobs: reports.pop(),
-                 lambda reports, jobs: reports.append(copy.deepcopy(reports[0])),
-                 lambda reports, jobs: reports[0].update(status='error'),
-                 lambda reports, jobs: reports[0].update(runAttempt='1'),
-                 lambda reports, jobs: jobs[0].update(conclusion='failure'),
-                 lambda reports, jobs: jobs[0].update(head_sha='d' * 40),
-                 lambda reports, jobs: reports[0]['passes'][0].update(seconds=float('nan')),
-                 lambda reports, jobs: reports[0]['passes'][0].update(seconds=10000),
-                 lambda reports, jobs: reports[0]['passes'][1].update(identity={'changed': True})]
-        for mutate in cases:
-            with self.subTest(case=cases.index(mutate)), self.assertRaises(ValueError):
-                self.summarize(mutate)
 
 
 if __name__ == '__main__':

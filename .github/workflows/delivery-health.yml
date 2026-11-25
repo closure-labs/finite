@@ -1,7 +1,7 @@
 name: Delivery and decision pipeline health
 on:
   schedule:
-    - cron: '47 * * * *'
+    - cron: '47 */6 * * *'
   workflow_run: # zizmor: ignore[dangerous-triggers] Trusted main code reads metadata only.
     workflows: [Build Finite, Prepare two-image release approval, Publish approved two-image release]
     types: [completed]
@@ -41,43 +41,30 @@ jobs:
       - uses: $/.github/actions/setup-nix
         with:
           job-profile: controller
-      - name: Resolve declared review App credentials
-        id: credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite human decision authority App' --format gha
       - name: Generate short-lived repository-scoped review token
         id: health-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: read
-          permission-pull-requests: read
-          permission-actions: read
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite human decision authority App
+          permissions: |
+            contents: read
+            pull-requests: read
+            actions: read
       - name: Generate the preparation and audit token
         id: review-token
-        if: always() && steps.credentials.outcome == 'success'
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: read
-          permission-pull-requests: read
-          permission-actions: write
-          permission-issues: write
-      - name: Clear App private credentials
         if: always()
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+        uses: $/.github/actions/review-app-token
+        with:
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite human decision authority App
+          permissions: |
+            contents: read
+            pull-requests: read
+            actions: write
+            issues: write
       - name: Report delivery and publisher health
         id: health
         if: always() && steps.health-token.outcome == 'success'
@@ -143,30 +130,17 @@ jobs:
         with:
           job-profile: controller
         if: steps.cycle.outputs.changed == 'true'
-      - name: Resolve declared review App credentials
-        if: steps.cycle.outputs.changed == 'true'
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite post-release development PR' --format gha
       - name: Generate a token for the development PR only
-        if: steps.cycle.outputs.changed == 'true'
         id: review-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
-        with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-          permission-pull-requests: write
-      - name: Clear App private credentials
         if: steps.cycle.outputs.changed == 'true'
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+        uses: $/.github/actions/review-app-token
+        with:
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite post-release development PR
+          permissions: |
+            contents: write
+            pull-requests: write
       - name: Propose the next development version
         if: steps.cycle.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3

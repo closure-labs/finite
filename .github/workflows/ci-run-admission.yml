@@ -84,29 +84,18 @@ jobs:
           tools=$(nix build --file lib/ci-tools.nix image-tools --no-link --print-out-paths)
           [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-ci-image-tools$ ]]
           printf 'path=%s\n' "$tools" >>"$GITHUB_OUTPUT"
-      - name: Resolve declared review App credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite trusted CI execution admission' --format gha
       - name: Generate token limited to execution approval and identity reads
         id: ci-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-actions: write
-          permission-contents: read
-          permission-pull-requests: read
-          permission-members: read
-      - name: Clear App private credentials
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite trusted CI execution admission
+          permissions: |
+            actions: write
+            contents: read
+            pull-requests: read
+            members: read
       - name: Authenticate live PR author and approve only current-head CI runs
         env:
           GH_TOKEN: ${{ steps.ci-token.outputs.token }}

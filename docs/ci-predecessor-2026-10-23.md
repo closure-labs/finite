@@ -30,7 +30,7 @@ Each row is one observation on Ubuntu 24.04 runner image `20261012.334.1`, sourc
 `23c06c71c671106ae8ac7ea5112224c5c5d400be`. These are different candidate
 cohorts from 1071; they establish a working restore path, not a matched savings
 estimate, median, or complete-workflow cost reduction. Native archive bindings
-and the exact comparison are in the [companion report](ci-predecessor-2026-10-23.json).
+and the exact comparison are in the [companion report](../archive/evidence/ci-predecessor-2026-10-23.json).
 
 The fix projects only the pristine artifact comparison, excluding `local-vm.sh`
 and `reuse-predecessor-iso.py`. The latter reads artifacts only in the upgrade

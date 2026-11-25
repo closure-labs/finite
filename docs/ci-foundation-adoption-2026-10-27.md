@@ -9,7 +9,7 @@ Den, Home Manager, Determinate Nix, Nixpkgs and flake-parts dependency locks.
 Foundation's `scripts/home.py` initializer is unchanged from v0.4.0; the opt-in
 stage timing producer remains compatible with this collector.
 
-The [evidence snapshot](ci-foundation-adoption-2026-10-27.json) records the
+The [evidence snapshot](../archive/evidence/ci-foundation-adoption-2026-10-27.json) records the
 native source, assets, checksums, updater and input audit. The earlier v0.4.0
 publication and pin evidence remain under `priorCandidate`; those historical
 publication approval and exact-source-archive observations apply to v0.4.0 only.

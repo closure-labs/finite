@@ -23,15 +23,15 @@ def positive(value):
     return type(value) is int and value > 0
 
 
-def job_name(profile, phase, diagnostic=False):
+def job_name(profile, phase):
     suffix = 'prepare' if phase == 'reused' else f'phase ({phase})'
-    return ('qualification' if diagnostic else f'Publish ({profile}) / qualification') + ' / ' + suffix
+    return f'Publish ({profile}) / qualification / {suffix}'
 
 
-def successful(job, run, attempt, profile, phase, diagnostic=False):
+def successful(job, run, attempt, profile, phase):
     required = ('Save authenticated reusable qualification',) if phase == 'reused' else (
         'Qualify immutable candidate phase', 'Save phase evidence')
-    return (job.get('name') == job_name(profile, phase, diagnostic)
+    return (job.get('name') == job_name(profile, phase)
             and positive(job.get('id')) and job.get('run_id') == run['id']
             and job.get('run_attempt') == attempt and job.get('head_sha') == run['head_sha']
             and job.get('status') == 'completed' and job.get('conclusion') == 'success'
@@ -39,10 +39,9 @@ def successful(job, run, attempt, profile, phase, diagnostic=False):
                         for step in job.get('steps', [])) == 1 for name in required))
 
 
-def artifact_binding(artifact, run, profile, phase, attempt, diagnostic=False):
-    prefix = 'qualification-diagnostic' if diagnostic else 'qualification'
+def artifact_binding(artifact, run, profile, phase, attempt):
     name = (f'qualification-reused-{profile}-{run["id"]}-{attempt}' if phase == 'reused' else
-            f'{prefix}-phase-{profile}-{phase}-{run["id"]}-{attempt}')
+            f'qualification-phase-{profile}-{phase}-{run["id"]}-{attempt}')
     binding = artifact.get('workflow_run', {})
     if (artifact.get('name') != name or not positive(artifact.get('id'))
             or artifact.get('expired') is not False or type(artifact.get('size_in_bytes')) is not int
@@ -84,12 +83,12 @@ def extract(archive, destination, profile, phase):
 
 
 class Collector:
-    def __init__(self, run_id, attempt, revision, profile, diagnostic=False, api=get_json):
+    def __init__(self, run_id, attempt, revision, profile, api=get_json):
         if (not positive(run_id) or type(attempt) is not int or not 1 <= attempt <= 20
                 or not re.fullmatch(r'[0-9a-f]{40}', revision) or profile not in ('finite', 'finite-dev')):
             raise ValueError('Invalid bounded qualification collection identity')
         self.run_id, self.attempt, self.revision, self.profile = run_id, attempt, revision, profile
-        self.diagnostic, self.api, self.attempts = diagnostic, api, {}
+        self.api, self.attempts = api, {}
         self.run, self.jobs = self.native(attempt)
         self.artifacts = inventory(api, f'repos/{REPOSITORY}/actions/runs/{run_id}/artifacts', 'artifacts', limit=1000)
 
@@ -97,14 +96,12 @@ class Collector:
         if attempt not in self.attempts:
             base = f'repos/{REPOSITORY}/actions/runs/{self.run_id}/attempts/{attempt}'
             run = self.api(base)
-            path = '.github/workflows/' + ('benchmark-image-tools.yml' if self.diagnostic else 'build.yml')
             if (run.get('id') != self.run_id or run.get('run_attempt') != attempt
-                    or run.get('head_sha') != self.revision or run.get('path') != path
+                    or run.get('head_sha') != self.revision or run.get('path') != '.github/workflows/build.yml'
                     or run.get('repository', {}).get('full_name') != REPOSITORY
                     or run.get('head_repository', {}).get('full_name') != REPOSITORY
-                    or (self.diagnostic and (run.get('event') != 'workflow_dispatch' or run.get('head_branch') == 'main'))
-                    or (not self.diagnostic and (run.get('head_branch') != 'main'
-                        or run.get('event') not in ('push', 'schedule', 'workflow_dispatch')))):
+                    or run.get('head_branch') != 'main'
+                    or run.get('event') not in ('push', 'schedule', 'workflow_dispatch')):
                 raise ValueError('Qualification run is not the exact trusted source/workflow')
             timestamp(run.get('run_started_at'))
             jobs = inventory(self.api, base + '/jobs', 'jobs', limit=1000)
@@ -114,27 +111,26 @@ class Collector:
     def origin(self, phase):
         current = [j for j in self.jobs if type(j.get('run_attempt')) is int
                    and 1 <= j['run_attempt'] <= self.attempt
-                   and successful(j, self.run, j['run_attempt'], self.profile, phase, self.diagnostic)]
+                   and successful(j, self.run, j['run_attempt'], self.profile, phase)]
         if len(current) != 1 or execution_key(current[0]) is None:
             raise ValueError('Current phase is not one successful identifiable execution')
         candidates = []
         for attempt in range(1, self.attempt + 1):
             run, jobs = self.native(attempt)
             for job in jobs:
-                if (successful(job, run, attempt, self.profile, phase, self.diagnostic)
+                if (successful(job, run, attempt, self.profile, phase)
                         and execution_key(job) == execution_key(current[0])
                         and timestamp(job['started_at']) >= timestamp(run['run_started_at'])):
                     candidates.append((attempt, job))
         if len(candidates) != 1:
             raise ValueError('Qualification producing attempt is missing or ambiguous')
         attempt, job = candidates[0]
-        prefix = 'qualification-diagnostic' if self.diagnostic else 'qualification'
         name = (f'qualification-reused-{self.profile}-{self.run_id}-{attempt}' if phase == 'reused' else
-                f'{prefix}-phase-{self.profile}-{phase}-{self.run_id}-{attempt}')
+                f'qualification-phase-{self.profile}-{phase}-{self.run_id}-{attempt}')
         artifacts = [a for a in self.artifacts if a.get('name') == name]
         if len(artifacts) != 1:
             raise ValueError('Qualification producing artifact is missing or ambiguous')
-        artifact = artifact_binding(artifacts[0], self.run, self.profile, phase, attempt, self.diagnostic)
+        artifact = artifact_binding(artifacts[0], self.run, self.profile, phase, attempt)
         if not timestamp(job['started_at']) <= timestamp(artifact.get('created_at')) <= timestamp(job['completed_at']):
             raise ValueError('Phase artifact was not created during its successful producer job')
         origin = {'run': self.run_id, 'attempt': attempt, 'revision': self.revision, 'job': job['id'],
@@ -167,7 +163,7 @@ class Collector:
                     shutil.copyfile(path, target)
             if phases != ['reused']:
                 receipt = {'schema': 1, 'repository': REPOSITORY, 'run': self.run_id, 'attempt': self.attempt,
-                           'revision': self.revision, 'profile': self.profile, 'validationOnly': self.diagnostic,
+                           'revision': self.revision, 'profile': self.profile, 'validationOnly': False,
                            'phases': origins}
                 target = destination / 'qualification-phase-origins.json'
                 with target.open('x') as output:
@@ -224,9 +220,10 @@ def main():
     args = parser.parse_args()
     if os.environ.get('GITHUB_ACTIONS') != 'true' or os.environ.get('GITHUB_REPOSITORY') != REPOSITORY:
         raise ValueError('Qualification collection requires hosted Finite execution')
+    if os.environ.get('FINITE_VALIDATION_ONLY', 'false') not in ('', 'false'):
+        raise ValueError('Validation-only qualification is archived; collect production qualification only')
     collector = Collector(int(os.environ['GITHUB_RUN_ID']), int(os.environ['GITHUB_RUN_ATTEMPT']),
-                          os.environ['GITHUB_SHA'], os.environ['PROFILE'],
-                          os.environ.get('FINITE_VALIDATION_ONLY') == 'true')
+                          os.environ['GITHUB_SHA'], os.environ['PROFILE'])
     phases = ['reused'] if args.reused else (['fresh', 'upgrade'] if os.environ.get('PREVIOUS_DIGEST') else ['fresh'])
     collector.collect(phases, args.directory)
 

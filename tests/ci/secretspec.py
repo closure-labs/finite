@@ -220,7 +220,8 @@ class Manifest(unittest.TestCase):
         self.assertIn('env -u CACHIX_AUTH_TOKEN -u FINITE_CACHIX_TOKEN -u COSIGN_PRIVATE_KEY', tasks)
         self.assertIn('ci:cache:writer:prepare', tasks)
         self.assertIn('#local-cache', tasks)
-        self.assertIn('"ci:cache:benchmark"', tasks)
+        # The hosted cache benchmark summarizer is archived with its workflow.
+        self.assertNotIn('"ci:cache:benchmark"', tasks)
         self.assertIn('IMAGE_REFERENCE:?set IMAGE_REFERENCE to the immutable image to sign', tasks)
         self.assertIn('"ci-repository-security-audit" "repository-read"', tasks)
         self.assertIn('"scanner-tools" "image-signing"', tasks)

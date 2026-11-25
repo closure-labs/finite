@@ -9,7 +9,7 @@ duplicate to remove.
 
 The packet accepted through PR 254 has OCI manifest digest
 `sha256:a779c7c762144ba27e4cbe1bc5c2ea0e987495c9833cb2a0e880576c7fee80d7`.
-Its [retained manifest observation](ci-decision-packet-staging-2026-10-25.json.gz)
+Its [retained manifest observation](../archive/evidence/ci-decision-packet-staging-2026-10-25.json.gz)
 was fetched anonymously and verified against that digest, without downloading
 any evidence blobs. The observation's SHA-256 is
 `ea6d61f6ea85ba9d4008d80c032eb4bb69217798d2369c166135eabfd9f8f3f2`. The manifest declares 35 layers totaling

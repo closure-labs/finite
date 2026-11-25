@@ -52,33 +52,17 @@ jobs:
         if: steps.release.outputs.changed == 'true'
         run: nix develop --file lib/ci-tools.nix shell --command bash tests/repository/text-style.sh
 
-      - name: Resolve Decider credentials after public source validation
-        if: steps.release.outputs.changed == 'true'
-        id: credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite Foundation-update PR authorship' --format gha
-
       - name: Create short-lived Decider PR token
-        if: steps.release.outputs.changed == 'true'
         id: foundation-pr-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        if: steps.release.outputs.changed == 'true'
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Clear Decider private credentials
-        if: always() && steps.credentials.outcome == 'success'
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite Foundation-update PR authorship
+          permissions: |
+            contents: write
+            pull-requests: write
 
       - name: Authenticate Decider commit and PR identity
         if: steps.release.outputs.changed == 'true'

@@ -5,7 +5,7 @@
 [protected queue run](https://github.com/closure-labs/finite/actions/runs/40468511341)
 passed both profiles' exact local candidate boots. This combines Foundation
 v0.4.1, bounded timing collection and the merged Bluefin update #294.
-The [authenticated snapshot](ci-foundation-rollout-2026-10-27.json) records all
+The [authenticated snapshot](../archive/evidence/ci-foundation-rollout-2026-10-27.json) records all
 three receipt archives, with no unavailable or unmatched receipts.
 
 ## Measured intervals

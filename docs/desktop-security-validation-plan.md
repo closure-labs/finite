@@ -85,7 +85,7 @@ blanket mitigation or waiver. Retain all findings, KEV blockers and unknowns.
 
 ## Completed evidence and remediation
 
-[The compact evidence ledger](desktop-security-evidence-2026-10-12.json) binds the
+[The compact evidence ledger](../archive/evidence/desktop-security-evidence-2026-10-12.json) binds the
 following observations to run revisions, immutable sources and artifact hashes.
 Baseline finding statuses remain unchanged.
 
@@ -351,8 +351,8 @@ and parser reviews. Final hosted source checks passed run38327424786.
 completed successfully with a **blocked** security verdict:121 blocking pairs
 (95 serious,26 untriaged Critical),421 advisory pairs,0 KEV and0 exceptions.
 It reused the same native immutable manifest and raw evidence without rescanning.
-See [exact evaluation](desktop-risk-evaluation-2026-10-12.json) and
-[remaining file-level blockers](desktop-risk-blockers-2026-10-12.json).
+See [exact evaluation](../archive/evidence/desktop-risk-evaluation-2026-10-12.json) and
+[remaining file-level blockers](../archive/evidence/desktop-risk-blockers-2026-10-12.json).
 
 The expanded observation scope and104 disposition changes reflect the approved
 policy decision, not newly introduced vulnerabilities or successful package fixes.
@@ -380,6 +380,6 @@ passed. [Retained policy reevaluation](https://github.com/closure-labs/finite/ac
 passed: unchanged observations now yield 71 standard and 119 development
 blocking pairs, down from 87 and 135 under the previous reviewed policy.
 Owners, unblock evidence and separate verdicts are retained in
-[the continuation ledger](desktop-applicability-continuation-2026-10-13.json).
+[the continuation ledger](../archive/evidence/desktop-applicability-continuation-2026-10-13.json).
 Compiler/cgo, unresolved network consumers, AnyIO, rclone and the Next source
 hold remain explicit. Release eligibility has not been established.

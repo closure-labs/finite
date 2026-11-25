@@ -398,7 +398,7 @@ They retain the stable publisher's live human authority, security admission,
 signatures, immutable assets and recovery journal. Publishing a prerelease does
 not bump the version again. Each development version identifies one immutable
 pair; subsequent development commits do not replace its tags or assets. The
-hourly observer and manual health dispatch reconcile missed completion events.
+six-hourly observer and manual health dispatch reconcile missed completion events.
 The existing published `0.8.1` pair permits the initial `0.8.2-dev` preparation.
 A manually reviewed version bump may skip a reserved development version, such
 as `0.8.2-dev` → `0.8.3-dev`. Preparation requires the latest earlier stable patch
@@ -738,7 +738,7 @@ Native policy data remains visible. It checks recursive relabeling, preserved
 ownership and modes, migration, and repeatability without changing real GDM
 state. Unexpected file types fail with a named diagnostic.
 
-**Delivery and decision pipeline health** runs hourly and after trusted main build and release
+**Delivery and decision pipeline health** runs every six hours and after trusted main build and release
 workflows. Its publisher monitor is read-only. Separate reconciliation jobs
 retain automatic preparation and audit/decision issue reporting, even when
 publisher health fails. Its summary links the latest recorded qualification and promotion for
@@ -793,7 +793,7 @@ checks remote state before another operation.
 
 Health completion triggers exclude PR and merge-queue validation runs. Same-repository
 main push, scheduled and manual delivery completions remain observed even when
-they fail. Hourly and explicit health dispatches retain missed-event recovery.
+they fail. Six-hourly and explicit health dispatches retain missed-event recovery.
 
 The read-only **Observe workflow costs** workflow retains native run/attempt,
 source, job/profile and phase timings, including failed/cancelled work. It runs

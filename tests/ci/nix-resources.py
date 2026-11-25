@@ -64,7 +64,7 @@ class Resources(unittest.TestCase):
                     if uses == '$/.github/actions/setup-nix' or uses.startswith('DeterminateSystems/determinate-nix-action@'):
                         installed = True
                     command = step.get('run', '')
-                    if re.search(r'\bnix\s+(shell|develop|build|eval|run)\b', command) or 'scripts/ci/nix-checks.py' in command or 'scripts/ci/benchmark-image-tools.py' in command:
+                    if re.search(r'\bnix\s+(shell|develop|build|eval|run)\b', command) or 'scripts/ci/nix-checks.py' in command:
                         with self.subTest(workflow=path.name, job=name):
                             self.assertTrue(installed)
                 # The setup condition must cover the conditional reconcile step.
@@ -73,10 +73,9 @@ class Resources(unittest.TestCase):
                     self.assertIn('inputs.reconcile', setup['if'])
                     self.assertIn("github.event_name == 'push'", setup['if'])
 
-    def test_benchmark_and_shared_setup_use_identical_budget(self):
+    def test_shared_setup_budget_order(self):
         action = yaml.safe_load((ROOT / '.github/actions/setup-nix/action.yml').read_text())['runs']['steps']
-        benchmark = yaml.safe_load((ROOT / '.github/workflows/benchmark-image-tools.yml').read_text())['jobs']['benchmark']['steps']
-        for steps in (action, benchmark):
+        for steps in (action,):
             detect = next(i for i, step in enumerate(steps) if step.get('run') == 'python3 scripts/ci/nix-resources.py')
             install = next(i for i, step in enumerate(steps) if step.get('uses', '').startswith('DeterminateSystems/determinate-nix-action@'))
             verify = next(i for i, step in enumerate(steps) if step.get('run') == 'python3 scripts/ci/nix-resources.py --verify')

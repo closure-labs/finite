@@ -95,7 +95,7 @@ classification, lock flags, successful GC roots and phase ordering are unchanged
 | Packet staging and active publisher lookup | Completed; whole-job savings require measurement | Preserve per-profile integrity and live checks; wait for naturally executed lookup paths. |
 | Product-origin receipt, zstd and same-build OCI export | Deferred | Preserve failed/stopped samples and existing correctness/performance gates. |
 
-The [frozen evidence](ci-source-resources-2026-10-25.json.gz) retains native
+The [frozen evidence](../archive/evidence/ci-source-resources-2026-10-25.json.gz) retains native
 job costs, authenticated source proofs, controller projections and guest joins.
 Its SHA-256 is
 `f246233f7449120d0be7f38b4616013e252ea54925659c5cf268443ac2b57035`.

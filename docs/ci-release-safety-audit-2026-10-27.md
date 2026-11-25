@@ -3,7 +3,7 @@
 This audit reviews source `41b5ad889713769ab449fd1158c3e5692e0fcfab`, including
 the pending #287 scanner change. It maps existing safeguards to production
 callers and offline regressions rather than adding duplicate authority gates.
-The [machine-readable evidence](ci-release-safety-audit-2026-10-27.json) retains
+The [machine-readable evidence](../archive/evidence/ci-release-safety-audit-2026-10-27.json) retains
 source hashes, 320 passing tests across 18 suites, bounded live metadata and a
 workflow inventory of credential references, App permissions and artifact
 retention. Secret values were neither requested nor recorded.

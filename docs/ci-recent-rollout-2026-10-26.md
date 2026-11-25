@@ -8,7 +8,7 @@ also passed. #279 was closed as superseded after its lock bytes were integrated;
 Foundation remains v0.3.3. This closes D1's integration milestone, not stable
 0.8.3 acceptance.
 
-The compressed [evidence](ci-recent-rollout-2026-10-26.json.gz) contains bounded
+The compressed [evidence](../archive/evidence/ci-recent-rollout-2026-10-26.json.gz) contains bounded
 native cost observations and the digest-verified qualification/promotion JSON
 members. Both qualification records accept the same source revision and bind
 Secure Boot, encrypted root, candidate, predecessor and build identity. Artifact

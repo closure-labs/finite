@@ -6,7 +6,7 @@
 
 Historical plan: the later owner-approved [two-variant upstream kernel policy](upstream-kernel-variants.md) supersedes kernel replacement, ZFS removal and Next-variant instructions below. Preserve these observations as historical evidence; do not dispatch retired-variant work.
 
-Current rollout: [standard Finite qualified and promoted](signing-resume-evidence-2026-10-13.json).
+Current rollout: [standard Finite qualified and promoted](../archive/evidence/signing-resume-evidence-2026-10-13.json).
 Run38467981855 at85a37e0c1b88 passed source/build, security policy, protected signing,
 Secure Boot/encrypted-root/SELinux-enforcing VM fresh installation, signed upgrade,
 rollback, promotion and the CI gate. Both public standard tags resolve to the
@@ -30,7 +30,7 @@ merged; PR #140 merged at `1bf562527742`, and documentation PR #143 merged at
 The user authorized further remediation, optional generic virtual-camera removal,
 and now removal of host ZFS support from all four profiles. Release eligibility still requires the security and boot gates. Current
 evidence and pending validation are recorded in
-[the desktop ledger](desktop-security-evidence-2026-10-12.json).
+[the desktop ledger](../archive/evidence/desktop-security-evidence-2026-10-12.json).
 
 ## Sequence and acceptance criteria
 
@@ -91,13 +91,13 @@ Results and concrete blockers are recorded below as each stage completes.
 
 Two benchmark pairs passed with lower cold and warm setup time and a smaller
 closure. The second run also verified artifact retention; no further benchmark
-repeat is needed. See [paired measurements](ci-tool-benchmark-2026-10-12.json).
+repeat is needed. See [paired measurements](../archive/evidence/ci-tool-benchmark-2026-10-12.json).
 
 [Hosted prerequisites run 38294546850](https://github.com/closure-labs/finite/actions/runs/38294546850)
 verified availability of all 16 current RPM floors. It reused the authenticated
 native SBOM without extracting or scanning the baseline image again. Every one
 of the 281 component PURLs matched; 244 have identified RPM owners and 37 remain
-without identified ownership. [The compact evidence](remediation-prerequisite-evidence-2026-10-12.json)
+without identified ownership. [The compact evidence](../archive/evidence/remediation-prerequisite-evidence-2026-10-12.json)
 retains source artifact hashes and package versions.
 
 Three owning-package fixes were unavailable in the retained approved Fedora
@@ -161,7 +161,7 @@ completed on 2026-10-12 at 19:44 UTC. At that observation all 16 floors were
 available; AnyIO, msgpack and rclone were below the reviewed fixed versions. Exit 1 is the
 expected `blocked` readiness result, with the native inventory parser passing.
 The original ownership inventory is reused, avoiding another full SBOM parse.
-[Retained continuation evidence](security-continuation-evidence-2026-10-12.json)
+[Retained continuation evidence](../archive/evidence/security-continuation-evidence-2026-10-12.json)
 binds the small reports to their source hashes and workflow revisions.
 
 A newer signed vendor package makes a partial Tailscale update actionable.
@@ -269,7 +269,7 @@ scan policy. Production verification rejects explicit diagnostic markers before
 release processing; 27 policy tests cover this boundary. Its first hosted scan,
 final PR/source integration, and affected-profile boot qualification are pending.
 See [the desktop plan](desktop-security-validation-plan.md) and
-[current evidence](desktop-security-evidence-2026-10-12.json). Source/build,
+[current evidence](../archive/evidence/desktop-security-evidence-2026-10-12.json). Source/build,
 vulnerability clearance and release eligibility remain separate; no baseline
 finding is resolved automatically.
 
@@ -319,6 +319,6 @@ passed. [Retained policy reevaluation](https://github.com/closure-labs/finite/ac
 passed: unchanged observations now yield 71 standard and 119 development
 blocking pairs, down from 87 and 135 under the previous reviewed policy.
 Owners, unblock evidence and separate verdicts are retained in
-[the continuation ledger](desktop-applicability-continuation-2026-10-13.json).
+[the continuation ledger](../archive/evidence/desktop-applicability-continuation-2026-10-13.json).
 Compiler/cgo, unresolved network consumers, AnyIO, rclone and the Next source
 hold remain explicit. Release eligibility has not been established.

@@ -84,7 +84,7 @@ benchmark compares fresh-runner and repeated execution for the old and new tool
 setup. Two hosted benchmark pairs measured lower cold and warm tool-setup time:
 37.63s/9.12s became 12.78s/1.08s in the first pair, and 32.49s/7.11s became
 9.17s/2.11s in the second. These are setup measurements, not whole image-job
-speedups. [Raw paired results](ci-tool-benchmark-2026-10-12.json) retain the
+speedups. [Raw paired results](../archive/evidence/ci-tool-benchmark-2026-10-12.json) retain the
 matching runner, lock and Nix versions. Compare actual image-job timing as well;
 revert the tool-environment change if it adds unnecessary total time.
 The targeted RPM transaction is required security work and skips network access
@@ -103,7 +103,7 @@ package availability, vulnerability resolution, or boot compatibility.
 ## Follow-up validation
 
 [The implementation plan](validation-remediation-plan.md) records the staged
-validation sequence. [Hosted prerequisite evidence](remediation-prerequisite-evidence-2026-10-12.json)
+validation sequence. [Hosted prerequisite evidence](../archive/evidence/remediation-prerequisite-evidence-2026-10-12.json)
 identifies package owners and available versions. AnyIO, msgpack and rclone
 remain below their advisory fix versions in the approved repositories; queried
 Go-owning RPMs are already at their newest Fedora versions. Preflight reports
@@ -115,7 +115,7 @@ A new installed-only Tailscale floor uses an exact locked, signed stable vendor
 RPM. Actual hosted package inspection confirmed newer embedded modules; Go and
 x/net fix prerequisites still remain unmet. See the
 [continued plan and residual owners](validation-remediation-plan.md) and
-[signature/module evidence](security-continuation-evidence-2026-10-12.json).
+[signature/module evidence](../archive/evidence/security-continuation-evidence-2026-10-12.json).
 This partial update does not close baseline ledger findings or establish release
 eligibility. The final original four-profile matrix passed at `f506ae341663`;
 current continuation validation is tracked on PR #140.

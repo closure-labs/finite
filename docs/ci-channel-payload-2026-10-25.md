@@ -30,7 +30,7 @@ step, before sharing the evaluation:
 | [40175020315](https://github.com/closure-labs/finite/actions/runs/40175020315) | 59 | 25 |
 | [40177783528](https://github.com/closure-labs/finite/actions/runs/40177783528) | 50 | 21 |
 
-The [retained native baseline](ci-channel-payload-2026-10-25.json.gz) preserves
+The [retained native baseline](../archive/evidence/ci-channel-payload-2026-10-25.json.gz) preserves
 run/source/job identities and native step timings. The step includes environment
 entry, Nix evaluation, file hashing and registry access. Individual payload
 evaluation times are unknown. Reducing evaluator invocations from two to one

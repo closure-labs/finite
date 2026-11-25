@@ -144,7 +144,7 @@ AI review/exception fields when constructing that cutover policy. Activation mus
 fail closed if the App, baseline, or verifier is unavailable.
 
 The decision coordinator resumes retained candidates after approval, with fresh
-scans when evidence expires. Its hourly health check maintains one issue for an
+scans when evidence expires. Its six-hourly health check maintains one issue for an
 audit missing more than 36 hours or a human decision pending more than 72 hours.
 Neither timeout approves nor rejects risk. All diagnostic/cache benchmarks remain
 on demand. New caches require three comparable measurements before activation.

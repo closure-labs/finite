@@ -33,7 +33,7 @@ matched speedup for packet staging. The earlier cancelled-producer controller
 failed before timing initialization: its 56 seconds remain charged, with phase
 coverage missing rather than zero.
 
-The [frozen evidence](ci-active-publishers-2026-10-25.json.gz) has SHA-256
+The [frozen evidence](../archive/evidence/ci-active-publishers-2026-10-25.json.gz) has SHA-256
 `e7cef0fb3811cfe2bb70756184ba0b9f41c25c478a1e0dcda724bedb59f2b818`.
 It preserves complete native cost, every recorded phase, and the separate
 read-only API comparison below. Historical reports retain their original data.

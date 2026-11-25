@@ -78,12 +78,8 @@ def context(root=ROOT):
     value = {'schema': 2, 'platform': 'linux/amd64', 'runner': 'ubuntu-24.04',
             'inputs': inputs, 'firmware': firmware, 'packages': versions.strip(),
             'bluebuildVersion': json.loads((root / 'sources/bluebuild-cli.json').read_text())}
-    compression = os.environ.get('FINITE_INSTALLER_COMPRESSION', 'default')
-    if compression == 'zstd':
-        value['installerCompression'] = {'schema': 1, 'algorithm': 'zstd', 'level': 15, 'bcj': False,
-            'presetSha256': sha(root / 'files/installer/lorax-zstd.conf')}
-    elif compression != 'default':
-        raise ValueError('Unknown installer compression experiment')
+    if os.environ.get('FINITE_INSTALLER_COMPRESSION', 'default') != 'default':
+        raise ValueError('Installer compression experiments are archived')
     return value
 
 

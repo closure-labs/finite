@@ -18,6 +18,13 @@ def uses(step, action):
     return step.get('uses', '').split('@')[0] == action
 
 
+REVIEW_APP = '$/.github/actions/review-app-token'
+
+
+def permissions(step):
+    return dict(line.strip().split(': ') for line in step['with']['permissions'].splitlines() if line.strip())
+
+
 class Integrations(unittest.TestCase):
     def test_codeql_has_one_actions_python_matrix_per_event(self):
         entries = []
@@ -66,9 +73,10 @@ class Integrations(unittest.TestCase):
         self.assertEqual(build['permissions'], {'contents': 'read'})
         events = build.get('on', build.get(True))
         self.assertIn('pull_request', events)
-        # All PR-reachable jobs and the read-only shared payload producer,
-        # including the optional native benchmark.
-        for name in ('impact', 'docs', 'checks', 'payload', 'gate', 'vm-tools-benchmark', 'repository-secrets', 'incoming-scan'):
+        # All PR-reachable jobs and the read-only shared payload producer.
+        # The optional native VM tools benchmark is archived.
+        self.assertNotIn('vm-tools-benchmark', jobs)
+        for name in ('impact', 'docs', 'checks', 'payload', 'gate', 'repository-secrets', 'incoming-scan'):
             job = jobs[name]
             self.assertTrue(all(value == 'read' for value in job.get('permissions', {}).values()), name)
             self.assertNotIn('secrets.', str(job), name)
@@ -107,11 +115,7 @@ class Integrations(unittest.TestCase):
         pr = document('codeql')['jobs']['analyze']
         self.assertNotIn('secrets.', str(pr))
         self.assertEqual(pr['permissions'], {'contents': 'read'})
-        benchmark = document('benchmark-vm-tools')
-        self.assertNotIn('secrets.', str(benchmark))
-        self.assertTrue(all(value == 'read' for value in benchmark['permissions'].values()))
-        for job in benchmark['jobs'].values():
-            self.assertTrue(all(value == 'read' for value in job.get('permissions', {}).values()))
+        self.assertFalse((WORKFLOWS / 'benchmark-vm-tools.yml').exists())
 
     def test_harden_runner_is_pinned_first_hosted_audit_without_paid_features(self):
         count = 0
@@ -159,16 +163,12 @@ class Integrations(unittest.TestCase):
     def test_review_app_profile_resolution_and_small_token_scope(self):
         job = document('release-set')['jobs']['prepare']
         steps = job['steps']
-        token_index = next(i for i, s in enumerate(steps) if uses(s, 'actions/create-github-app-token'))
-        token = steps[token_index]['with']
-        self.assertEqual(token['repositories'], '${{ github.event.repository.name }}')
-        self.assertEqual({k: v for k, v in token.items() if k.startswith('permission-')},
-                         {'permission-administration': 'read', 'permission-actions': 'read',
-                          'permission-contents': 'write', 'permission-pull-requests': 'write',
-                          'permission-members': 'read'})
-        self.assertTrue(any('--profile review-app' in s.get('run', '') and '--scope review-app' in s['run']
-                            for s in steps[:token_index]))
-        self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', steps[token_index + 1]['run'])
+        token_index = next(i for i, s in enumerate(steps) if uses(s, REVIEW_APP))
+        self.assertEqual(steps[token_index]['id'], 'decision-app')
+        self.assertEqual(permissions(steps[token_index]),
+                         {'administration': 'read', 'actions': 'read', 'contents': 'write',
+                          'pull-requests': 'write', 'members': 'read'})
+        self.assertFalse(any(uses(s, 'actions/create-github-app-token') for s in steps))
         proposal = next(s for s in steps if s.get('name') == 'Propose the single official release approval')
         origin = next(s for s in steps if s.get('name') == 'Retain native release product origin')
         self.assertGreater(steps.index(origin), steps.index(proposal))
@@ -225,7 +225,7 @@ class Integrations(unittest.TestCase):
                             in step.get('run', ''))
             fresh = next(i for i, step in enumerate(steps) if step.get('id') == 'authority-token')
             self.assertLess(transfer, fresh, name)
-            self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', steps[fresh + 1]['run'])
+            self.assertTrue(uses(steps[fresh], REVIEW_APP), name)
             authority_steps = [step for step in steps[fresh + 1:] if step.get('env', {}).get('GH_TOKEN') ==
                                '${{ steps.authority-token.outputs.token }}']
             self.assertTrue(authority_steps, name)
@@ -247,17 +247,20 @@ class Integrations(unittest.TestCase):
         commit = next(i for i, step in enumerate(steps) if 'execute-release-set.py commit-publication' in step.get('run', ''))
         self.assertLess(stage, fresh)
         self.assertLess(fresh, commit)
-        self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', steps[fresh + 1]['run'])
+        self.assertTrue(uses(steps[fresh], REVIEW_APP))
         self.assertEqual(steps[commit]['env']['GH_TOKEN'], '${{ steps.commit-authority-token.outputs.token }}')
-        self.assertTrue(all(value == 'read' for key, value in steps[fresh]['with'].items() if key.startswith('permission-')))
+        self.assertTrue(all(value == 'read' for value in permissions(steps[fresh]).values()))
 
     def test_all_decision_and_release_tokens_can_verify_the_pinned_team(self):
         for name in ('decision-authority', 'decision-proposals', 'release-set', 'publish-release-set'):
+            minted = 0
             for job in document(name)['jobs'].values():
                 for step in job.get('steps', []):
-                    if uses(step, 'actions/create-github-app-token'):
-                        self.assertEqual(step['with']['permission-members'], 'read', name)
-                        self.assertEqual(step['with']['repositories'], '${{ github.event.repository.name }}')
+                    self.assertFalse(uses(step, 'actions/create-github-app-token'), name)
+                    if uses(step, REVIEW_APP):
+                        minted += 1
+                        self.assertEqual(permissions(step)['members'], 'read', name)
+            self.assertTrue(minted, name)
         rules = json.loads((ROOT / 'automation/github/repository-security.json').read_text())
         reviewers = next(rule['reviewers'] for rule in rules['environments']['package-cleanup']['protection_rules']
                          if rule['type'] == 'required_reviewers')
@@ -266,6 +269,42 @@ class Integrations(unittest.TestCase):
         self.assertEqual(release['protection_rules'], [{'type': 'branch_policy'}])
         self.assertFalse(release['can_admins_bypass'])
         self.assertEqual(release['deployment_branches'], [{'name': 'main', 'type': 'branch'}])
+
+    def test_review_app_token_action_scopes_tokens_and_always_clears_the_key(self):
+        import os
+        import subprocess
+        import tempfile
+        action = yaml.safe_load((ROOT / '.github/actions/review-app-token/action.yml').read_text())
+        steps = action['runs']['steps']
+        self.assertEqual([s.get('id') for s in steps], ['permissions', None, 'token', None])
+        resolve = steps[1]
+        self.assertIn('finite-ci-secrets-run review-app --', resolve['run'])
+        self.assertIn('--profile review-app', resolve['run'])
+        self.assertIn('--scope review-app', resolve['run'])
+        self.assertIn('"$REASON"', resolve['run'])
+        self.assertEqual(resolve['env']['REASON'], '${{ inputs.reason }}')
+        token = steps[2]
+        self.assertTrue(uses(token, 'actions/create-github-app-token'))
+        self.assertEqual(token['with']['owner'], '${{ github.repository_owner }}')
+        self.assertEqual(token['with']['repositories'], '${{ github.event.repository.name }}')
+        self.assertEqual(steps[3]['if'], 'always()')
+        self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', steps[3]['run'])
+        self.assertEqual(action['outputs']['token']['value'], '${{ steps.token.outputs.token }}')
+        names = {k.removeprefix('permission-') for k in token['with'] if k.startswith('permission-')}
+        for request, expected in [('contents: write\npull-requests: read\n', {'contents': 'write', 'pull-requests': 'read'}),
+                                  ('', None), ('contents: admin', None), ('workflows: write', None),
+                                  ('contents: read\ncontents: write', None), ('contents read', None)]:
+            with self.subTest(request=request), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / 'output'
+                result = subprocess.run(['bash', '-e', '-c', steps[0]['run']], capture_output=True, text=True,
+                                        env={**os.environ, 'PERMISSIONS': request, 'GITHUB_OUTPUT': str(output)})
+                if expected is None:
+                    self.assertNotEqual(result.returncode, 0)
+                    continue
+                self.assertEqual(result.returncode, 0, result.stderr)
+                values = dict(line.split('=', 1) for line in output.read_text().splitlines())
+                self.assertEqual(set(values), names)
+                self.assertEqual({k: v for k, v in values.items() if v}, expected)
 
 
 if __name__ == '__main__':

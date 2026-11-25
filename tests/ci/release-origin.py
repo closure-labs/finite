@@ -2,6 +2,7 @@
 """Native origin receipts fail closed and never grant approval."""
 from copy import deepcopy
 import hashlib
+import inspect
 import io
 import json
 import os
@@ -130,9 +131,7 @@ class Origin(unittest.TestCase):
         packet = {'reference': self.reference, 'sha256': canonical_hash(self.manifest), 'producer': self.producer}
         self.value = origin.receipt(self.root, self.producer, self.artifact, packet, 50)
         with self.assertRaisesRegex(ValueError, 'Invalid origin producer'): self.verify()
-        self.assertTrue(self.verify(diagnostic=True))
-        self.job['status'] = 'in_progress'
-        with self.assertRaises(ValueError): self.verify(diagnostic=True)
+        self.assertNotIn('diagnostic', inspect.signature(origin.verify).parameters)
 
     def test_receipt_writer_requires_the_current_native_producer_job(self):
         self.job['status'] = 'in_progress'

@@ -19,9 +19,8 @@ def preflight(env=os.environ):
     require(env.get('GITHUB_ACTIONS') == 'true' and env.get('GITHUB_REPOSITORY') == 'closure-labs/finite'
             and env.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'
             and ref.startswith('refs/heads/') and ref != 'refs/heads/main'
-            and env.get('GITHUB_WORKFLOW_REF') in {
-                'closure-labs/finite/.github/workflows/' + workflow + '@' + ref
-                for workflow in ('bootability-pilot.yml', 'benchmark-image-tools.yml')}
+            # The benchmark-image-tools.yml launcher is archived; only direct dispatch remains.
+            and env.get('GITHUB_WORKFLOW_REF') == 'closure-labs/finite/.github/workflows/bootability-pilot.yml@' + ref
             and env.get('GITHUB_RUN_ATTEMPT') == '1', 'Pilot requires a first-attempt manual branch run')
     require(bool(re.fullmatch('[0-9a-f]{40}', env.get('GITHUB_SHA', ''))), 'Missing exact checkout head')
 

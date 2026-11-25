@@ -268,6 +268,7 @@ class Checks(unittest.TestCase):
         self.assertEqual(discover['permissions'], {'contents': 'read', 'actions': 'read', 'pull-requests': 'read', 'checks': 'read'})
         self.assertFalse(any(s.get('uses') == '$/.github/actions/setup-nix'
                              or s.get('uses', '').startswith('actions/create-github-app-token@')
+                             or s.get('uses') == '$/.github/actions/review-app-token'
                              for s in discover['steps']))
         writer = workflow['jobs']['authority']
         self.assertEqual(writer['needs'], 'discover')

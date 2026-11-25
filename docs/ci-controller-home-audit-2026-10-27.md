@@ -2,7 +2,7 @@
 
 This audit uses the [successful production rollout](ci-foundation-production-2026-10-27.md),
 read-only registry inspection, the decision journal and two retained native fresh
-job logs. The [snapshot](ci-controller-home-audit-2026-10-27.json) binds candidate
+job logs. The [snapshot](../archive/evidence/ci-controller-home-audit-2026-10-27.json) binds candidate
 identities, journal inputs and log hashes. No local Nix, VM benchmark or package
 ownership change was performed.
 

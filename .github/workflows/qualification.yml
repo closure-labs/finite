@@ -24,17 +24,6 @@ on:
       source_revision:
         type: string
         required: true
-      validation_only:
-        type: boolean
-        default: false
-      installer_compression:
-        description: Diagnostic-only runtime compression; default preserves the pinned installer
-        type: string
-        default: default
-      installer_benchmark:
-        description: Diagnostic-only predeclared runner, runtime and cache cohort controls
-        type: string
-        default: ""
       force_qualification:
         type: boolean
         default: false
@@ -52,11 +41,7 @@ permissions:
 jobs:
   prepare:
     if: >-
-      github.repository == 'closure-labs/finite' &&
-      ((!inputs.validation_only && github.ref == 'refs/heads/main') ||
-       (inputs.validation_only && github.event_name == 'workflow_dispatch' &&
-        startsWith(github.ref, 'refs/heads/') && github.ref != 'refs/heads/main' &&
-        github.workflow_ref == format('{0}/.github/workflows/benchmark-image-tools.yml@{1}', github.repository, github.ref)))
+      github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
@@ -68,26 +53,18 @@ jobs:
       BUILD_IDENTITY: ${{ inputs.identity }}
       SOURCE_REVISION: ${{ inputs.source_revision }}
       GH_TOKEN: ${{ github.token }}
-      FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
-      FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
-      FINITE_INSTALLER_BENCHMARK: ${{ inputs.installer_benchmark }}
-      QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
+      QUALIFICATION_PREFIX: qualification
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Validate manual branch diagnostic boundary
-        if: inputs.validation_only
-        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - uses: $/.github/actions/setup-nix
-        if: ${{ !inputs.validation_only }}
         with:
           job-profile: controller
           cache-mode: none
       - name: Validate qualification execution context
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - name: Reject obsolete publication before reuse or VM work
-        if: ${{ !inputs.validation_only }}
         env:
           IMAGE_ARTIFACT: ${{ inputs.build_evidence }}
         run: |
@@ -99,7 +76,7 @@ jobs:
             --record ".bluebuild/$PROFILE-publication.json"
       - name: Check enabled exact qualification reuse
         id: reuse
-        if: ${{ !inputs.validation_only && env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
+        if: ${{ env.FINITE_QUALIFICATION_REUSE == 'true' && !inputs.force_qualification }}
         run: |
           echo "reused=false" >>"$GITHUB_OUTPUT"
           status=0
@@ -108,7 +85,7 @@ jobs:
           if [[ $status != 0 ]]; then exit "$status"; fi
           echo "reused=true" >>"$GITHUB_OUTPUT"
       - name: Save authenticated reusable qualification
-        if: ${{ !inputs.validation_only && steps.reuse.outputs.reused == 'true' }}
+        if: ${{ steps.reuse.outputs.reused == 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: qualification-reused-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
@@ -120,9 +97,7 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.reused != 'true'
     strategy:
-      # A controlled benchmark cannot use a partial pair. Cancel its sibling
-      # instead of spending another VM round after a cohort or acceptance failure.
-      fail-fast: ${{ inputs.validation_only && inputs.installer_benchmark != '' }}
+      fail-fast: false
       matrix:
         phase: ${{ fromJSON(inputs.previous != '' && '["fresh","upgrade"]' || '["fresh"]') }}
     runs-on: ubuntu-24.04
@@ -131,7 +106,6 @@ jobs:
       # Defer only functional verdicts to the REQUIRED functional aggregate job.
       FINITE_SEPARATE_FUNCTIONAL: true
       FINITE_BENCHMARK_PHASE: ${{ matrix.phase }}
-      FINITE_NIX_OBSERVATION: ${{ inputs.validation_only && inputs.installer_benchmark != '' }}
       PROFILE: ${{ inputs.profile }}
       CHANNEL: ${{ inputs.channel }}
       CANDIDATE_DIGEST: ${{ inputs.digest }}
@@ -139,21 +113,11 @@ jobs:
       BUILD_IDENTITY: ${{ inputs.identity }}
       SOURCE_REVISION: ${{ inputs.source_revision }}
       GH_TOKEN: ${{ github.token }}
-      FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
-      FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
-      FINITE_INSTALLER_BENCHMARK: ${{ inputs.installer_benchmark }}
-      QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
+      QUALIFICATION_PREFIX: qualification
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Validate manual branch diagnostic boundary
-        if: inputs.validation_only
-        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
-      - name: Validate and record predeclared benchmark controls
-        id: benchmark
-        if: inputs.validation_only
-        run: python3 scripts/bluebuild/benchmark-controls.py --record
       - name: Verify KVM and record runner capacity
         env:
           PHASE: ${{ matrix.phase }}
@@ -164,7 +128,7 @@ jobs:
       - uses: $/.github/actions/setup-nix
         with:
           job-profile: vm
-          cache-mode: ${{ steps.benchmark.outputs.cache-mode || 'none' }}
+          cache-mode: none
           cache-profile: checks
       - name: Validate qualification execution context
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
@@ -211,7 +175,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ${{ inputs.validation_only && 'qualification-diagnostic-phase' || 'qualification-phase' }}-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: qualification-phase-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .bluebuild/*outcome.json
             .bluebuild/*-predecessor-reuse.json
@@ -230,7 +194,7 @@ jobs:
       - name: Preserve pristine qualified candidate ISO for the pilot
         if: >-
           success() && steps.acceptance.outputs.functional_passed == 'true' &&
-          !inputs.validation_only && matrix.phase == 'fresh' &&
+          matrix.phase == 'fresh' &&
           env.FINITE_QUALIFIED_ISO_PRESERVATION == 'true' &&
           contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -262,19 +226,12 @@ jobs:
       BUILD_IDENTITY: ${{ inputs.identity }}
       SOURCE_REVISION: ${{ inputs.source_revision }}
       GH_TOKEN: ${{ github.token }}
-      FINITE_VALIDATION_ONLY: ${{ inputs.validation_only }}
-      FINITE_INSTALLER_COMPRESSION: ${{ inputs.installer_compression }}
-      FINITE_INSTALLER_BENCHMARK: ${{ inputs.installer_benchmark }}
-      QUALIFICATION_PREFIX: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}
+      QUALIFICATION_PREFIX: qualification
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Validate manual branch diagnostic boundary
-        if: inputs.validation_only
-        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
       - uses: $/.github/actions/setup-nix
-        if: ${{ !inputs.validation_only }}
         with:
           job-profile: controller
           cache-mode: none
@@ -305,7 +262,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ${{ inputs.validation_only && 'qualification-diagnostic' || 'qualification' }}-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: qualification-${{ inputs.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .bluebuild/*acceptance.json
             .bluebuild/*outcome.json
@@ -317,5 +274,5 @@ jobs:
             .bluebuild/iso-*/*.json
             .bluebuild/iso-*/SHA256SUMS
           include-hidden-files: true
-          retention-days: ${{ inputs.validation_only && 14 || 90 }}
+          retention-days: 90
 

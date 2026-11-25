@@ -86,7 +86,7 @@ jobs being compared; it is not part of the production per-hit security path.
 
 Small summary archives were authenticated by repository, run, attempt, source,
 artifact ID, size and SHA-256. Medians were independently recomputed from the
-authenticated job timestamps. [Machine-readable evidence](new-os-reuse-results-2026-10-15.json)
+authenticated job timestamps. [Machine-readable evidence](../archive/evidence/new-os-reuse-results-2026-10-15.json)
 records candidate/predecessor digests, build identities, original jobs, summary
 artifact digests, matched cohorts, firmware/package context and every sample.
 
@@ -116,7 +116,7 @@ this work does not create or retag a public versioned release.
 Following the owner's request, the repository Actions variables
 `FINITE_REUSE_INVENTORY` and `FINITE_QUALIFICATION_REUSE` were set to `true` on
 October 15, 2026 at 20:55 UTC. GitHub's variable API and the installed SecretSpec
-resolver confirmed both settings. See the [activation receipt](ci-reuse-activation-2026-10-15.json).
+resolver confirmed both settings. See the [activation receipt](../archive/evidence/ci-reuse-activation-2026-10-15.json).
 These settings already apply to new CI runs; merging this record does not apply
 the variable changes again. Source and local SecretSpec defaults remain false,
 and the original benchmark JSON retains its measurement-time settings.
