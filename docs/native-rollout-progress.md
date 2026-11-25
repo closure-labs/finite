@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45713686563)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45718895044)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -173,8 +173,20 @@ the RPM. The upstream source archive remains pinned to the same revision and
 checksum. Its locked `openssl-sys` 0.9.118 supports OpenSSL 4.
 [Fedora 45 package](https://packages.fedoraproject.org/pkgs/openssl/openssl-libs/fedora-45.html)
 [Rust OpenSSL upstream release history](https://github.com/rust-openssl/rust-openssl/releases)
-The retry runs revision `92ec27b4` with this pin and the expanded native recipe
-verification. There is no successful ISO or fresh boot receipt yet.
+Run [45713686563](https://github.com/closure-labs/finite/actions/runs/45713686563)
+produced the Fedora 45 RPM with OpenSSL 4 dependencies and rebuilt the shared
+Nix payload. RPM resolved the package dependencies and reached transaction
+preparation, then rejected the unsigned local artifact. Change `kqoxwtrt`
+applies RPM's digest verification mode for that one offline transaction
+after the exact file hash and Fedora major checks.
+[RPM verification modes](https://rpm.org/docs/6.0.x/man/rpm-config.5)
+
+The current retry at `dbebf626` configures the one-job, two-core Nix cap from
+setup, wraps VM tool realization in the memory watchdog, and reserves the live
+validation serial port for the installer. The capped local full check stopped
+at the 3 GiB reserve. Seven runtime cases, 24 installer cases, six resource
+cases, actionlint, Zizmor and shellcheck passed in targeted checks. There is no
+successful ISO or fresh boot receipt yet.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
