@@ -110,9 +110,9 @@ def seal(args, secret):
     os.environ['PATH'] = str(tools / 'bin') + ':' + os.environ['PATH']
     bootc = Path(shutil.which('bootc') or '/missing-bootc').resolve()
     pin = json.loads((ROOT / 'sources/native-composefs-verifier.json').read_text())
-    accepted = {pin['bootcSha256'], *pin.get('additionalBootcSha256', [])}
-    if oci.sha256(bootc) not in accepted or capture([bootc, '--version']) != pin['bootcVersion']:
-        raise ValueError('Canonical importer differs from the reviewed pin')
+    if args.validation_importer_sha256 is not None and not args.validation_only:
+        raise ValueError('A runner-built importer cannot be used for production sealing')
+    importer_sha = verification.check_importer(bootc, pin, args.validation_importer_sha256)
     identity = json.loads((ROOT / 'sources/boot-signing.json').read_text())
     if args.validation_only:
         if not args.validation_key or not args.validation_certificate or secret:
@@ -233,14 +233,14 @@ def seal(args, secret):
     (work / 'verification').mkdir(mode=0o700)
     verification.verify(argparse.Namespace(archive=output, certificate=certificate,
                          certificate_sha256=certificate_hash, output=work / 'integrity.json',
-                         temporary_root=work / 'verification'))
+                         temporary_root=work / 'verification'), args.validation_importer_sha256)
     if oci.sha256(source) != source_hash:
         raise ValueError('Source archive changed while sealing')
     report = {'schema': 1, 'profile': args.profile, 'sourceRevision': args.revision,
               'sourceArchiveSha256': source_hash, 'archiveSha256': oci.sha256(output),
               'bootableRootDigest': digest, 'certificateDerSha256': certificate_hash,
               'kernelRelease': release, 'epoch': args.epoch, 'validationOnly': args.validation_only,
-              'tools': str(tools), 'importerSha256': oci.sha256(bootc),
+              'tools': str(tools), 'importerSha256': importer_sha,
               'integrity': json.loads((work / 'integrity.json').read_text())}
     with (work / 'sealed.json').open('x') as stream:
         json.dump(report, stream, indent=2)
@@ -267,6 +267,7 @@ def main():
     p.add_argument('--keep-work', action='store_true')
     p.add_argument('--validation-key', type=Path)
     p.add_argument('--validation-certificate', type=Path)
+    p.add_argument('--validation-importer-sha256', help='same-run Nix-built importer identity for disposable CI')
     args = p.parse_args()
     try:
         seal(args, secret)

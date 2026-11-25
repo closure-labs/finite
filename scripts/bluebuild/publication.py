@@ -160,6 +160,7 @@ def validate_boot_seal(record, receipt_bytes, digest, source_revision, root):
             or receipt.get('certificateDerSha256') != signer['certificateDerSha256']
             or receipt.get('importerSha256') not in {importer['bootcSha256'], *importer.get('additionalBootcSha256', [])}
             or integrity.get('importerBinarySha256') != receipt.get('importerSha256')
+            or integrity.get('validationOnly') is True
             or integrity.get('strictVerity') is not True or not integrity.get('ukis')
             or integrity.get('archiveSha256') != receipt.get('archiveSha256')
             or integrity.get('certificateDerSha256') != signer['certificateDerSha256']

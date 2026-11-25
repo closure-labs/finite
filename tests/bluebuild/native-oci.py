@@ -102,6 +102,24 @@ class CompletedArchive(unittest.TestCase):
         with self.assertRaises(subprocess.CalledProcessError):
             self.verify(bad_signature=True)
 
+    def test_runner_digest_is_limited_to_disposable_branch(self):
+        actual = 'a' * 64
+        bootc = Path('/nix/store/fixture-importer/bin/bootc')
+        pin = {'bootcVersion': 'bootc 1.17.1', 'architecture': native.platform.machine(),
+               'bootcSha256': 'b' * 64}
+        env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
+               'GITHUB_REF': 'refs/heads/qualification/native-iso'}
+        with patch.object(native, 'capture', return_value=pin['bootcVersion']), \
+                patch.object(native, 'sha256', return_value=actual), patch.dict(native.os.environ, env):
+            self.assertEqual(native.check_importer(bootc, pin, actual), actual)
+            with self.assertRaisesRegex(ValueError, 'reviewed pin'):
+                native.check_importer(bootc, pin)
+            with self.assertRaisesRegex(ValueError, 'reviewed pin'):
+                native.check_importer(bootc, pin, 'f' * 64)
+            with patch.dict(native.os.environ, GITHUB_REF='refs/heads/main'), \
+                    self.assertRaisesRegex(ValueError, 'disposable'):
+                native.check_importer(bootc, pin, actual)
+
     def test_unpinned_importer_cannot_create_evidence(self):
         with self.assertRaisesRegex(ValueError, 'pin'):
             self.verify(bad_importer=True)

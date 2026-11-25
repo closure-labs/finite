@@ -16,9 +16,9 @@ tools=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-boo
 importer=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-bootc --no-link --print-out-paths)
 export PATH="$tools/bin:$importer/bin:$PATH"
 importer_sha=$(sha256sum "$importer/bin/bootc" | cut -d' ' -f1)
-jq -e --arg sha "$importer_sha" --arg version "$(bootc --version)" '
-  .bootcVersion == $version and ([.bootcSha256, .additionalBootcSha256[]] | index($sha) != null)
-' sources/native-composefs-verifier.json >/dev/null
+importer_version=$("$importer/bin/bootc" --version)
+printf 'Runner-built importer: %s, sha256:%s (%s)\n' "$importer_version" "$importer_sha" "$importer"
+[[ $importer_version == "$(jq -er .bootcVersion sources/native-composefs-verifier.json)" ]]
 python3 scripts/ci/bluefin-upstream.py verify
 nice -n 19 bash scripts/bluebuild/stage.sh "$profile"
 nice -n 19 bluebuild validate "recipes/$profile.yml"
@@ -42,7 +42,8 @@ openssl req -new -newkey rsa:3072 -nodes -x509 -sha256 -days 7 -subj "/CN=Finite
 nice -n 19 python3 scripts/bluebuild/seal-native.py \
   --source "$work/raw.oci.tar" --output "$work/sealed.oci.tar" --work "$work/seal" \
   --tools "$tools" --profile "$profile" --revision "$GITHUB_SHA" --epoch "$(date +%s)" \
-  --validation-only --validation-key "$work/vm.key" --validation-certificate "$work/vm.pem"
+  --validation-only --validation-key "$work/vm.key" --validation-certificate "$work/vm.pem" \
+  --validation-importer-sha256 "$importer_sha"
 rm -f "$work/vm.key" "$work/raw.oci.tar"
 digest=$(tar -xOf "$work/sealed.oci.tar" index.json | jq -er '.manifests[0].digest')
 cp "$work/seal/sealed.json" "$work/vm.pem" .bluebuild/native-validation/

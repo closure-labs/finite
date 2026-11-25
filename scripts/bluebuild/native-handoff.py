@@ -75,6 +75,7 @@ def finalize(args):
             or receipt.get('certificateDerSha256') != signer['certificateDerSha256']
             or receipt.get('importerSha256') not in accepted
             or integrity.get('importerBinarySha256') != receipt['importerSha256']
+            or integrity.get('validationOnly') is True
             or integrity.get('strictVerity') is not True or not integrity.get('ukis')
             or integrity.get('certificateDerSha256') != signer['certificateDerSha256']
             or integrity.get('bootableRootDigest') != receipt.get('bootableRootDigest')

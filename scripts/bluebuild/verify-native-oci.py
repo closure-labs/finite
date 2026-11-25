@@ -43,15 +43,30 @@ def digest_arguments(cmdline):
     return digests[0].rsplit(':', 1)[1]
 
 
-def verify(args):
+def check_importer(bootc, lock, validation_sha=None):
+    actual = sha256(bootc)
+    accepted = {lock['bootcSha256'], *lock.get('additionalBootcSha256', [])}
+    if validation_sha is not None:
+        if not (os.environ.get('GITHUB_ACTIONS') == 'true'
+                and os.environ.get('GITHUB_REPOSITORY') == 'closure-labs/finite'
+                and os.environ.get('GITHUB_REF') == 'refs/heads/qualification/native-iso'
+                and bootc.is_relative_to('/nix/store')
+                and re.fullmatch('[0-9a-f]{64}', validation_sha)):
+            raise ValueError('Runner-built importer requires the dedicated disposable qualification workflow')
+        accepted = {validation_sha}
+    version = capture([bootc, '--version'])
+    if platform.machine() != lock['architecture'] or actual not in accepted or version != lock['bootcVersion']:
+        raise ValueError(f'Canonical importer differs from its reviewed pin ({version}, sha256:{actual})')
+    return actual
+
+
+def verify(args, validation_sha=None):
     for tool in ('bootc', 'openssl', 'umoci', 'sbverify', 'objcopy'):
         if not shutil.which(tool):
             raise ValueError('Missing canonical verification tool: ' + tool)
     lock = json.loads((ROOT / 'sources/native-composefs-verifier.json').read_text())
     bootc = Path(shutil.which('bootc') or '/missing-bootc').resolve()
-    if (platform.machine() != lock['architecture'] or sha256(bootc) not in {lock['bootcSha256'], *lock.get('additionalBootcSha256', [])}
-            or capture([bootc, '--version']) != lock['bootcVersion']):
-        raise ValueError('Canonical importer differs from its reviewed version/binary pin')
+    importer_sha = check_importer(bootc, lock, validation_sha)
     archive = args.archive.resolve(strict=True)
     certificate = args.certificate.resolve(strict=True)
     if not re.fullmatch(r'[0-9a-f]{64}', args.certificate_sha256):
@@ -95,10 +110,12 @@ def verify(args):
             verified.append({'path': str(uki.relative_to(rootfs)), 'sha256': sha256(uki)})
         if sha256(archive) != archive_hash:
             raise ValueError('OCI archive changed during verification')
+        if sha256(bootc) != importer_sha:
+            raise ValueError('Canonical importer changed during verification')
         report = {'schema': 1, 'archiveSha256': archive_hash,
                   'bootableRootDigest': imported, 'strictVerity': True,
                   'certificateDerSha256': args.certificate_sha256,
-                  'importerBinarySha256': sha256(bootc),
+                  'importerBinarySha256': importer_sha, 'validationOnly': validation_sha is not None,
                   'importer': lock, 'ukis': verified,
                   'scope': 'artifact integrity only; not release or migration approval'}
     with args.output.open('x') as stream:
