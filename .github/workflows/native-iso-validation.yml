@@ -1,0 +1,58 @@
+name: Validate native installer media
+on:
+  push:
+    branches: [qualification/native-iso]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: finite-native-iso-validation
+  cancel-in-progress: true
+env:
+  FINITE_CI_VARS: ${{ toJSON(vars) }}
+jobs:
+  media:
+    name: Native media (${{ matrix.profile }})
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-iso'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        profile: [finite-native, finite-native-dev]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
+      - uses: $/.github/actions/setup-cosign
+      - name: Install the verified locked BlueBuild CLI
+        run: bash scripts/bluebuild/install-cli.sh
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          name: bluebuild
+          driver: docker-container
+          driver-opts: default-load=true
+          use: false
+      - name: Build, seal and package one disposable profile
+        env:
+          PROFILE: ${{ matrix.profile }}
+        run: bash scripts/native-installer/hosted-validation.sh "$PROFILE"
+      - name: Retain media build identity
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-iso-validation-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/native-validation/
+            .bluebuild/native-iso/installation.json
+            .bluebuild/native-iso/SHA256SUMS
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 7

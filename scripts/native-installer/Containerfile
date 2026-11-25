@@ -5,6 +5,7 @@ ARG PAYLOAD
 FROM ${PAYLOAD}
 ARG PAYLOAD_REF
 ARG PAYLOAD_DIGEST
+ARG VALIDATION=false
 
 # Live boot: dmsquash-live in the initramfs; Fedora-signed shim + cdboot GRUB
 # for the ISO's own Secure Boot chain; ISO assembly tools used by image-builder.
@@ -31,6 +32,10 @@ COPY README.md /usr/share/doc/finite/native-installer.md
 COPY finite-native-install /usr/libexec/finite/finite-native-install
 COPY finite-native-installer.service /usr/lib/systemd/system/finite-native-installer.service
 COPY iso.yaml /usr/lib/image-builder/bootc/iso.yaml
+RUN if [ "$VALIDATION" = true ]; then \
+      printf "  - console=ttyS0,115200n8\n  - rd.plymouth=0\n  - plymouth.enable=0\n" >> /usr/lib/image-builder/bootc/iso.yaml; \
+      sed -i "s|/dev/tty1|/dev/ttyS0|g" /usr/lib/systemd/system/finite-native-installer.service; \
+    fi
 
 # Installed-system services make no sense on live media.
 RUN systemctl enable finite-native-installer.service \

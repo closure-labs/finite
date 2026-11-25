@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the Finite native installer ISO for one verified native image digest.
-# Usage: build-iso.sh REPOSITORY TAG DIGEST
+# Usage: build-iso.sh REPOSITORY TAG DIGEST [SEALED_VALIDATION_ARCHIVE SEAL_RECEIPT]
 #   e.g. build-iso.sh ghcr.io/closure-labs/finite finite-native sha256:<64 hex>
 # Runs on the ephemeral hosted ISO runner (root podman); never on a workstation.
 set -euo pipefail
@@ -11,6 +11,8 @@ set -euo pipefail
 repository=${1:?repository}
 tag=${2:?tag}
 digest=${3:?digest}
+validation_archive=${4:-}
+validation_receipt=${5:-}
 [[ $repository =~ ^ghcr\.io/closure-labs/finite$ ]] || { echo "Unexpected repository $repository" >&2; exit 2; }
 [[ $tag == finite-native || $tag == finite-native-dev ]] || { echo 'Invalid tag' >&2; exit 2; }
 [[ $digest =~ ^sha256:[0-9a-f]{64}$ ]] || { echo 'Digest must be immutable' >&2; exit 2; }
@@ -23,27 +25,44 @@ builder="$(jq -er '.imageBuilder.image' "$lock")@$(jq -er '.imageBuilder.digest'
 output=${ISO_OUTPUT_DIR:-$root/.bluebuild/native-iso}
 installer="localhost/finite-native-installer:$tag"
 payload="$repository:$tag"
+revision=${GITHUB_SHA:?}
+[[ $revision =~ ^[0-9a-f]{40}$ ]]
+[[ ! -e $output ]] || { echo 'Use a fresh ISO output directory.' >&2; exit 2; }
 
-# The payload must be the signed digest, stored under a tag: image-builder reads
-# local containers-storage by name, and the installer targets that name.
-cosign verify --new-bundle-format=false --key "$root/cosign.pub" "$repository@$digest" >/dev/null
-sudo podman pull "$repository@$digest"
-profile=$(sudo podman image inspect --format '{{index .Labels "io.finite.profile"}}' "$repository@$digest")
-architecture=$(sudo podman image inspect --format '{{index .Labels "io.finite.boot-architecture"}}' "$repository@$digest")
+# Both paths require an immutable manifest before building a derived live root.
+# Only the dedicated validation run accepts an archive sealed with a VM key.
+validation=false
+if [[ -n $validation_archive || -n $validation_receipt ]]; then
+  [[ ${GITHUB_REF:-} == refs/heads/qualification/native-iso && $# == 5 ]]
+  archive_hash=$(sha256sum -- "$validation_archive" | cut -d' ' -f1)
+  jq -e --arg sha "$archive_hash" --arg profile "$tag" --arg revision "$revision" '
+    .schema == 1 and .validationOnly == true and .archiveSha256 == $sha and
+    .profile == $profile and .sourceRevision == $revision and .integrity.strictVerity == true and
+    .integrity.archiveSha256 == $sha and .integrity.bootableRootDigest == .bootableRootDigest
+  ' "$validation_receipt" >/dev/null
+  sudo skopeo copy --preserve-digests "oci-archive:$validation_archive" "containers-storage:$payload"
+  validation=true
+else
+  [[ ${GITHUB_REF:-} == refs/heads/main && $# == 3 ]]
+  cosign verify --new-bundle-format=false --key "$root/cosign.pub" "$repository@$digest" >/dev/null
+  sudo podman pull "$repository@$digest"
+  sudo podman tag "$repository@$digest" "$payload"
+fi
+[[ $(sudo podman image inspect --format '{{.Digest}}' "$payload") == "$digest" ]]
+profile=$(sudo podman image inspect --format '{{index .Labels "io.finite.profile"}}' "$payload")
+architecture=$(sudo podman image inspect --format '{{index .Labels "io.finite.boot-architecture"}}' "$payload")
 [[ $profile == "$tag" && $architecture == native-composefs ]] || {
   echo 'Payload must be the matching native profile, authenticated by digest.' >&2; exit 2;
 }
-sudo podman tag "$repository@$digest" "$payload"
-[[ $(sudo podman image inspect --format '{{.Digest}}' "$payload") == "$digest" ]]
-
 sudo podman build --pull=never \
-  --build-arg "PAYLOAD=$repository@$digest" --build-arg "PAYLOAD_REF=$payload" --build-arg "PAYLOAD_DIGEST=$digest" \
+  --build-arg "PAYLOAD=$payload" --build-arg "PAYLOAD_REF=$payload" --build-arg "PAYLOAD_DIGEST=$digest" \
+  --build-arg "VALIDATION=$validation" \
   --label "io.finite.native-installer.payload=$repository@$digest" \
   --tag "$installer" "$here"
 sudo podman pull "$builder"
 
 mkdir -p "$output"
-sudo podman run --rm --privileged --security-opt label=type:unconfined_t \
+sudo podman run --rm --privileged --security-opt label=disable \
   -v /var/lib/containers/storage:/var/lib/containers/storage \
   -v "$output":/output \
   "$builder" build --output-dir /output \
@@ -57,8 +76,8 @@ final="$output/finite-native-installer-$tag.iso"
 [[ ${isos[0]} == "$final" ]] || mv "${isos[0]}" "$final"
 installer_id=$(sudo podman image inspect --format '{{.Id}}' "$installer")
 jq -n --arg payload "$repository@$digest" --arg tag "$payload" --arg installer "$installer_id" \
-  --arg builder "$builder" --arg revision "${GITHUB_SHA:?}" \
+  --arg builder "$builder" --arg revision "$revision" --argjson validation "$validation" \
   '{schema: 1, payload: $payload, payloadTag: $tag, installerImageId: $installer,
-    imageBuilder: $builder, finiteRevision: $revision}' >"$output/installation.json"
+    imageBuilder: $builder, finiteRevision: $revision, validationOnly: $validation}' >"$output/installation.json"
 (cd "$output" && sha256sum -- "$(basename "$final")" installation.json >SHA256SUMS)
 echo "Native installer ISO: $final"
