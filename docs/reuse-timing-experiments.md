@@ -30,4 +30,4 @@ its measured reader paths are unchanged. No old OS or retired variant was
 benchmarked in this comparison, and no production defaults changed.
 
 See the [results and next decisions](new-os-reuse-results.md) and their
-[authenticated timing evidence](new-os-reuse-results-2026-10-15.json).
+[authenticated timing evidence](../archive/evidence/new-os-reuse-results-2026-10-15.json).

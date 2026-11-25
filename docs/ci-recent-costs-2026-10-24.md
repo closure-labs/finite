@@ -11,7 +11,7 @@ and 485 unique jobs, including 145 successful, eight failed, four cancelled,
 14 skipped and one unfinished run. Known runner occupancy is 85,975.331 seconds;
 two job durations remain unknown and one job is active/right-censored.
 
-The [retained snapshot](ci-recent-costs-2026-10-24.json.gz) preserves exact
+The [retained snapshot](../archive/evidence/ci-recent-costs-2026-10-24.json.gz) preserves exact
 workflow, event, profile, role and producer-revision cohorts. Its SHA-256 is
 `55313350f7e78667ff5d0493b20bc29b47f7463a2080998b527633619a52ecb0`. Native run/job/attempt identities
 were validated, every job ID is unique, and grouped cost conserves the full

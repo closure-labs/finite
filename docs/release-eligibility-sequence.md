@@ -63,9 +63,9 @@ CI gate38349399433 passed; dependency selection skipped redundant image work.
   and all51 scopes. The policy test harness now reads its temporary fixture from
   a file after the larger ledger exceeded the OS argument-size limit.
 
-The [evidence ledger](release-eligibility-evidence-2026-10-12.json) binds exact
+The [evidence ledger](../archive/evidence/release-eligibility-evidence-2026-10-12.json) binds exact
 revisions, runs, image digests, raw/report hashes and decisions. The
-[current blocker/ownership ledger](current-desktop-risk-blockers-2026-10-12.json)
+[current blocker/ownership ledger](../archive/evidence/current-desktop-risk-blockers-2026-10-12.json)
 maps every remaining component/advisory scope in all four registry candidates to
 shipped paths, owning RPM metadata or explicitly unknown ownership. Retained-file
 ownership relationships use exact content equality; they do not independently
@@ -128,6 +128,6 @@ passed. [Retained policy reevaluation](https://github.com/closure-labs/finite/ac
 passed: unchanged observations now yield 71 standard and 119 development
 blocking pairs, down from 87 and 135 under the previous reviewed policy.
 Owners, unblock evidence and separate verdicts are retained in
-[the continuation ledger](desktop-applicability-continuation-2026-10-13.json).
+[the continuation ledger](../archive/evidence/desktop-applicability-continuation-2026-10-13.json).
 Compiler/cgo, unresolved network consumers, AnyIO, rclone and the Next source
 hold remain explicit. Release eligibility has not been established.

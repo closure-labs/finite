@@ -72,7 +72,7 @@ receipt is hashed into acceptance and rechecked before promotion and durable
 release. The historical predecessor and rollback retain their existing tests;
 new candidate assertions are not retroactively imposed on them.
 
-[Retained package evidence](vm-tool-prerequisites-2026-10-13.json) confirms the
+[Retained package evidence](../archive/evidence/vm-tool-prerequisites-2026-10-13.json) confirms the
 standard candidate carries Python, procps, iproute and SELinux policy utilities.
 The actual future VM must still execute its tools successfully. No new image or
 VM pass is claimed by fixture tests or historical package presence.

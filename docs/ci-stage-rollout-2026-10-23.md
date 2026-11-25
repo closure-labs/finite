@@ -2,7 +2,7 @@
 
 #240 and #241 merged through the protected queue. This report joins native
 receipts from naturally occurring runs; no VM was dispatched to populate it.
-The [companion record](ci-stage-rollout-2026-10-23.json.gz) retains native job
+The [companion record](../archive/evidence/ci-stage-rollout-2026-10-23.json.gz) retains native job
 identity, timestamps, archive digests, collector hashes and explicit coverage gaps.
 
 ## First split guest intervals

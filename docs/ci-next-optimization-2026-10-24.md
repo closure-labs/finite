@@ -4,7 +4,7 @@ The reporting changes in [#245](https://github.com/closure-labs/finite/pull/245)
 and [#244](https://github.com/closure-labs/finite/pull/244) merged at
 `80721c62bc3a7362302ccf960fe2dcd5fabe6f86` and
 `283496ca76683d5183c06b74ecb0bc85e4b4edc7`, respectively.
-The [evidence snapshot](ci-next-optimization-2026-10-24.json.gz) retains the
+The [evidence snapshot](../archive/evidence/ci-next-optimization-2026-10-24.json.gz) retains the
 complete transport comparison and a bounded investigation of existing
 qualification logs. Earlier reports and their original measurements remain
 unchanged. This report supersedes their incomplete transport experiment status.

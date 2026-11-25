@@ -26,7 +26,7 @@ is scoped to the original producer, two security-259 recoveries and their queue,
 and the queue/main rollout of 260. It is not a fleet-wide frequency estimate.
 Only bounded source-check archives were downloaded for this replay.
 
-The [frozen evidence](ci-source-repetition-2026-10-25.json.gz) has SHA-256
+The [frozen evidence](../archive/evidence/ci-source-repetition-2026-10-25.json.gz) has SHA-256
 `18458948c1c41d63def51f44f8e4ded7831a1ce1fae1ade1c5dd0be6a83d9e05`.
 It retains the six native projections, authenticated source phase joins, controller
 receipts and the separate read-only idle-publisher comparison.

@@ -24,7 +24,7 @@ This conservative treatment applies to legacy resumed receipts until their
 actual timing producer can be established. Ordinary newly scanned jobs retain
 their phase detail. Invalid or conflicting receipts still fail validation.
 
-The [authenticated replay](ci-recovery-cost-attribution-2026-10-25.json.gz)
+The [authenticated replay](../archive/evidence/ci-recovery-cost-attribution-2026-10-25.json.gz)
 preserves native run/job identities, artifact inventories/digests, original
 unattributed phases and the corrected report. Its SHA-256 is
 `3b44f7701fb341ff9ce2ad9f8d40b5876d7bbd05318800c413f30684673b52cf`. The complete workflow remains

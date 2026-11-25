@@ -12,7 +12,7 @@
 
 The release owner's evidence-based Critical policy is implemented in PR151.
 Source checks and a lower scanner count are not proof of vulnerability removal. See the
-[exact-candidate ledger](critical-desktop-policy-evidence-2026-10-13.json).
+[exact-candidate ledger](../archive/evidence/critical-desktop-policy-evidence-2026-10-13.json).
 
 Standard Generic goes first. Next and development qualify independently. No
 hardware test is required; the exact candidate still needs the signed,
@@ -65,7 +65,7 @@ false-positive disposition was granted:
 [Hosted run38411928635](https://github.com/closure-labs/finite/actions/runs/38411928635)
 completed all five declined transactions on standard digest
 `sha256:3b18003a2267bf22b455254f29c9324805c48cfff0f9115d00a77d041035eece`.
-[Retained transaction/caller evidence](desktop-removal-evidence-2026-10-13.json)
+[Retained transaction/caller evidence](../archive/evidence/desktop-removal-evidence-2026-10-13.json)
 shows rclone removes alone; AnyIO also removes python3-httpx. Gum and glow remove
 alone at the RPM level but inherited desktop commands actively call them. Gum
 is used for factory-reset, installation, developer-mode and update confirmations;

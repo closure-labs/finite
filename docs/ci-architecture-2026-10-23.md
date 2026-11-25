@@ -1,7 +1,7 @@
 # CI architecture review, October 23, 2026
 
 Status: proposed changes; hosted validation and the seven-day observation are
-pending. The [machine-readable record](ci-architecture-2026-10-23.json) binds the
+pending. The [machine-readable record](../archive/evidence/ci-architecture-2026-10-23.json) binds the
 measurements to native runs, attempts, source revisions, candidates, profiles,
 artifact hashes and available runner/tool identities. It grants no authority.
 

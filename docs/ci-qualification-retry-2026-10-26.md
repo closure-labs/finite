@@ -5,7 +5,7 @@ reports and the original October 30 observation endpoint. This report records
 a real failure, its bounded recovery and an authenticated read-only replay;
 it does not issue release or qualification authority.
 
-The [frozen snapshot](ci-qualification-retry-2026-10-26.json.gz) has SHA-256
+The [frozen snapshot](../archive/evidence/ci-qualification-retry-2026-10-26.json.gz) has SHA-256
 `3e5c5243eb95c024dc602a2c290600aa0d9956d83ef33c6d11c67349df8680c4`.
 It retains four selected native run projections, exact phase origins, original
 artifact digests, candidate/predecessor and qualification-context identity.

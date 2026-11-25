@@ -55,7 +55,7 @@ exactly the derivation built by the successful developer job at 15:50:07 UTC.
 Local Nix was Determinate 3.23.3 / upstream 2.35.3; hosted Nix was Determinate
 3.23.2 / upstream 2.35.3. These are local observations from one checkout, not a
 controlled cold benchmark, a hosted savings estimate or complete-job medians.
-The [companion JSON](ci-payload-evaluation-2026-10-23.json) records their scope.
+The [companion JSON](../archive/evidence/ci-payload-evaluation-2026-10-23.json) records their scope.
 
 Focused validation passed 79 image identity, selection, toolchain, candidate
 resume and build-boundary tests, plus the pure Nix boundary fixture. The new identity tests preserve the explicit

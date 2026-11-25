@@ -83,7 +83,7 @@ placement is not zero time. ISO construction's measured zero means another job
 was active throughout those samples; it does not establish that ISO work is
 avoidable or outside the dependency critical path.
 
-The [projection](ci-stage-blocking-2026-10-26.json.gz) has SHA-256
+The [projection](../archive/evidence/ci-stage-blocking-2026-10-26.json.gz) has SHA-256
 `eda53b737e6d7c0d93b7f387c551f5edf1d07cad2d46edfb96a269b2321a5d6d`.
 It references the unchanged original census by hash and includes the native
 queue/main projections, authenticated source receipts, cancelled work and

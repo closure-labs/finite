@@ -30,7 +30,7 @@ The helper now pins seven signed payloads: five runtime kernel RPMs plus
 `kernel-devel` and `kernel-devel-matched`. It installs the development pair when
 inherited development packages require it. Exact hashes and Fedora 44 key identity
 are recorded in `files/security/kernel-generic.json` and
-[the current evidence ledger](desktop-security-evidence-2026-10-12.json).
+[the current evidence ledger](../archive/evidence/desktop-security-evidence-2026-10-12.json).
 Authentication of every required payload precedes optional-camera removal or
 other mutation. Repository access is disabled during the bounded local-RPM
 transaction, local signature checks are enforced, and unrelated packages must

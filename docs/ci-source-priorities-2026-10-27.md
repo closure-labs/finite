@@ -8,7 +8,7 @@
 using 431, 441 and 150 native runner seconds respectively. These are complete
 Build Finite job totals, not workflow latency or all callback costs. Main CodeQL,
 delivery health, decision reconciliation and cache maintenance also passed.
-The [compressed evidence](ci-source-priorities-2026-10-27.json.gz) retains the
+The [compressed evidence](../archive/evidence/ci-source-priorities-2026-10-27.json.gz) retains the
 native accounting and source breakdown; grouped and native totals agree.
 
 ## Diagnostics and proof reuse

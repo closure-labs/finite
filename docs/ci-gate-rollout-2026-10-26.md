@@ -7,7 +7,7 @@ complete-window assessment.
 
 ## Recent operating cost
 
-The [retained census](ci-gate-rollout-2026-10-26.json.gz) covers runs created from
+The [retained census](../archive/evidence/ci-gate-rollout-2026-10-26.json.gz) covers runs created from
 `2026-10-25T16:00:00Z` through `2026-10-26T00:56:41Z`, exclusive. Collection
 finished at `00:58:10Z`. It contains 155 native runs and 378 unique jobs: 132 runs
 succeeded, seven failed, one was cancelled, 14 were skipped and one was still

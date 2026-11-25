@@ -1,7 +1,7 @@
 # CI delivery and cost audit: 2026-10-23
 
 This audit uses live GitHub metadata, authenticated image artifacts and the
-current controller code. Its [versioned receipt](ci-workflow-audit-2026-10-23.json)
+current controller code. Its [versioned receipt](../archive/evidence/ci-workflow-audit-2026-10-23.json)
 records repository settings, candidate sources and the download reproduction.
 Reports are discovery evidence and grant no approval or publication authority.
 Historical optimization reports supply background only.
@@ -162,7 +162,7 @@ so collection uses the App token's separate allowance.
 
 The [14-day table](ci-workflow-costs-2026-10-23.md) covers runs created from
 2026-10-09 03:55 UTC through 2026-10-23 03:55 UTC. The complete versioned
-[JSON report](ci-workflow-costs-2026-10-23.json.gz) contains 1,534 runs and 5,818
+[JSON report](../archive/evidence/ci-workflow-costs-2026-10-23.json.gz) contains 1,534 runs and 5,818
 unique native jobs, totaling 1,144,307 observed runner seconds. It includes
 218 failed, 79 cancelled and one startup-failure run. It also retains skipped
 and active work. Runner occupancy is not billed cost. Category/profile rows

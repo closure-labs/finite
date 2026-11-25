@@ -22,7 +22,7 @@ native health and live approval checks. No diagnostic run was dispatched.
 | [Preceding natural run](https://github.com/closure-labs/finite/actions/runs/40149877163), before staging | 172 | 138 | 21 |
 | First natural run with staging | 194 | 159 | 21 |
 
-The [retained observation](ci-reconciliation-timings-2026-10-25.json.gz) binds
+The [retained observation](../archive/evidence/ci-reconciliation-timings-2026-10-25.json.gz) binds
 native run/job/source identities, unique-job accounting, structured controller
 results and startup-log hashes. Its SHA-256 is
 `1a828316ed52700d790014a623a5548699b8403607810e01249b22f503a68954`. Both startup headers identify

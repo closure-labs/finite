@@ -6,7 +6,7 @@ passed both complete premerge profile validations. The Build Finite workflow
 used 6,082 runner seconds; stage times below are nested in those jobs and must
 not be added to native occupancy.
 
-The [retained evidence](ci-native-runner-evidence-2026-10-24.json.gz) binds native
+The [retained evidence](../archive/evidence/ci-native-runner-evidence-2026-10-24.json.gz) binds native
 run/job/head identities, artifact inventories, stage observations and native
 startup-log SHA-256 digests. Its SHA-256 is
 `0dcc71e2a765b51eec82b784ad66e13dce96956cd2c41f97b6c2129a2abe27cf`. This is evidence from natural

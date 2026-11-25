@@ -1,6 +1,6 @@
 # CI rollout and governed dependency updates — October 23, 2026
 
-The [companion record](ci-rollout-2026-10-23.json) binds observations to native
+The [companion record](../archive/evidence/ci-rollout-2026-10-23.json) binds observations to native
 runs, attempts, source revisions, candidates, artifact hashes and available
 runner/tool cohorts. These reports grant no approval or publication authority.
 

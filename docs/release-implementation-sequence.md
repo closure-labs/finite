@@ -34,7 +34,7 @@ error and discarded the diagnostic. PR #156 corrected that matcher and retained
 sanitized diagnostics; the new VM run observed the exact rejection, accepted the
 correct signature, and completed upgrade/rollback. The identity-bound harness
 required one fresh standard candidate; no identity or release gate was bypassed.
-See the [exact revisions, artifacts and verdicts](signing-resume-evidence-2026-10-13.json).
+See the [exact revisions, artifacts and verdicts](../archive/evidence/signing-resume-evidence-2026-10-13.json).
 
 The vulnerability verdict passes the approved desktop Critical exploitability
 policy with zero confirmed release blockers. Unresolved advisory observations
@@ -78,7 +78,7 @@ passed all four image builds and security-policy jobs. Signing failed because
 Cosign's signing-config default conflicts with the requested legacy format.
 The explicit compatible flags passed a hosted ephemeral-key test, including
 real transparency verification and wrong-key rejection. Exact candidates and
-artifact bindings are in [the signing ledger](signing-resume-evidence-2026-10-13.json).
+artifact bindings are in [the signing ledger](../archive/evidence/signing-resume-evidence-2026-10-13.json).
 
 The initial plan was to resume standard generic first, then Next independently.
 The identity failure above supersedes that attempt and requires fresh candidates. Reuse authenticated fresh native security evidence, reevaluate
@@ -108,10 +108,10 @@ The latest valid retained-candidate review is
 70 standard and 119 development component/advisory pairs remain blocking under
 156 scoped dispositions. These are not counts of distinct exploitable attacks.
 The latest exact scope is in the
-[consumer reevaluation ledger](consumer-policy-reevaluation-2026-10-13.json);
-[the prior continuation ledger](desktop-applicability-continuation-2026-10-13.json)
+[consumer reevaluation ledger](../archive/evidence/consumer-policy-reevaluation-2026-10-13.json);
+[the prior continuation ledger](../archive/evidence/desktop-applicability-continuation-2026-10-13.json)
 retains inherited unknowns.
-The [remaining findings](release-remaining-findings-2026-10-13.json) retain the prior
+The [remaining findings](../archive/evidence/release-remaining-findings-2026-10-13.json) retain the prior
 blocking pairs, affected path, risk class and scanner-reported fixed version for
 standard and development profiles; a fixed-version string is not publisher proof.
 
@@ -178,10 +178,10 @@ The vendor RPM has no independent RPM signature, so it does not close the
 previous checksum-signature trust gap. No Fedora44 AnyIO4.14.2 build or published
 update was observed; a signed owning update or verified backport remains needed.
 Exact official requests, responses, source/build identifiers and limitations are
-retained in [package options](release-package-options-2026-10-13.json). No testing
+retained in [package options](../archive/evidence/release-package-options-2026-10-13.json). No testing
 repository was enabled, no package installed, and no risk exception added.
 
-The [bounded next-applicability review](release-next-applicability-2026-10-13.json)
+The [bounded next-applicability review](../archive/evidence/release-next-applicability-2026-10-13.json)
 proves no additional release-affecting exemption. The Skopeo SSH lead is already
 nonblocking. Next internal proof work must bind actual gRPC server/auth
 interceptors and HTTP2/CONNECT handlers to authenticated source and shipped build
@@ -193,9 +193,9 @@ on a zero-blocker classification change.
 ## Authenticated candidate and actual HTTP callers
 
 [Read-only rclone reference inspection](https://github.com/closure-labs/finite/actions/runs/38361178024)
-passed before stable promotion. The [signed reference](rclone-signed-reference-2026-10-13.json)
+passed before stable promotion. The [signed reference](../archive/evidence/rclone-signed-reference-2026-10-13.json)
 contains Go1.26.9, x/crypto0.57.0 and x/net0.60.0.
-[Advisory-by-advisory review](rclone-prospective-remediation-2026-10-13.json)
+[Advisory-by-advisory review](../archive/evidence/rclone-prospective-remediation-2026-10-13.json)
 supports prospective fixes for all14 currently recorded rclone-owned pairs in
 the reviewed standard/development candidates. The gRPC development-version
 comparison uses specific source-fix evidence, not version ordering alone.
@@ -206,7 +206,7 @@ package, Finite still needs its supported auth-proxy, session-isolation, copy,
 mount and protocol compatibility tests, as well as stable-source, transaction
 and exact-candidate gates. No testing source is enabled by this inspection.
 
-[HTTP caller review](http-caller-review-2026-10-13.json) verifies23 immutable
+[HTTP caller review](../archive/evidence/http-caller-review-2026-10-13.json) verifies23 immutable
 source files. Podman's optional TLS API has an actual server path. Profiling
 and interactive-signing handlers also prevent blanket client-only treatment.
 Exact advisory prerequisites and proxy/exposure consequences remain distinct;
@@ -219,7 +219,7 @@ was cancelled as redundant while existing package blockers remained. Keep
 manual changed-candidate work behind the prerequisites above; published-channel
 reconciliation can still select stale channels and is not a clearance signal.
 
-The [authenticated source census](grpc-source-census-2026-10-13.json) passed
+The [authenticated source census](../archive/evidence/grpc-source-census-2026-10-13.json) passed
 run38362940891 and eleven hosted parser fixtures after the first census
 38362022050 identified specific constructor/initializer/linkname gaps. It parsed
 13,286 Go files from
@@ -231,15 +231,15 @@ The census alone is not call-graph proof and grants no disposition.
 
 ## Reviewed consumer scopes and compatibility continuation
 
-The [complete gRPC caller review](grpc-caller-review-2026-10-13.json) and
-[independent scope verification](grpc-independent-review-2026-10-13.json)
+The [complete gRPC caller review](../archive/evidence/grpc-caller-review-2026-10-13.json) and
+[independent scope verification](../archive/evidence/grpc-independent-review-2026-10-13.json)
 approve six exact historical-digest dispositions for the server-authorization
 advisory GHSA-p77j-4mvh-x3m3. Each covers only the four verified Podman/Buildah
 live and retained paths. The policy now has 156 scoped dispositions;69 focused
 fixtures pass. Podman-tui remains unproven, and the shared transport advisory
 GHSA-hrxh-6v49-42gf remains blocked because the actual client queues peer-controlled
 window updates without the fixed accounting. New main digests require new joins.
-[Hosted retained-evidence reevaluation](consumer-policy-reevaluation-2026-10-13.json)
+[Hosted retained-evidence reevaluation](../archive/evidence/consumer-policy-reevaluation-2026-10-13.json)
 passed in run38364577930: standard blocking pairs declined71→70; development
 remains119 because podman-tui is unproven. All six original results reproduced
 and scanner observations remained unchanged. These counts are policy outcomes,
@@ -250,10 +250,10 @@ queue38362921128 passed. The redundant automatic main image run38363454043 was
 cancelled: its changes only concern reference tooling and evidence. Follow-up
 implementation uses the separate JJ bookmark security/consumer-compatibility.
 
-The [compatibility plan](rclone-compatibility-plan-2026-10-13.json) defines positive
+The [compatibility plan](../archive/evidence/rclone-compatibility-plan-2026-10-13.json) defines positive
 and negative controls. The new hosted-only harness implements ordinary operations,
 link containment, FTP session authority and two Restic traversal contracts.
-Its19 offline tests and independent QA pass. [Actual hosted compatibility](rclone-compatibility-evidence-2026-10-13.json)
+Its19 offline tests and independent QA pass. [Actual hosted compatibility](../archive/evidence/rclone-compatibility-evidence-2026-10-13.json)
 passed all five implemented contracts in run38366200031 atcf349b5a62f577de31fc04d0f65bb8a709539d4d.
 The first two attempts exposed fixture issues (invalid passive range and a narrow
 FTP response-code expectation), not candidate vulnerabilities; both are retained.
@@ -280,7 +280,7 @@ physical-hardware or manual graphical-desktop gate is not required. The new
 physical/GUI coverage as informational and preserves security, signing, encrypted
 Secure Boot install, upgrade and rollback requirements.
 
-The [official prerequisite refresh](release-prerequisites-refresh-2026-10-13.json)
+The [official prerequisite refresh](../archive/evidence/release-prerequisites-refresh-2026-10-13.json)
 found rclone1.75.2 still testing-only and no fixed AnyIO4.14.2 Fedora44 build.
 Next7.2.9-301 now meets testing requirements and has a stable request/pending tag,
 but approved stable promotion was not observed. No package floor/source changes
@@ -288,12 +288,12 @@ are justified yet; a stable request is not an approved repository transaction.
 
 RC per-server proxy and S3 identity-secret compatibility contracts have been
 implemented, with30 offline fixtures passing and independent review approval.
-[Actual hosted validation](rclone-protocol-compatibility-2026-10-13.json)
+[Actual hosted validation](../archive/evidence/rclone-protocol-compatibility-2026-10-13.json)
 passed all seven implemented cases in run38368702487. Shared-backend S3 multipart/metadata,
 SFTP/Windows and mounting remain explicit package-compatibility gaps; these are
 distinct from the rejected physical-workstation qualification requirement.
 
-The [implementation validation ledger](desktop-qualification-validation-2026-10-13.json)
+The [implementation validation ledger](../archive/evidence/desktop-qualification-validation-2026-10-13.json)
 records612 passing offline tests and the source-CI fixture correction. PR151
 tracks exact-head hosted checks. Actual new VM execution remains pending a useful
 changed candidate; source fixtures do not count as an end-to-end boot pass.
@@ -307,7 +307,7 @@ not evidence that those vulnerabilities were repaired. Unknown Critical applicab
 stays pending review; exact nonapplicability/backport proof and all authenticity,
 security-evidence validity and VM boot gates remain required.
 
-[Hosted reevaluation](critical-desktop-policy-evidence-2026-10-13.json) reused
+[Hosted reevaluation](../archive/evidence/critical-desktop-policy-evidence-2026-10-13.json) reused
 all four fresh native scans from run38395796884 without rebuilding or rescanning.
 The original policy results reproduce and observations remain unchanged.
 Standard Generic/Next each move93→24 blocking component/advisory pairs;
@@ -350,7 +350,7 @@ therefore explicitly empty. Signing, freshness/integrity of security evidence,
 SELinux-enforcing VM installation/upgrade/rollback and release approval remain
 required. Do not delay those gates solely for unresolved advisory counts.
 
-[Hosted verification38414548421](reviewed-desktop-policy-evidence-2026-10-13.json)
+[Hosted verification38414548421](../archive/evidence/reviewed-desktop-policy-evidence-2026-10-13.json)
 passes the revised vulnerability policy for all four immutable candidates with
 zero confirmed blockers. All original native observations remain unchanged.
 Standard24/development54 Critical pairs remain unresolved advisories, not release

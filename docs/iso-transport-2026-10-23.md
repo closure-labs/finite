@@ -110,7 +110,7 @@ further proposal, not a consequence of adding this receipt.
 This follow-up depends on #237. It does not amend that approved head, dispatch a
 recovery, resume the failed candidate, mutate published assets or cancel an
 active publication. The exact candidate, predecessor and native evidence hashes
-are in the [companion record](iso-transport-2026-10-23.json).
+are in the [companion record](../archive/evidence/iso-transport-2026-10-23.json).
 
 Rollback the predecessor timeout handler to restore the former terminal behavior.
 The shared release API remains compatible. Changing `release-evidence.py`

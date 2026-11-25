@@ -6,7 +6,7 @@ The first [main execution](https://github.com/closure-labs/finite/actions/runs/3
 then passed both fresh-install and upgrade/rollback qualifications, both
 promotions and the final CI gate. Native
 promotion results and complete workflow costs are recorded in the
-[companion evidence](ci-follow-through-2026-10-23.json). Queue candidates are
+[companion evidence](../archive/evidence/ci-follow-through-2026-10-23.json). Queue candidates are
 local validation images; main candidates have their own recorded immutable
 identities. Neither result substitutes for another candidate's acceptance.
 

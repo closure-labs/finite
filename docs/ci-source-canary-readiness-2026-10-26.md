@@ -1,6 +1,6 @@
 # Source-proof canary readiness, October 26 UTC
 
-The [frozen native snapshot](ci-source-canary-readiness-2026-10-26.json.gz)
+The [frozen native snapshot](../archive/evidence/ci-source-canary-readiness-2026-10-26.json.gz)
 contains six natural main builds observed through `2026-10-26T16:04:03Z`.
 All six workflows completed successfully. Its 42 unique native jobs account
 for 2,772 runner seconds, including skipped jobs at zero. Grouped totals

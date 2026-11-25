@@ -8,7 +8,7 @@ itself; it is not a matched replay of #242's report-only change and does not
 establish recurring frequency or a measured savings percentage. Preserve the
 [earlier 1324-second observation](ci-cost-selection-2026-10-23.md).
 
-The [companion record](ci-transport-evidence-2026-10-24.json.gz) retains native
+The [companion record](../archive/evidence/ci-transport-evidence-2026-10-24.json.gz) retains native
 queue metadata, authenticated partial transport samples, explicit gate reasons,
 the collector hash and producer retention/cost evidence. Historical reports
 retain their original snapshots.
