@@ -1,5 +1,12 @@
 # ISO runtime compression diagnostic, October 24, 2026 UTC
 
+**Archived (November 2026).** The experiment was retired without a successful
+comparison. Its helpers (`installer-compression.py`, `installer-provenance.py`),
+the `lorax-zstd.conf` preset, the tests and the manual benchmark workflow now
+live under `archive/`. Qualification preflight, installer preparation and the
+qualification context reject any non-default compression or validation-only
+request. The notes below describe the experiment as it was.
+
 Keep this prototype draft until hosted correctness and matched complete-job
 cost gates pass. No successful compression comparison has run and no speedup is claimed.
 Production retains the pinned installer's existing configuration.

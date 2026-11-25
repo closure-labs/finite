@@ -152,7 +152,6 @@ in {
     python3 tests/ci/cache-publish.py
     python3 tests/ci/prune-ci-caches.py
     python3 tests/ci/delivery-policy.py
-    python3 tests/bluebuild/installer-provenance.py
     python3 tests/ci/remediation-preflight.py
     python3 tests/ci/security-ownership.py
     python3 tests/ci/security-remediation-diff.py

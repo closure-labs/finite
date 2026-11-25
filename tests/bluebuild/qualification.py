@@ -1065,46 +1065,34 @@ class ExecutionGate(unittest.TestCase):
     def setUp(self):
         self.revision = 'a' * 40
         self.env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
-            'GITHUB_SHA': self.revision, 'GITHUB_REF': 'refs/heads/ci/qualification-benchmark',
-            'GITHUB_EVENT_NAME': 'workflow_dispatch', 'FINITE_VALIDATION_ONLY': 'true', 'PREVIOUS_DIGEST': 'sha256:'+'e'*64,
-            'GITHUB_WORKFLOW_REF': 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/ci/qualification-benchmark'}
+            'GITHUB_SHA': self.revision, 'GITHUB_REF': 'refs/heads/main', 'GITHUB_EVENT_NAME': 'push'}
 
-    def test_only_explicit_manual_branch_benchmark_authorizes_diagnostics(self):
-        with patch.object(preflight.production, 'require_current') as main:
+    def test_main_path_retains_existing_eligibility_rule(self):
+        with patch.object(preflight.production, 'require_current', return_value=self.revision) as main:
             result = preflight.require_eligible(self.revision, self.env)
-            self.assertEqual(result, {'validationOnly': True, 'revision': self.revision})
-            main.assert_not_called()
+            self.assertEqual(result, {'validationOnly': False, 'revision': self.revision, 'main': self.revision})
+            main.assert_called_once_with(self.revision)
 
-    def test_main_pr_fork_other_workflow_and_wrong_checkout_are_rejected(self):
-        mutations = [('GITHUB_REF', 'refs/heads/main'), ('GITHUB_REF', 'refs/tags/test'),
-            ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_EVENT_NAME', 'push'),
-            ('GITHUB_REPOSITORY', 'other/finite'), ('GITHUB_ACTIONS', 'false'),
-            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/build.yml@refs/heads/ci/qualification-benchmark'),
-            ('GITHUB_WORKFLOW_REF', 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/main'),
-            ('GITHUB_SHA', 'b' * 40), ('FINITE_VALIDATION_ONLY', 'yes')]
+    def test_branch_fork_and_wrong_checkout_are_rejected(self):
+        mutations = [('GITHUB_REF', 'refs/heads/ci/qualification-benchmark'), ('GITHUB_REF', 'refs/tags/test'),
+            ('GITHUB_REPOSITORY', 'other/finite'), ('GITHUB_ACTIONS', 'false'), ('GITHUB_SHA', 'b' * 40)]
         with patch.object(preflight.production, 'require_current') as main:
             for key, value in mutations:
                 with self.subTest(key=key, value=value), self.assertRaises(ValueError):
                     preflight.require_eligible(self.revision, {**self.env, key: value})
             main.assert_not_called()
 
-    def test_default_main_path_retains_existing_eligibility_rule_and_branch_cannot_opt_out(self):
-        default = {**self.env, 'FINITE_VALIDATION_ONLY': 'false'}
-        with patch.object(preflight.production, 'require_current', return_value=self.revision) as main:
-            with self.assertRaisesRegex(ValueError, 'Production qualification'):
-                preflight.require_eligible(self.revision, default)
-            main.assert_not_called()
-            default['GITHUB_REF'] = 'refs/heads/main'
-            result = preflight.require_eligible(self.revision, default)
-            self.assertFalse(result['validationOnly'])
-            main.assert_called_once_with(self.revision)
-
-    def test_compression_is_manual_diagnostic_only_and_unknown_modes_fail_closed(self):
-        with patch.object(preflight.production,'require_current') as main:
-            self.assertTrue(preflight.require_eligible(self.revision,{**self.env,'FINITE_INSTALLER_COMPRESSION':'zstd'})['validationOnly'])
-            for changes in ({'FINITE_VALIDATION_ONLY':'false'}, {'GITHUB_REF':'refs/heads/main'}, {'GITHUB_EVENT_NAME':'pull_request'}, {'GITHUB_WORKFLOW_REF':'closure-labs/finite/.github/workflows/build.yml@refs/heads/ci/qualification-benchmark'}, {'FINITE_INSTALLER_COMPRESSION':'lz4'}, {'PREVIOUS_DIGEST':''}, {'PREVIOUS_DIGEST':'mutable:tag'}):
-                with self.subTest(changes=changes),self.assertRaises(ValueError):
-                    preflight.require_eligible(self.revision,{**self.env,'FINITE_INSTALLER_COMPRESSION':'zstd',**changes})
+    def test_archived_diagnostics_and_experiments_fail_closed_even_on_main(self):
+        benchmark = {'FINITE_VALIDATION_ONLY': 'true', 'GITHUB_REF': 'refs/heads/ci/qualification-benchmark',
+            'GITHUB_EVENT_NAME': 'workflow_dispatch', 'PREVIOUS_DIGEST': 'sha256:' + 'e' * 64,
+            'GITHUB_WORKFLOW_REF': 'closure-labs/finite/.github/workflows/benchmark-image-tools.yml@refs/heads/ci/qualification-benchmark'}
+        with patch.object(preflight.production, 'require_current') as main:
+            for changes in ({'FINITE_VALIDATION_ONLY': 'true'}, {'FINITE_VALIDATION_ONLY': 'yes'},
+                            {'FINITE_INSTALLER_COMPRESSION': 'zstd'}, {'FINITE_INSTALLER_COMPRESSION': 'lz4'},
+                            {'FINITE_INSTALLER_BENCHMARK': '{}'}, benchmark,
+                            {**benchmark, 'FINITE_INSTALLER_COMPRESSION': 'zstd'}):
+                with self.subTest(changes=changes), self.assertRaises(ValueError):
+                    preflight.require_eligible(self.revision, {**self.env, **changes})
             main.assert_not_called()
 
     def test_diagnostic_iso_size_is_measured_without_changing_production_binding(self):
@@ -1119,18 +1107,12 @@ class ExecutionGate(unittest.TestCase):
                 self.assertEqual(diagnostic['sizeBytes'],9)
                 self.assertEqual({k:v for k,v in diagnostic.items() if k!='sizeBytes'},baseline)
 
-    def test_compression_variants_have_different_context_identities(self):
-        original_sha=q.sha
-        def digest(path):
-            return original_sha(path) if Path(path).name=='lorax-zstd.conf' else 'a'*64
-        with patch.object(q,'validate_certificate'),patch.object(q,'source_inputs',return_value={}),patch.object(q,'sha',side_effect=digest),patch.object(q.vm_tools,'identity',return_value={'schema':1}),patch.dict(os.environ,FINITE_VM_TOOLS_MANIFEST='fixture',FINITE_INSTALLER_COMPRESSION='default'):
-            baseline=q.context()
-            self.assertNotIn('installerCompression',baseline)
-            with patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION='zstd'):
-                diagnostic=q.context()
-            self.assertNotEqual(q.identity(baseline),q.identity(diagnostic))
-            self.assertEqual(diagnostic['installerCompression']['presetSha256'],original_sha(ROOT/'files/installer/lorax-zstd.conf'))
-            with patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION='unknown'),self.assertRaises(ValueError):q.context()
+    def test_only_the_default_installer_compression_has_a_context(self):
+        with patch.object(q,'validate_certificate'),patch.object(q,'source_inputs',return_value={}),patch.object(q,'sha',return_value='a'*64),patch.object(q.vm_tools,'identity',return_value={'schema':1}),patch.dict(os.environ,FINITE_VM_TOOLS_MANIFEST='fixture',FINITE_INSTALLER_COMPRESSION='default'):
+            self.assertNotIn('installerCompression',q.context())
+            for compression in ('zstd','unknown'):
+                with self.subTest(compression=compression),patch.dict(os.environ,FINITE_INSTALLER_COMPRESSION=compression),self.assertRaises(ValueError):
+                    q.context()
 
     def test_functional_job_is_required_and_preserves_native_producer_contract(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())

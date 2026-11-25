@@ -27,10 +27,8 @@ def assign(domains, paths):
 
 assign(('iso-generation', 'vm-acceptance'), '''
 files/installer/Containerfile files/installer/install_finite_fstab
-files/installer/lorax-zstd.conf sources/bluebuild-installer.json
+sources/bluebuild-installer.json
 scripts/bluebuild/iso.sh scripts/bluebuild/prepare-installer.sh
-scripts/bluebuild/installer-compression.py
-scripts/bluebuild/installer-provenance.py
 .github/workflows/iso.yml .github/actions/setup-vm-tools/action.yml
 lib/vm-tools.nix scripts/ci/vm_tools.py
 ''')
@@ -101,7 +99,7 @@ RUNTIME_REQUIREMENTS = (
     'actual BlueBuild executable and pinned installer image identity',
     'actual Docker engine, host kernel, tool executables and firmware identities',
     'generate-iso arguments: run-driver=docker, variant=kinoite, output/name/channel',
-    'validated compression and validation-only mode; diagnostic wrappers when enabled',
+    'default installer compression only; diagnostic compression and Lorax wrappers are archived',
     'generated certificate DER bytes, installer hook and effective Containerfile',
     'installation tag, volume ID and original installation metadata (not reproducible ISO bytes)',
     'registry content/signature binding before and after generation',
