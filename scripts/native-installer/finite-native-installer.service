@@ -1,0 +1,23 @@
+[Unit]
+Description=Finite native installer
+Documentation=file:///usr/share/doc/finite/native-installer.md
+# Only on the installer media; never on an installed system built from the same image.
+ConditionKernelCommandLine=finite.native-installer=1
+After=systemd-user-sessions.service plymouth-quit-wait.service systemd-udev-settle.service
+Conflicts=getty@tty1.service
+Before=getty@tty1.service
+
+[Service]
+Type=idle
+ExecStart=/usr/libexec/finite/finite-native-install install
+# A stopped or finished installer hands the console to a root shell for rescue work.
+ExecStopPost=-/usr/bin/systemctl --no-block start getty@tty1.service
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+
+[Install]
+WantedBy=multi-user.target

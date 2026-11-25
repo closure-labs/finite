@@ -21,6 +21,8 @@
       ../scripts/bluebuild
       ../scripts/ci
       ../scripts/home
+      ../scripts/native-installer
+      ../scripts/vm-composefs
       ../scripts/workstation
       ../tests
       ../modules/outputs.nix
@@ -176,6 +178,7 @@ in {
     python3 tests/bluebuild/native-sealing.py
     python3 tests/bluebuild/native-handoff.py
     python3 tests/bluebuild/efi-update.py
+    python3 tests/bluebuild/native-installer.py
     python3 tests/bluebuild/boot-signer.py
     python3 tests/bluebuild/bootc-runtime.py
     python3 tests/bluebuild/vm-mok.py
