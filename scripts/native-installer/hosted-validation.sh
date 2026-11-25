@@ -13,7 +13,11 @@ evidence=".bluebuild/native-validation/$profile"
 mkdir -p "$evidence"
 work=$(mktemp -d "$RUNNER_TEMP/native-iso.XXXXXXXX")
 podman_started=false
+container=''
 cleanup() {
+  if [[ -n $container ]]; then
+    docker rm "$container" || true
+  fi
   rm -rf -- "$work"
   if [[ $podman_started == true ]]; then
     sudo podman image rm --ignore "localhost/finite-native-installer:$profile" \
@@ -46,9 +50,12 @@ docker tag "${candidates[0]}" "localhost/finite-validation-root:$profile"
 docker build --pull=false --file scripts/native-installer/Validation.Containerfile \
   --build-arg "NATIVE_ROOT=localhost/finite-validation-root:$profile" \
   --tag "localhost/finite-validation:$profile" scripts/native-installer
-container=$(docker create "localhost/finite-validation:$profile")
+# This container is only a filesystem source for docker cp. The bootable image
+# may omit CMD, and the placeholder command is never started.
+container=$(docker create "localhost/finite-validation:$profile" /unused)
 docker cp "$container:/etc/pki/akmods/certs/akmods-ublue.der" "$work/module.der"
 docker rm "$container"
+container=''
 openssl x509 -inform DER -in "$work/module.der" -out "$work/module.pem"
 skopeo copy "docker-daemon:localhost/finite-validation:$profile" "oci-archive:$work/raw.oci.tar"
 docker image rm "localhost/finite-validation:$profile" "localhost/finite-validation-root:$profile"
