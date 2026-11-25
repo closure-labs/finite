@@ -19,8 +19,6 @@
       ../files/system
       ../files/dnf
       ../scripts/bluebuild
-      ../scripts/native-installer
-      ../scripts/vm-composefs/install-xbootldr.sh
       ../scripts/ci
       ../scripts/home
       ../scripts/native-installer

@@ -1,5 +1,8 @@
-{pkgs}: let
+{system}: let
   pin = builtins.fromJSON (builtins.readFile ../sources/native-bootc.json);
+  # The verifier authenticates the output bytes, including linked Nix store
+  # paths. The project's weekly input updates must not change those bytes.
+  pkgs = import (builtins.fetchTree pin.nixpkgs) {inherit system;};
 in
   pkgs.rustPlatform.buildRustPackage {
     pname = "finite-native-bootc-importer";

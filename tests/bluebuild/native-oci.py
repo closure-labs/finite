@@ -60,8 +60,11 @@ class CompletedArchive(unittest.TestCase):
         def run(command):
             command = list(map(str, command))
             calls.append(command)
-            if command[0] == 'umoci':
+            if command[0] == str(bootc) and 'init' in command:
+                Path(command[command.index('--repo') + 1]).mkdir()
+            elif command[0] == 'umoci':
                 uki = Path(command[-1]) / 'rootfs/boot/EFI/Linux/fixture.efi'
+                self.assertFalse((Path(command[-1]).parent / 'repo').exists())
                 uki.parent.mkdir(parents=True)
                 uki.write_bytes(b'signed UKI fixture')
             elif command[0] == 'objcopy':

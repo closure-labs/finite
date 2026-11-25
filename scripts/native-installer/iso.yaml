@@ -4,3 +4,4 @@
 label: FINITE-INSTALL
 kernel_args:
   - finite.native-installer=1
+  - systemd.unit=multi-user.target

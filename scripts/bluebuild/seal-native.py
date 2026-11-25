@@ -85,6 +85,17 @@ def importer(archive, directory, bootc):
     return digest
 
 
+def remove_unpacked_tree(path):
+    def writable_retry(operation, name, _):
+        entry = Path(name)
+        entry.parent.chmod(0o700)
+        if not entry.is_symlink():
+            entry.chmod(0o700)
+        operation(name)
+
+    shutil.rmtree(path, onerror=writable_retry)
+
+
 def seal(args, secret):
     if args.profile not in ('finite-native', 'finite-native-dev') or not re.fullmatch('[0-9a-f]{40}', args.revision):
         raise ValueError('An exact profile and source revision are required')
@@ -143,6 +154,8 @@ def seal(args, secret):
         image.close()
     oci.extract_layout(source, work / 'oci')
     run(['umoci', 'unpack', '--rootless', '--image', f'{work / "oci"}:candidate', work / 'bundle'])
+    if not args.keep_work:
+        shutil.rmtree(work / 'oci')
     root = work / 'bundle/rootfs'
     regular(root, 'usr/lib/composefs/setup-root-conf.toml')
     if any((root / name).exists() for name in ('usr/lib/ostree/prepare-root.conf', 'etc/ostree/prepare-root.conf', 'usr/bin/bootupctl')):
@@ -198,6 +211,9 @@ def seal(args, secret):
         unsigned_root = work / 'loader-signed.oci.tar'
         oci.append(source, unsigned_root, files, existing_directories=existing_parents(root, files))
         digest = importer(unsigned_root, work / 'canonical-root', bootc)
+        if not args.keep_work:
+            for name in ('canonical-root', 'layout-canonical-root'):
+                shutil.rmtree(work / name)
         cmdline = work / 'cmdline'
         cmdline.write_text(kernel_arguments(root, digest) + '\n')
         unsigned_uki = work / 'unsigned.efi'
@@ -208,6 +224,11 @@ def seal(args, secret):
         sign(unsigned_uki, signed_uki)
         uki_files = [oci.File(f'boot/EFI/Linux/{release}.efi', signed_uki)]
         oci.append(unsigned_root, output, uki_files, existing_directories=existing_parents(root, uki_files))
+    if not args.keep_work:
+        # The independent import below needs neither the signing rootfs nor
+        # its intermediate archive. Release both before allocating another rootfs.
+        remove_unpacked_tree(work / 'bundle')
+        unsigned_root.unlink()
     # A fresh independent importer and unpack, not the signing work repository.
     (work / 'verification').mkdir(mode=0o700)
     verification.verify(argparse.Namespace(archive=output, certificate=certificate,
@@ -225,15 +246,9 @@ def seal(args, secret):
         json.dump(report, stream, indent=2)
         stream.write('\n')
     if not args.keep_work:
-        def writable_retry(operation, path, _):
-            Path(path).parent.chmod(0o700)
-            if not Path(path).is_symlink():
-                Path(path).chmod(0o700)
-            operation(path)
-
-        for name in ('bundle', 'oci', 'canonical-root', 'layout-canonical-root', 'verification', 'tmp'):
-            shutil.rmtree(work / name, onerror=writable_retry)
-        for name in ('loader-signed.oci.tar', 'unsigned.efi', 'kernel.efi', 'systemd-bootx64.efi.signed', 'cmdline'):
+        for name in ('verification', 'tmp'):
+            remove_unpacked_tree(work / name)
+        for name in ('unsigned.efi', 'kernel.efi', 'systemd-bootx64.efi.signed', 'cmdline'):
             (work / name).unlink()
     print('Native archive sealed and independently verified; validationOnly=' + str(args.validation_only).lower())
 

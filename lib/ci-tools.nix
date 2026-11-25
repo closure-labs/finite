@@ -21,7 +21,7 @@ in {
     paths = with pkgs; [systemdUkify sbsigntool libfaketime binutils openssl skopeo umoci python3];
     pathsToLink = ["/bin"];
   };
-  native-bootc = import ./native-bootc.nix {inherit pkgs;};
+  native-bootc = import ./native-bootc.nix {inherit system;};
   vm-tools = import ./vm-tools.nix {inherit pkgs;};
   oras = pkgs.oras;
   secretspec-tools = secretspec;

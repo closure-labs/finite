@@ -74,6 +74,7 @@ def verify(args):
         imported = capture([*cfs, 'oci', 'compute-id', '--bootable', 'candidate'])
         if not re.fullmatch(r'[0-9a-f]{128}', imported):
             raise ValueError('Importer produced an unexpected bootable-root digest')
+        shutil.rmtree(work / 'repo')
         # Unpack separately from the importer. Neither this tree's ownership
         # nor Docker's mounted metadata is used to compute the authenticated root.
         run(['umoci', 'unpack', '--rootless', '--image', f'{work / "oci"}:candidate', work / 'bundle'])

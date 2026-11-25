@@ -131,6 +131,7 @@ class DownloadTests(unittest.TestCase):
             ('desktop-security-evidence.yml', 'evidence'),
             ('iso.yml', 'iso'),
             ('native-iso.yml', 'iso'),
+            ('native-iso-validation.yml', 'media'),
             ('publication.yml', 'sign'),
             ('qualification.yml', 'phase'),
             ('release-recovery.yml', 'sign-release'),

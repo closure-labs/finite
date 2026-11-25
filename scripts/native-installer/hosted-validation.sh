@@ -15,6 +15,10 @@ export NIX_CONFIG=$'max-jobs = 1\ncores = 2'
 tools=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-boot-tools --no-link --print-out-paths)
 importer=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-bootc --no-link --print-out-paths)
 export PATH="$tools/bin:$importer/bin:$PATH"
+importer_sha=$(sha256sum "$importer/bin/bootc" | cut -d' ' -f1)
+jq -e --arg sha "$importer_sha" --arg version "$(bootc --version)" '
+  .bootcVersion == $version and ([.bootcSha256, .additionalBootcSha256[]] | index($sha) != null)
+' sources/native-composefs-verifier.json >/dev/null
 python3 scripts/ci/bluefin-upstream.py verify
 nice -n 19 bash scripts/bluebuild/stage.sh "$profile"
 nice -n 19 bluebuild validate "recipes/$profile.yml"
