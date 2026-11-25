@@ -130,6 +130,7 @@ class DownloadTests(unittest.TestCase):
             ('containerfile-experiment.yml', 'signature-fixture'),
             ('desktop-security-evidence.yml', 'evidence'),
             ('iso.yml', 'iso'),
+            ('native-iso.yml', 'iso'),
             ('publication.yml', 'sign'),
             ('qualification.yml', 'phase'),
             ('release-recovery.yml', 'sign-release'),

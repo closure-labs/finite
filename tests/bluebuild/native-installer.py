@@ -203,5 +203,62 @@ class Placement(unittest.TestCase):
                 installer.verify_placement(target)
 
 
+class Media(unittest.TestCase):
+    directory = ROOT / 'scripts/native-installer'
+
+    def test_live_kernel_argument_matches_installer_and_service(self):
+        lock = json.loads((ROOT / 'sources/native-installer.json').read_text())
+        iso = (self.directory / 'iso.yaml').read_text()
+        argument = lock['liveKernelArgument']
+        self.assertIn('  - ' + argument, iso)
+        self.assertIn('label: ' + lock['isoLabel'], iso)
+        self.assertLessEqual(len(lock['isoLabel']), 32)
+        service = (self.directory / 'finite-native-installer.service').read_text()
+        self.assertIn('ConditionKernelCommandLine=' + argument, service)
+        self.assertIn('ExecStart=/usr/libexec/finite/finite-native-install install', service)
+        self.assertIn(argument, SCRIPT.read_text())
+
+    def test_containerfile_builds_live_media_from_the_exact_payload(self):
+        content = (self.directory / 'Containerfile').read_text()
+        self.assertIn('FROM ${PAYLOAD}', content)
+        self.assertIn('--add dmsquash-live', content)
+        self.assertIn('grub2-efi-x64-cdboot', content)
+        self.assertIn('cp -ra /usr/lib/efi/*/*/EFI /boot/efi', content)
+        self.assertIn('COPY iso.yaml /usr/lib/image-builder/bootc/iso.yaml', content)
+        self.assertIn('/usr/libexec/finite/finite-native-install', content)
+        self.assertIn('systemctl enable finite-native-installer.service', content)
+        self.assertIn('"sourceImgref": "containers-storage:%s"', content)
+        # The plan calls the installed copy for placement checks.
+        steps = installer.plan(disk(), PINS)
+        self.assertTrue(any(step.argv[0] == '/usr/libexec/finite/finite-native-install' for step in steps))
+        self.assertEqual(str(installer.PINS), '/usr/lib/finite/installer/pins.json')
+
+    def test_builder_is_pinned_by_digest_and_uses_generic_iso(self):
+        lock = json.loads((ROOT / 'sources/native-installer.json').read_text())['imageBuilder']
+        self.assertEqual(lock['image'], 'ghcr.io/osbuild/image-builder-cli')
+        self.assertRegex(lock['digest'], r'^sha256:[0-9a-f]{64}$')
+        self.assertEqual(lock['imageType'], 'generic-iso')
+        script = (self.directory / 'build-iso.sh').read_text()
+        self.assertIn('.imageBuilder.digest', script)
+        self.assertIn('cosign verify', script)
+        self.assertIn('--bootc-installer-payload-ref', script)
+        self.assertNotIn('anaconda-iso', script)
+
+    def test_workflow_is_manual_main_only_and_uploads_unqualified_media(self):
+        import yaml
+        workflow = yaml.safe_load((ROOT / '.github/workflows/native-iso.yml').read_text())
+        triggers = workflow.get('on', workflow.get(True))
+        self.assertEqual(set(triggers), {'workflow_dispatch'})
+        self.assertEqual(triggers['workflow_dispatch']['inputs']['channel']['options'],
+                         ['finite-native', 'finite-native-dev'])
+        job = workflow['jobs']['iso']
+        self.assertIn("github.ref == 'refs/heads/main'", job['if'])
+        self.assertEqual(job['permissions'], {'contents': 'read', 'packages': 'read'})
+        self.assertNotIn('environment', job)
+        text = (ROOT / '.github/workflows/native-iso.yml').read_text()
+        self.assertNotIn('secrets.', text)
+        self.assertIn('bash scripts/native-installer/build-iso.sh', text)
+
+
 if __name__ == '__main__':
     unittest.main()

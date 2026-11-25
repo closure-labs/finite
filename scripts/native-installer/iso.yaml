@@ -1,0 +1,6 @@
+# Read by osbuild image-builder generic-iso from the installer container
+# (/usr/lib/image-builder/bootc/iso.yaml). The kernel argument starts
+# finite-native-installer.service and is required by finite-native-install.
+label: FINITE-INSTALL
+kernel_args:
+  - finite.native-installer=1

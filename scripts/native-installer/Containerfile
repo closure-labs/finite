@@ -1,0 +1,46 @@
+# Finite native installer media, built FROM the exact signed native payload so
+# the live system runs the identical pinned bootc runtime and EFI updater.
+# Packaged by osbuild image-builder generic-iso (see sources/native-installer.json).
+ARG PAYLOAD
+FROM ${PAYLOAD}
+ARG PAYLOAD_REF
+ARG PAYLOAD_DIGEST
+
+# Live boot: dmsquash-live in the initramfs; Fedora-signed shim + cdboot GRUB
+# for the ISO's own Secure Boot chain; ISO assembly tools used by image-builder.
+RUN dnf -y install dracut-live grub2-efi-x64-cdboot grub2-pc-modules grub2-tools grub2-tools-extra \
+        squashfs-tools xorriso isomd5sum skopeo podman \
+    && dnf clean all
+
+RUN set -eu; \
+    kernels=$(find /usr/lib/modules -mindepth 2 -maxdepth 2 -name vmlinuz | wc -l); \
+    test "$kernels" -eq 1; \
+    kver=$(basename "$(dirname "$(find /usr/lib/modules -mindepth 2 -maxdepth 2 -name vmlinuz)")"); \
+    dracut --force --no-hostonly --reproducible --add dmsquash-live --kver "$kver" \
+        "/usr/lib/modules/$kver/initramfs.img"; \
+    lsinitrd "/usr/lib/modules/$kver/initramfs.img" | grep -q dmsquash-live; \
+    mkdir -p /boot/efi; \
+    cp -ra /usr/lib/efi/*/*/EFI /boot/efi; \
+    test -s /boot/efi/EFI/fedora/shimx64.efi; \
+    test -s /boot/efi/EFI/fedora/gcdx64.efi
+
+COPY finite-native-install /usr/libexec/finite/finite-native-install
+COPY finite-native-installer.service /usr/lib/systemd/system/finite-native-installer.service
+COPY iso.yaml /usr/lib/image-builder/bootc/iso.yaml
+
+# Installed-system services make no sense on live media.
+RUN systemctl enable finite-native-installer.service \
+    && systemctl mask finite-efi-update.service bootloader-update.service rpm-ostreed.service \
+        finite-firstboot-rpm-ostree.service
+
+# Pins checked by finite-native-install before any disk work. The live root
+# drops the RPM database, so the runtime is pinned by its reported version.
+RUN set -eu; \
+    test -n "$PAYLOAD_REF"; \
+    echo "$PAYLOAD_DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'; \
+    version=$(bootc --version | sed -n 's/^bootc //p'); \
+    test -n "$version"; \
+    mkdir -p /usr/lib/finite/installer; \
+    printf '{"schema": 1, "bootcVersion": "%s", "payloadDigest": "%s", "sourceImgref": "containers-storage:%s", "targetImgref": "%s"}\n' \
+        "$version" "$PAYLOAD_DIGEST" "$PAYLOAD_REF" "$PAYLOAD_REF" > /usr/lib/finite/installer/pins.json; \
+    python3 -c 'import json; json.load(open("/usr/lib/finite/installer/pins.json"))'
