@@ -21,9 +21,16 @@ nice -n 19 bluebuild validate "recipes/$profile.yml"
 nice -n 19 bash scripts/bluebuild/build.sh "$profile" false
 mapfile -t candidates < <(docker image ls --filter "label=io.finite.profile=$profile" --format '{{.ID}}' | sort -u)
 [[ ${#candidates[@]} == 1 ]]
-docker tag "${candidates[0]}" "localhost/finite-validation:$profile"
+docker tag "${candidates[0]}" "localhost/finite-validation-root:$profile"
+docker build --pull=false --file scripts/native-installer/Validation.Containerfile \
+  --build-arg "NATIVE_ROOT=localhost/finite-validation-root:$profile" \
+  --tag "localhost/finite-validation:$profile" scripts/native-installer
+container=$(docker create "localhost/finite-validation:$profile")
+docker cp "$container:/etc/pki/akmods/certs/akmods-ublue.der" "$work/module.der"
+docker rm "$container"
+openssl x509 -inform DER -in "$work/module.der" -out "$work/module.pem"
 skopeo copy "docker-daemon:localhost/finite-validation:$profile" "oci-archive:$work/raw.oci.tar"
-docker image rm "localhost/finite-validation:$profile"
+docker image rm "localhost/finite-validation:$profile" "localhost/finite-validation-root:$profile"
 # Only public certificates and receipts survive. The key is never copied into
 # a container build context or mounted in QEMU.
 openssl req -new -newkey rsa:3072 -nodes -x509 -sha256 -days 7 -subj "/CN=Finite native qualification/" \
@@ -38,3 +45,8 @@ cp "$work/seal/sealed.json" "$work/vm.pem" .bluebuild/native-validation/
 nice -n 19 bash scripts/native-installer/build-iso.sh ghcr.io/closure-labs/finite "$profile" "$digest" \
   "$work/sealed.oci.tar" "$work/seal/sealed.json"
 (cd .bluebuild/native-iso && sha256sum --check SHA256SUMS)
+rm "$work/sealed.oci.tar"
+nice -n 19 python3 scripts/native-installer/qualify-iso.py \
+  --iso ".bluebuild/native-iso/finite-native-installer-$profile.iso" \
+  --seal "$work/seal/sealed.json" --certificate "$work/vm.pem" --module-certificate "$work/module.pem" \
+  --state "$work/guest" --evidence .bluebuild/native-validation

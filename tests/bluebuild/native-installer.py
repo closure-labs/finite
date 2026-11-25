@@ -7,6 +7,7 @@ import dataclasses
 from pathlib import Path
 import tempfile
 import unittest
+from subprocess import CompletedProcess
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -266,17 +267,29 @@ class Placement(unittest.TestCase):
             target = Path(temporary)
             with self.assertRaisesRegex(installer.InstallError, 'No UKI'):
                 installer.verify_placement(target)
-            (target / 'boot/EFI/Linux').mkdir(parents=True)
-            (target / 'boot/EFI/Linux/finite.efi').write_bytes(b'uki')
+            (target / 'boot/EFI/Linux/bootc').mkdir(parents=True)
+            (target / 'boot/EFI/Linux/bootc/finite.efi').write_bytes(b'uki')
             with self.assertRaisesRegex(installer.InstallError, 'No boot entry'):
                 installer.verify_placement(target)
             (target / 'boot/loader/entries').mkdir(parents=True)
             (target / 'boot/loader/entries/finite.conf').write_text('uki /EFI/Linux/finite.efi\n')
             installer.verify_placement(target)
-            (target / 'efi/EFI/Linux').mkdir(parents=True)
-            (target / 'efi/EFI/Linux/stray.efi').write_bytes(b'uki')
+            (target / 'efi/EFI/Linux/bootc').mkdir(parents=True)
+            (target / 'efi/EFI/Linux/bootc/stray.efi').write_bytes(b'uki')
             with self.assertRaisesRegex(installer.InstallError, 'ESP instead'):
                 installer.verify_placement(target)
+
+
+class Enrollment(unittest.TestCase):
+    def test_pre_enrolled_keys_skip_prompt_and_missing_key_is_queued(self):
+        with patch.object(installer, 'print', create=True):
+            with patch('subprocess.run', return_value=CompletedProcess([], 0)) as run:
+                installer.enroll_mok(run)
+                self.assertEqual([entry.args[0][1] for entry in run.call_args_list], ['--test-key'] * 2)
+            with patch('subprocess.run', side_effect=[CompletedProcess([], 1), CompletedProcess([], 0),
+                                                       CompletedProcess([], 0)]) as run:
+                installer.enroll_mok(run)
+                run.assert_called_with(['mokutil', '--import', '/run/finite-install/finite-boot.der'], check=True)
 
 
 class Media(unittest.TestCase):

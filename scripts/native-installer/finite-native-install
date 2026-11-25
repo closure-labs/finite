@@ -169,8 +169,8 @@ def plan(disk, pins, *, fido2=False, recovery_key=True):
         Step('Create the firmware boot entry',
              ('efibootmgr', '--create', '--disk', dev, '--part', '1', '--loader', SHIM_LOADER,
               '--label', 'Finite')),
-        Step('Queue MOK enrollment of the boot and module-signing certificates (set a one-time password)',
-             ('mokutil', '--import', '/run/finite-install/finite-boot.der', str(MODULE_CERT)), interactive=True),
+        Step('Queue any missing boot and module-signing MOK certificates',
+             ('/usr/libexec/finite/finite-native-install', 'enroll-mok'), interactive=True),
         Step('Unmount the target', ('umount', '--recursive', target)),
         Step('Close the encrypted root', ('cryptsetup', 'close', ROOT_MAPPING)),
         Step('Flush writes', ('sync',)),
@@ -181,11 +181,11 @@ def plan(disk, pins, *, fido2=False, recovery_key=True):
 def verify_placement(target):
     """The VM-qualified placement contract, from install-xbootldr.sh."""
     target = Path(target)
-    if not any((target / 'boot/EFI/Linux').glob('*.efi')):
+    if not any(path.is_file() for path in (target / 'boot/EFI/Linux').rglob('*.efi')):
         raise InstallError('No UKI was installed on XBOOTLDR')
     if not any((target / 'boot/loader/entries').glob('*.conf')):
         raise InstallError('No boot entry was installed on XBOOTLDR')
-    if any((target / 'efi/EFI/Linux').glob('*.efi')):
+    if any((target / 'efi/EFI/Linux').rglob('*.efi')):
         raise InstallError('A UKI was placed on the ESP instead of XBOOTLDR')
 
 
@@ -360,6 +360,14 @@ def load_pins(path=PINS):
     return json.loads(Path(path).read_text())
 
 
+def enroll_mok(run=subprocess.run):
+    certificates = ['/run/finite-install/finite-boot.der', str(MODULE_CERT)]
+    missing = [cert for cert in certificates if run(['mokutil', '--test-key', cert]).returncode != 0]
+    if missing:
+        print('Set the one-time password for MokManager enrollment on next boot.', flush=True)
+        run(['mokutil', '--import', *missing], check=True)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -370,6 +378,7 @@ def main(argv=None):
     placement = sub.add_parser('verify-placement')
     placement.add_argument('target', type=Path)
     sub.add_parser('configure-target')
+    sub.add_parser('enroll-mok')
     args = parser.parse_args(argv)
     try:
         if args.command == 'verify-placement':
@@ -377,6 +386,9 @@ def main(argv=None):
             return 0
         pins = load_pins()
         check_environment(pins)
+        if args.command == 'enroll-mok':
+            enroll_mok()
+            return 0
         verify_payload(pins)
         if args.command == 'configure-target':
             configure_target()
@@ -394,9 +406,8 @@ def main(argv=None):
                         '-out', '/run/finite-install/finite-boot.der'], check=True)
         revalidate_disk(disk)
         execute(steps, secret)
-        print('\nInstallation complete. On the next boot, MokManager asks you to enroll the queued\n'
-              'certificates with the one-time password you just set. Choose "Enroll MOK".\n'
-              'Skipping it leaves the system unbootable until enrollment is queued again from rescue media.')
+        print('\nInstallation complete. If certificates were queued, choose "Enroll MOK" on the next boot\n'
+              'and use the one-time password. Keep the rescue media until the installed system boots.', flush=True)
         return 0
     except (InstallError, subprocess.SubprocessError, OSError, ValueError, KeyboardInterrupt) as error:
         print(f'\nInstallation stopped: {error}', file=sys.stderr)

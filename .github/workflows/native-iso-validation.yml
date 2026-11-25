@@ -40,10 +40,15 @@ jobs:
           driver: docker-container
           driver-opts: default-load=true
           use: false
-      - name: Build, seal and package one disposable profile
+      - uses: $/.github/actions/setup-vm-tools
+      - name: Check KVM access on the ephemeral runner
+        run: |
+          sudo setfacl -m "u:$(id -un):rw" /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+      - name: Build and test one disposable profile
         env:
           PROFILE: ${{ matrix.profile }}
-        run: bash scripts/native-installer/hosted-validation.sh "$PROFILE"
+        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh "$PROFILE"
       - name: Retain media build identity
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
