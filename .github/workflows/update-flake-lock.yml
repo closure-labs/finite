@@ -67,33 +67,17 @@ jobs:
           PUBLIC_TOOLS: ${{ steps.updater-tools.outputs.public }}
         run: PATH="${PUBLIC_TOOLS}/bin:$PATH" bash tests/repository/text-style.sh
 
-      - name: Resolve Decider credentials after public lock validation
-        if: steps.source.outputs.changed == 'true'
-        id: credentials
-        env:
-          FINITE_REVIEW_CLIENT_ID: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
-          FINITE_REVIEW_PRIVATE_KEY: ${{ secrets.DECIDER_KEY }}
-        run: >-
-          finite-ci-secrets-run review-app --
-          secretspec export --file secretspec.toml --profile review-app --provider github-actions
-          --scope review-app --reason 'Finite lock-refresh PR authorship' --format gha
-
       - name: Create short-lived Decider PR token
-        if: steps.source.outputs.changed == 'true'
         id: lock-pr-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        if: steps.source.outputs.changed == 'true'
+        uses: $/.github/actions/review-app-token
         with:
-          client-id: ${{ env.FINITE_REVIEW_CLIENT_ID }}
-          private-key: ${{ env.FINITE_REVIEW_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: ${{ github.event.repository.name }}
-          permission-contents: write
-          permission-pull-requests: write
-
-      - name: Clear Decider private credentials
-        if: always() && steps.credentials.outcome == 'success'
-        run: | # zizmor: ignore[github-env]
-          printf 'FINITE_REVIEW_CLIENT_ID=\nFINITE_REVIEW_PRIVATE_KEY=\n' >>"$GITHUB_ENV"
+          client-id: ${{ vars.DECIDER_CLIENT || secrets.DECIDER_CLIENT }}
+          private-key: ${{ secrets.DECIDER_KEY }}
+          reason: Finite lock-refresh PR authorship
+          permissions: |
+            contents: write
+            pull-requests: write
 
       - name: Authenticate Decider commit and PR identity
         if: steps.source.outputs.changed == 'true'

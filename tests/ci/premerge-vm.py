@@ -164,16 +164,20 @@ class Premerge(unittest.TestCase):
         jobs = workflow('delivery-health')['jobs']
         health = jobs['reconcile']['steps']
         self.assertNotIn('health', jobs)
-        observer = next(step for step in health if step.get('id') == 'health-token')['with']
-        self.assertEqual(observer['permission-actions'], 'read')
-        self.assertNotIn('permission-issues', observer)
+        def permissions(step_id):
+            step = next(step for step in health if step.get('id') == step_id)
+            self.assertEqual(step['uses'], '$/.github/actions/review-app-token')
+            return dict(line.strip().split(': ') for line in step['with']['permissions'].splitlines() if line.strip())
+        observer = permissions('health-token')
+        self.assertEqual(observer['actions'], 'read')
+        self.assertNotIn('issues', observer)
         self.assertTrue(any('reconcile-delivery.py' in step.get('run', '') for step in health))
         monitor = next(step for step in health if step.get('name', '').startswith('Report audit'))
         self.assertIn('always()', monitor['if'])
-        dispatch_token = next(step for step in health if step.get('id') == 'review-token')['with']
-        self.assertEqual(dispatch_token['permission-actions'], 'write')
-        self.assertEqual(dispatch_token['permission-contents'], 'read')
-        self.assertNotIn('permission-packages', dispatch_token)
+        dispatch_token = permissions('review-token')
+        self.assertEqual(dispatch_token['actions'], 'write')
+        self.assertEqual(dispatch_token['contents'], 'read')
+        self.assertNotIn('packages', dispatch_token)
 
 
 if __name__ == '__main__':

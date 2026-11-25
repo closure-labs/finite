@@ -492,11 +492,8 @@ class Gate(unittest.TestCase):
         steps = workflow['jobs']['update']['steps']
         token = next(step for step in steps if step.get('id') == 'lock-pr-token')
         self.assertEqual(token['if'], "steps.source.outputs.changed == 'true'")
-        self.assertEqual(token['uses'], 'actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510')
-        self.assertEqual({key: value for key, value in token['with'].items() if key.startswith('permission-')},
-                         {'permission-contents': 'write', 'permission-pull-requests': 'write'})
-        self.assertEqual(token['with']['owner'], '${{ github.repository_owner }}')
-        self.assertEqual(token['with']['repositories'], '${{ github.event.repository.name }}')
+        self.assertEqual(token['uses'], '$/.github/actions/review-app-token')
+        self.assertEqual(token['with']['permissions'].split(), ['contents:', 'write', 'pull-requests:', 'write'])
         create = next(step for step in steps if step.get('id') == 'update')
         self.assertEqual(create['with']['token'], '${{ steps.lock-pr-token.outputs.token }}')
         self.assertEqual(create['with']['branch'], 'automation/decider-weekly-flake-input-refresh')
@@ -509,9 +506,7 @@ class Gate(unittest.TestCase):
         self.assertEqual(validate['env']['GH_TOKEN'], '${{ env.MERGE_QUEUE_TOKEN }}')
         names = [step.get('name') for step in steps]
         self.assertLess(names.index('Validate generated text'), names.index('Create short-lived Decider PR token'))
-        self.assertLess(names.index('Clear Decider private credentials'), names.index('Open or update pull request'))
-        clear = next(step for step in steps if step.get('name') == 'Clear Decider private credentials')
-        self.assertEqual(clear['if'], "always() && steps.credentials.outcome == 'success'")
+        self.assertLess(names.index('Create short-lived Decider PR token'), names.index('Open or update pull request'))
 
     def test_live_decider_identity_produces_bot_commit_and_app_pr_author(self):
         result, output, args = self.lock_identity({'id': 344936881, 'login': 'cl-decider[bot]', 'type': 'Bot'})
@@ -528,9 +523,8 @@ class Gate(unittest.TestCase):
         steps = job['steps']
         token = next(step for step in steps if step.get('id') == 'foundation-pr-token')
         self.assertEqual(token['if'], "steps.release.outputs.changed == 'true'")
-        self.assertEqual({k: v for k, v in token['with'].items() if k.startswith('permission-')},
-                         {'permission-contents': 'write', 'permission-pull-requests': 'write'})
-        self.assertEqual(token['with']['repositories'], '${{ github.event.repository.name }}')
+        self.assertEqual(token['uses'], '$/.github/actions/review-app-token')
+        self.assertEqual(token['with']['permissions'].split(), ['contents:', 'write', 'pull-requests:', 'write'])
         create = next(step for step in steps if step.get('id') == 'update')
         self.assertEqual(create['with']['token'], '${{ steps.foundation-pr-token.outputs.token }}')
         self.assertEqual(create['with']['author'], '${{ steps.pr-identity.outputs.name }} <${{ steps.pr-identity.outputs.email }}>')
@@ -539,9 +533,7 @@ class Gate(unittest.TestCase):
         self.assertNotIn('MERGE_QUEUE', json.dumps(workflow))
         names = [step.get('name') for step in steps]
         self.assertLess(names.index('Validate generated text'), names.index('Create short-lived Decider PR token'))
-        self.assertLess(names.index('Clear Decider private credentials'), names.index('Open or update pull request'))
-        clear = next(step for step in steps if step.get('name') == 'Clear Decider private credentials')
-        self.assertEqual(clear['if'], "always() && steps.credentials.outcome == 'success'")
+        self.assertLess(names.index('Create short-lived Decider PR token'), names.index('Open or update pull request'))
 
     def test_foundation_identity_rejects_personal_auth_and_wrong_app(self):
         bot = {'id': 344936881, 'login': 'cl-decider[bot]', 'type': 'Bot'}

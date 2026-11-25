@@ -15,14 +15,24 @@ JOBS = WORKFLOW['jobs']
 TOKEN = '${{ steps.review-token.outputs.token || github.token }}'
 
 
+ADMISSION = yaml.safe_load((ROOT / '.github/actions/admission-policy/action.yml').read_text())
+REVIEW_APP = yaml.safe_load((ROOT / '.github/actions/review-app-token/action.yml').read_text())
+
+
 def step(job, name):
     return next(item for item in JOBS[job]['steps'] if item.get('name') == name)
 
 
+def permissions(item):
+    return dict(line.strip().split(': ') for line in item['with']['permissions'].splitlines() if line.strip())
+
+
 class PublicationAuthority(unittest.TestCase):
     def test_checked_policy_controls_all_three_authority_consumers(self):
+        script = ADMISSION['runs']['steps'][0]['run']
+        self.assertEqual(ADMISSION['outputs']['maintainer']['value'], '${{ steps.policy.outputs.maintainer }}')
         for job in ('security', 'sign', 'promote'):
-            script = step(job, 'Read checked publication admission policy')['run']
+            self.assertEqual(step(job, 'Read checked publication admission policy')['uses'], '$/.github/actions/admission-policy')
             with tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
                 (root / 'scripts/bluebuild').mkdir(parents=True)
@@ -55,16 +65,20 @@ class PublicationAuthority(unittest.TestCase):
             self.assertIn("steps.admission-policy.outputs.maintainer == 'true'", mint['if'])
             if job == 'security':
                 self.assertIn("inputs.resume_run != ''", mint['if'])
-            permissions = {k: v for k, v in mint['with'].items() if k.startswith('permission-')}
-            self.assertEqual(permissions, {f'permission-{p}': 'read' for p in ('contents', 'actions', 'pull-requests', 'administration', 'members')})
-            self.assertEqual(mint['with']['repositories'], '${{ github.event.repository.name }}')
-            resolve = step(job, 'Resolve declared read-only authority App credentials')
-            self.assertIn('--profile review-app', resolve['run'])
-            self.assertIn('--scope review-app', resolve['run'])
-            clear = step(job, 'Clear App private credentials')
-            self.assertIn('always()', clear['if'])
-            self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', clear['run'])
-            self.assertLess(steps.index(mint), steps.index(clear))
+            self.assertEqual(mint['uses'], '$/.github/actions/review-app-token')
+            self.assertEqual(permissions(mint), {p: 'read' for p in ('contents', 'actions', 'pull-requests', 'administration', 'members')})
+            self.assertEqual(mint['with']['private-key'], '${{ secrets.DECIDER_KEY }}')
+        # The shared action resolves the review-app profile and always clears the key it exported.
+        inner = REVIEW_APP['runs']['steps']
+        resolve = next(item for item in inner if 'finite-ci-secrets-run' in item.get('run', ''))
+        self.assertIn('--profile review-app', resolve['run'])
+        self.assertIn('--scope review-app', resolve['run'])
+        token = next(item for item in inner if item.get('id') == 'token')
+        self.assertEqual(token['with']['repositories'], '${{ github.event.repository.name }}')
+        clear = inner[-1]
+        self.assertEqual(clear['if'], 'always()')
+        self.assertIn('FINITE_REVIEW_PRIVATE_KEY=\\n', clear['run'])
+        self.assertLess(inner.index(token), inner.index(clear))
 
     def test_authority_tokens_reach_verifiers_while_registry_and_scan_keep_workflow_token(self):
         for job, name in [('security', 'Revalidate fresh security evidence for a resumed candidate'),
@@ -80,7 +94,7 @@ class PublicationAuthority(unittest.TestCase):
         self.assertNotIn('review-token', json.dumps(scan))
         self.assertNotIn('DECIDER_KEY', json.dumps(scan))
         signer = JOBS['sign']['steps']
-        self.assertLess(signer.index(step('sign', 'Clear App private credentials')),
+        self.assertLess(signer.index(step('sign', 'Generate short-lived read-only authority token')),
                         signer.index(step('sign', 'Sign the independently scanned immutable digest')))
 
     def test_reusable_secrets_are_optional_for_legacy_and_forwarded_from_build(self):

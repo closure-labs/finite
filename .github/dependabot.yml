@@ -4,6 +4,7 @@ updates:
     # Root discovery covers workflows; local composite actions need their own directory.
     directories:
       - /
+      - /.github/actions/review-app-token
       - /.github/actions/setup-nix
       - /.github/actions/setup-cosign
     schedule:

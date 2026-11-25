@@ -412,10 +412,10 @@ class Admission(unittest.TestCase):
         worker = workflow['jobs']['approve-execution']
         self.assertEqual(worker['if'], "needs.discover.outputs.has-targets == 'true'")
         self.assertFalse(worker['concurrency']['cancel-in-progress'])
-        token = next(step['with'] for step in worker['steps'] if step.get('id') == 'ci-token')
-        self.assertEqual({k: v for k, v in token.items() if k.startswith('permission-')},
-                         {'permission-actions': 'write', 'permission-contents': 'read',
-                          'permission-pull-requests': 'read', 'permission-members': 'read'})
+        token = next(step for step in worker['steps'] if step.get('id') == 'ci-token')
+        self.assertEqual(token['uses'], '$/.github/actions/review-app-token')
+        self.assertEqual(dict(line.strip().split(': ') for line in token['with']['permissions'].splitlines() if line.strip()),
+                         {'actions': 'write', 'contents': 'read', 'pull-requests': 'read', 'members': 'read'})
         for job in workflow['jobs'].values():
             checkout = next(step['with'] for step in job['steps'] if step.get('uses', '').startswith('actions/checkout@'))
             self.assertEqual(checkout, {'ref': 'main', 'persist-credentials': False})

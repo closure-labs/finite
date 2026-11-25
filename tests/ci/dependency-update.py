@@ -448,10 +448,10 @@ class Integration(unittest.TestCase):
         self.assertIn('image-tools --no-link --print-out-paths', steps[prepared]['run'])
         command = next(value['run'] for value in steps if '--pull-request' in value.get('run', ''))
         self.assertIn('"$DEPENDENCY_TOOLS/bin/python3"', command)
-        token = next(value['with'] for value in steps if value.get('id') == 'ci-token')
-        self.assertEqual({k: v for k, v in token.items() if k.startswith('permission-')},
-                         {'permission-actions': 'write', 'permission-contents': 'read',
-                          'permission-pull-requests': 'read', 'permission-members': 'read'})
+        token = next(value for value in steps if value.get('id') == 'ci-token')
+        self.assertEqual(token['uses'], '$/.github/actions/review-app-token')
+        self.assertEqual(dict(line.strip().split(': ') for line in token['with']['permissions'].splitlines() if line.strip()),
+                         {'actions': 'write', 'contents': 'read', 'pull-requests': 'read', 'members': 'read'})
         self.assertIs(admission.policy()['dependabot']['requiresCurrentHeadHumanApproval'], False)
 
 

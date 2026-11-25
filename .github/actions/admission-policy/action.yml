@@ -1,0 +1,22 @@
+name: Read publication admission policy
+description: Report whether the checked image policy requires a maintainer decision
+outputs:
+  maintainer:
+    description: "'true' when automation/security/image-policy.json is in maintainer-decision mode, else 'false'"
+    value: ${{ steps.policy.outputs.maintainer }}
+runs:
+  using: composite
+  steps:
+    - name: Read checked publication admission policy
+      id: policy
+      shell: bash
+      run: |
+        python3 - <<'PY_POLICY'
+        import os
+        from pathlib import Path
+        import runpy
+        policy = runpy.run_path('scripts/bluebuild/security-policy.py')['load_policy'](
+            Path('automation/security/image-policy.json'))
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+            print('maintainer=' + str(policy['mode'] == 'maintainer-decision').lower(), file=output)
+        PY_POLICY
