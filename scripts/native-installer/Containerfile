@@ -32,10 +32,12 @@ COPY README.md /usr/share/doc/finite/native-installer.md
 COPY finite-native-install /usr/libexec/finite/finite-native-install
 COPY finite-native-installer.service /usr/lib/systemd/system/finite-native-installer.service
 COPY iso.yaml /usr/lib/image-builder/bootc/iso.yaml
-RUN if [ "$VALIDATION" = true ]; then \
+RUN set -eu; if [ "$VALIDATION" = true ]; then \
       printf "  - console=ttyS0,115200n8\n  - rd.plymouth=0\n  - plymouth.enable=0\n" >> /usr/lib/image-builder/bootc/iso.yaml; \
-      sed -i "s|/dev/tty1|/dev/ttyS0|g" /usr/lib/systemd/system/finite-native-installer.service; \
-      sed -i "s|finite-native-install install$|finite-native-install install --no-recovery-key|" /usr/lib/systemd/system/finite-native-installer.service; \
+      sed -i -e 's|/dev/tty1|/dev/ttyS0|g' \
+        -e 's|finite-native-install install$|finite-native-install install --no-recovery-key|' \
+        /usr/lib/systemd/system/finite-native-installer.service; \
+      systemctl mask serial-getty@ttyS0.service; \
     fi
 
 # Installed-system services make no sense on live media.
