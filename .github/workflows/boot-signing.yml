@@ -63,9 +63,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
-      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
-        with:
-          skip-if-available: "80G"
+      - name: Free disk space without third-party code
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h
       - name: Prepare pinned native signing tools without credentials
         run: | # zizmor: ignore[github-env]
           tools=$(nix build --file lib/ci-tools.nix native-boot-tools --out-link "$RUNNER_TEMP/native-tools" --print-out-paths)
