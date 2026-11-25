@@ -22,6 +22,7 @@ def validate(pin):
             or not re.fullmatch('[0-9a-f]{40}', pin.get('requiredFix', ''))
             or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', pin.get('minimumOfficialVersion', ''))
             or not re.fullmatch('[0-9A-Za-z.]+', pin.get('rpmRelease', ''))
+            or type(pin.get('buildFedoraVersion')) is not int or not 1 <= pin['buildFedoraVersion'] <= 999
             or not re.fullmatch(r'registry.fedoraproject.org/fedora@sha256:[0-9a-f]{64}', pin.get('buildBase', ''))):
         raise ValueError('Invalid locked bootc runtime source')
     expected = pin['revision'] if pin['kind'] == 'upstream-snapshot' else 'v' + pin['version']

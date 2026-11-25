@@ -8,11 +8,17 @@ import json
 x=json.load(open('/source-lock.json'))
 print(x['version'])
 print(x['rpmRelease'])
+print(x['buildFedoraVersion'])
 PY
 )
 version=${metadata[0]}
 release=${metadata[1]}
+fedora=${metadata[2]}
 [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ && $release =~ ^[0-9A-Za-z.]+$ ]]
+if [[ $(rpm --eval '%{?fedora}') != "$fedora" ]]; then
+  echo "Bootc build base does not match the locked Fedora $fedora release" >&2
+  exit 1
+fi
 export SOURCE_DATE_EPOCH=0
 mkdir -p /tmp/rpmbuild/{SPECS,RPMS,BUILDROOT}
 # Keep upstream's packaging and complete runtime/initramfs payload. A low RPM
@@ -32,4 +38,6 @@ mapfile -t packages < <(find /tmp/rpmbuild/RPMS -name "bootc-$version-$release*.
 [[ ${#packages[@]} == 1 ]]
 cp "${packages[0]}" /out/bootc-runtime.rpm
 cp /source-lock.json /out/source-lock.json
-rpm -qp --qf '%{NAME} %{VERSION}-%{RELEASE}.%{ARCH}\n' /out/bootc-runtime.rpm
+rpm_identity=$(rpm -qp --qf '%{NAME} %{VERSION}-%{RELEASE}.%{ARCH}' /out/bootc-runtime.rpm)
+[[ $rpm_identity == "bootc $version-$release.fc$fedora.x86_64" ]]
+printf '%s\n' "$rpm_identity"

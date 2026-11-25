@@ -8,6 +8,7 @@
   "requiredFix": "8275daa9227f7c4ee893c0b05b4134dc2ff11283",
   "minimumOfficialVersion": "1.17.5",
   "rpmRelease": "0.1.finite.git8275daa9227f",
-  "buildBase": "registry.fedoraproject.org/fedora@sha256:3fcae46546ac42b44e7af262329b033ce1dc800a5d2583e5025cb43531dba55d",
+  "buildBase": "registry.fedoraproject.org/fedora@sha256:89fe812033e4b10bb8b05bd573fce914e7a11c2337772ede441c9382f874717b",
+  "buildFedoraVersion": 45,
   "purpose": "Temporary upstream XBOOTLDR implementation for installer and installed OS; transition to the next qualifying official release, without a downstream source patch"
 }

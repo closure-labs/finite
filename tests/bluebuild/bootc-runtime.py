@@ -96,7 +96,8 @@ class RuntimeSource(unittest.TestCase):
                 update.update(self.path, Mock(return_value=release), self.fetch)
             self.assertEqual(before, self.path.read_bytes())
         for field, value in [('ref', 'main'), ('revision', '../escape'), ('archiveSha256', 'x'),
-                             ('schema', True), ('buildBase', 'fedora:latest')]:
+                             ('schema', True), ('buildBase', 'fedora:latest'),
+                             ('buildFedoraVersion', '45'), ('buildFedoraVersion', True)]:
             pin = {**self.pin, field: value}
             with self.subTest(field=field), self.assertRaises(ValueError):
                 update.source.validate(pin)
