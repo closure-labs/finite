@@ -89,10 +89,9 @@ These are contract/lint builds, not OS-image builds. No VM was started.
 - Alejandra accepted the changed Nix source declarations; `git diff --check`
   passed. Documentation checks run on a tracked-file export, excluding ignored
   container storage under `artifacts/`.
-- BlueBuild 0.9.37 could not fetch its schema endpoint, including a retry outside
-  the restricted sandbox. Recipe schema validation is **not passed**. The
-  repository's YAML/recipe contracts passed; resolve schema access and run the
-  real validator before integration.
+- BlueBuild 0.9.37 passed live schema validation for both native recipes after
+  retrying access to the schema endpoint. The pinned base signatures also
+  verified with the corresponding Bluefin project keys.
 - No ISO build, production seal, encrypted native boot, upgrade/rollback,
   workstation partition/firmware write, MOK enrollment or release occurred.
 
@@ -105,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45705616551)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45707478815)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -135,8 +134,17 @@ before staging the ISO images. That job emitted neither its computed hash
 nor an ISO receipt. Change `kylntukl` emits the version and hash and lets the
 dedicated disposable branch bind its same-run Nix-built executable to the
 seal and verification receipts. Production consumers still require the
-reviewed executable hashes and reject validation receipts. The retry runs
-both profiles on the same one-VM-at-a-time workflow.
+reviewed executable hashes and reject validation receipts.
+
+Run [45705616551](https://github.com/closure-labs/finite/actions/runs/45705616551)
+confirmed `bootc 1.17.1` at the pinned store output and reported executable
+SHA256 `9e8d8d74be1237fcec3fdd10716526aae4660293c7f67ac23560077fa56f72f6`.
+The different local and hosted executable hashes were observed at the same Nix
+output path. The run then failed in upstream verification with
+`ModuleNotFoundError: No module named 'yaml'`. Change `plllnsxt` keeps the
+pinned VM Python with PyYAML on the host PATH and limits the plain Python
+in the sealing tools to the seal subprocess. It preserves setup-nix's cache
+configuration and stages the image before compiling the importer.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
