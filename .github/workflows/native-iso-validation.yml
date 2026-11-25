@@ -12,15 +12,10 @@ env:
   FINITE_CI_VARS: ${{ toJSON(vars) }}
 jobs:
   media:
-    name: Native media (${{ matrix.profile }})
+    name: Qualify both native profiles in sequence
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-iso'
     runs-on: ubuntu-24.04
-    timeout-minutes: 150
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        profile: [finite-native, finite-native-dev]
+    timeout-minutes: 210
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,22 +40,24 @@ jobs:
         # Only VM tools and firmware paths checked by the provisioner enter the workflow environment.
         run: python3 scripts/native-installer/watch-memory.py python3 scripts/ci/vm_tools.py # zizmor: ignore[github-env]
       - name: Check KVM access on the ephemeral runner
+        id: kvm
         run: |
           sudo setfacl -m "u:$(id -un):rw" /dev/kvm
           test -r /dev/kvm && test -w /dev/kvm
-      - name: Build and test one disposable profile
-        env:
-          PROFILE: ${{ matrix.profile }}
-        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh "$PROFILE"
+      - name: Build and test finite-native
+        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh finite-native
+      - name: Build and test finite-native-dev
+        if: ${{ !cancelled() && steps.kvm.outcome == 'success' }}
+        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh finite-native-dev
       - name: Retain media build identity
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-iso-validation-${{ matrix.profile }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-iso-validation-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             .bluebuild/native-validation/
-            .bluebuild/native-iso/installation.json
-            .bluebuild/native-iso/SHA256SUMS
+            .bluebuild/native-iso/*/installation.json
+            .bluebuild/native-iso/*/SHA256SUMS
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 7

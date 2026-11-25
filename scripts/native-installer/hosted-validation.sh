@@ -7,9 +7,24 @@ profile=${1:?native profile required}
 [[ $profile == finite-native || $profile == finite-native-dev ]]
 [[ ${GITHUB_SHA:?} == "$(git rev-parse HEAD)" ]]
 umask 077
+output="$PWD/.bluebuild/native-iso/$profile"
+evidence=".bluebuild/native-validation/$profile"
+[[ ! -e $output && ! -e $evidence ]]
+mkdir -p "$evidence"
 work=$(mktemp -d "$RUNNER_TEMP/native-iso.XXXXXXXX")
-trap 'rm -rf -- "$work"' EXIT
-mkdir -p .bluebuild/native-validation
+podman_started=false
+cleanup() {
+  rm -rf -- "$work"
+  if [[ $podman_started == true ]]; then
+    sudo podman image rm --ignore "localhost/finite-native-installer:$profile" \
+      "ghcr.io/closure-labs/finite:$profile" || true
+  fi
+  if [[ -d $output ]]; then
+    # The serial transcript and exact checksums are the retained evidence.
+    sudo find "$output" -type f -name '*.iso' -delete || true
+  fi
+}
+trap cleanup EXIT
 nix_args=(--accept-flake-config --max-jobs 1 --cores 2)
 # Retain the verified setup-nix substituters while capping every nested build.
 NIX_CONFIG="${NIX_CONFIG:-}"$'\nmax-jobs = 1\ncores = 2'
@@ -22,6 +37,7 @@ python3 scripts/ci/bluefin-upstream.py verify --include-native
 nice -n 19 bluebuild validate "recipes/$profile.yml"
 printf 'Staging the locked runtime and payload for %s\n' "$profile"
 nice -n 19 bash scripts/bluebuild/stage.sh "$profile"
+cp files/bootc-runtime/receipt.json "$evidence/runtime.json"
 printf 'Building the %s image and serial observation layer\n' "$profile"
 nice -n 19 bash scripts/bluebuild/build.sh "$profile" false
 mapfile -t candidates < <(docker image ls --filter "label=io.finite.profile=$profile" --format '{{.ID}}' | sort -u)
@@ -36,6 +52,7 @@ docker rm "$container"
 openssl x509 -inform DER -in "$work/module.der" -out "$work/module.pem"
 skopeo copy "docker-daemon:localhost/finite-validation:$profile" "oci-archive:$work/raw.oci.tar"
 docker image rm "localhost/finite-validation:$profile" "localhost/finite-validation-root:$profile"
+docker image rm --force "${candidates[0]}"
 printf 'Building the pinned importer and sealing the %s archive\n' "$profile"
 tools=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-boot-tools --no-link --print-out-paths)
 importer=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-bootc --no-link --print-out-paths)
@@ -55,14 +72,15 @@ nice -n 19 python3 scripts/bluebuild/seal-native.py \
   --validation-importer-sha256 "$importer_sha"
 rm -f "$work/vm.key" "$work/raw.oci.tar"
 digest=$(tar -xOf "$work/sealed.oci.tar" index.json | jq -er '.manifests[0].digest')
-cp "$work/seal/sealed.json" "$work/vm.pem" .bluebuild/native-validation/
+cp "$work/seal/sealed.json" "$work/vm.pem" "$evidence/"
 printf 'Building the %s installer ISO\n' "$profile"
-nice -n 19 bash scripts/native-installer/build-iso.sh ghcr.io/closure-labs/finite "$profile" "$digest" \
+podman_started=true
+ISO_OUTPUT_DIR="$output" nice -n 19 bash scripts/native-installer/build-iso.sh ghcr.io/closure-labs/finite "$profile" "$digest" \
   "$work/sealed.oci.tar" "$work/seal/sealed.json"
-(cd .bluebuild/native-iso && sha256sum --check SHA256SUMS)
+(cd "$output" && sha256sum --check SHA256SUMS)
 rm "$work/sealed.oci.tar"
 printf 'Booting the %s installer in the capped VM\n' "$profile"
 nice -n 19 python3 scripts/native-installer/qualify-iso.py \
-  --iso ".bluebuild/native-iso/finite-native-installer-$profile.iso" \
+  --iso "$output/finite-native-installer-$profile.iso" \
   --seal "$work/seal/sealed.json" --certificate "$work/vm.pem" --module-certificate "$work/module.pem" \
-  --state "$work/guest" --evidence .bluebuild/native-validation
+  --state "$work/guest" --evidence "$evidence"
