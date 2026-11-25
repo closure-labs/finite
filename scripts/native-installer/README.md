@@ -4,7 +4,7 @@ This is experimental whole-disk media, not the workstation migration tool.
 It has source-level tests but no end-to-end ISO or encrypted Secure Boot
 qualification. It erases the selected disk. Do not use it to convert an existing
 OSTree installation or preserve its data. The parallel workstation migration
-remains gated by the [rollout record](../../docs/v0.9.0-implementation.md).
+remains gated by the [rollout record](../../docs/native-rollout-progress.md).
 
 Build media only on the ephemeral hosted runner, using an authenticated native
 payload in `ghcr.io/closure-labs/finite` and its distinct `finite-native` or
