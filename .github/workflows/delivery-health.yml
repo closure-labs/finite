@@ -1,7 +1,7 @@
 name: Delivery and decision pipeline health
 on:
   schedule:
-    - cron: '47 * * * *'
+    - cron: '47 */6 * * *'
   workflow_run: # zizmor: ignore[dangerous-triggers] Trusted main code reads metadata only.
     workflows: [Build Finite, Prepare two-image release approval, Publish approved two-image release]
     types: [completed]

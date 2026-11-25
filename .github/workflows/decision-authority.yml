@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, edited]
     branches: [main]
   schedule:
-    - cron: '7,22,37,52 * * * *'
+    - cron: '7 6 * * *'
   workflow_dispatch:
     inputs:
       pull_request:

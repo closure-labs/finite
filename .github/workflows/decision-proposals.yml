@@ -7,7 +7,7 @@ on:
     branches: [main]
     paths: ['automation/decisions/security/**']
   schedule:
-    - cron: '37 * * * *'
+    - cron: '37 */6 * * *'
   workflow_dispatch:
     inputs:
       operation:
