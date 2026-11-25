@@ -105,7 +105,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active run](https://github.com/closure-labs/finite/actions/runs/45703547295)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45705616551)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -119,7 +119,7 @@ their own observed results.
 
 Both native recipes passed BlueBuild 0.9.37's live schema validation after
 retrying with network access. The corrected source passed the pinned
-bluebuild group with 116 suites and 2,053 cases and the workflow group
+bluebuild group with 116 suites and 2,054 cases and the workflow group
 with two suites and 15 cases. The first hosted run `45701591964` was
 superseded to include the VM test. The next run `45702162585` passed
 toolchain setup and KVM access, then began compiling an importer using the
@@ -128,6 +128,15 @@ output path from the approved binary. The replacement run uses the pinned
 Nixpkgs revision `26f4107e`, which locally resolved to the reviewed
 bootc 1.17.1 binary SHA256
 `f26b09f987697c1755a3d65d6b45e31534e59cdd6ffee6c664a35b66acc20f0a`.
+
+Run [45703547295](https://github.com/closure-labs/finite/actions/runs/45703547295)
+built the right importer derivation and stopped at the executable check
+before staging the ISO images. That job emitted neither its computed hash
+nor an ISO receipt. Change `kylntukl` emits the version and hash and lets the
+dedicated disposable branch bind its same-run Nix-built executable to the
+seal and verification receipts. Production consumers still require the
+reviewed executable hashes and reject validation receipts. The retry runs
+both profiles on the same one-VM-at-a-time workflow.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
