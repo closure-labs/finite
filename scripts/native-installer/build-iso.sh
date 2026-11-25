@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build the Finite native installer ISO for one verified native image digest.
 # Usage: build-iso.sh REPOSITORY TAG DIGEST
-#   e.g. build-iso.sh ghcr.io/closure-labs/finite-native latest sha256:<64 hex>
+#   e.g. build-iso.sh ghcr.io/closure-labs/finite finite-native sha256:<64 hex>
 # Runs on the ephemeral hosted ISO runner (root podman); never on a workstation.
 set -euo pipefail
 [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite ]] || {
@@ -11,8 +11,8 @@ set -euo pipefail
 repository=${1:?repository}
 tag=${2:?tag}
 digest=${3:?digest}
-[[ $repository =~ ^ghcr\.io/closure-labs/finite-native(-dev)?$ ]] || { echo "Unexpected repository $repository" >&2; exit 2; }
-[[ $tag =~ ^[A-Za-z0-9._-]{1,128}$ ]] || { echo 'Invalid tag' >&2; exit 2; }
+[[ $repository =~ ^ghcr\.io/closure-labs/finite$ ]] || { echo "Unexpected repository $repository" >&2; exit 2; }
+[[ $tag == finite-native || $tag == finite-native-dev ]] || { echo 'Invalid tag' >&2; exit 2; }
 [[ $digest =~ ^sha256:[0-9a-f]{64}$ ]] || { echo 'Digest must be immutable' >&2; exit 2; }
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 root=$(cd "$here/../.." && pwd)
@@ -28,6 +28,11 @@ payload="$repository:$tag"
 # local containers-storage by name, and the installer targets that name.
 cosign verify --new-bundle-format=false --key "$root/cosign.pub" "$repository@$digest" >/dev/null
 sudo podman pull "$repository@$digest"
+profile=$(sudo podman image inspect --format '{{index .Labels "io.finite.profile"}}' "$repository@$digest")
+architecture=$(sudo podman image inspect --format '{{index .Labels "io.finite.boot-architecture"}}' "$repository@$digest")
+[[ $profile == "$tag" && $architecture == native-composefs ]] || {
+  echo 'Payload must be the matching native profile, authenticated by digest.' >&2; exit 2;
+}
 sudo podman tag "$repository@$digest" "$payload"
 [[ $(sudo podman image inspect --format '{{.Digest}}' "$payload") == "$digest" ]]
 

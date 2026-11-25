@@ -33,6 +33,37 @@ def snapshot(directory):
 
 
 class EFIUpdate(unittest.TestCase):
+    def test_runtime_refresh_still_requires_a_strict_native_boot(self):
+        good = ['rw', 'composefs.digest=v1-sha512-12:' + 'a' * 128]
+        self.assertEqual(efi.refresh_root(None, None, None, good, False), Path('/'))
+        for arguments, ostree in ((['rw'], False), (good, True),
+                                  (['composefs.digest=?optional'], False)):
+            with self.subTest(arguments=arguments), self.assertRaises(ValueError):
+                efi.refresh_root(None, None, None, arguments, ostree)
+
+    def test_offline_refresh_requires_installer_mount_and_persistent_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            marker = root / 'usr/lib/composefs/setup-root-conf.toml'
+            marker.parent.mkdir(parents=True)
+            marker.touch()
+            state = root / 'var/lib/finite/efi-updates'
+            esp = root / 'esp'
+            args = (root, esp, state, ['finite.native-installer=1'], False)
+            # No actual mounts or firmware changes: emulate only the deployment
+            # mountpoint observation while exercising the production guard.
+            with patch.object(Path, 'is_mount', return_value=True):
+                self.assertEqual(efi.refresh_root(*args), root)
+                for changed in ((root, esp, state, [], False),
+                                (root, esp, state, args[3], True),
+                                (root, None, state, args[3], False),
+                                (root, esp, None, args[3], False),
+                                (root, esp, Path('/tmp/live-state'), args[3], False)):
+                    with self.subTest(changed=changed), self.assertRaises(ValueError):
+                        efi.refresh_root(*changed)
+            with self.assertRaisesRegex(ValueError, 'mounted native deployment'):
+                efi.refresh_root(*args)
+
     def test_rescue_mount_path_can_change_but_filesystem_identity_cannot(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

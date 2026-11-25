@@ -3,9 +3,11 @@
 from importlib.machinery import SourceFileLoader
 import importlib.util
 import json
+import dataclasses
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / 'scripts/native-installer/finite-native-install'
@@ -15,9 +17,9 @@ installer = importlib.util.module_from_spec(spec)
 loader.exec_module(installer)
 
 GIB = 1024**3
-PINS = {'schema': 1, 'bootcVersion': '1.17.5', 'payloadDigest': 'sha256:' + 'a' * 64,
-        'sourceImgref': 'oci-archive:/run/install/payload.oci.tar',
-        'targetImgref': 'ghcr.io/closure-labs/finite-native:latest'}
+PINS = {'schema': 2, 'bootcSha256': 'b' * 64, 'bootcVersion': '1.17.5', 'payloadDigest': 'sha256:' + 'a' * 64,
+        'sourceImgref': 'containers-storage:ghcr.io/closure-labs/finite:finite-native',
+        'targetImgref': 'ghcr.io/closure-labs/finite:finite-native'}
 
 
 def disk(path='/dev/nvme0n1', by_id='nvme-KIOXIA_512GB_X', size=512 * GIB, **changes):
@@ -28,12 +30,34 @@ def disk(path='/dev/nvme0n1', by_id='nvme-KIOXIA_512GB_X', size=512 * GIB, **cha
 
 
 class DiskChoice(unittest.TestCase):
+    def test_last_moment_disk_and_stable_id_changes_prevent_the_wipe(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            ids = Path(temporary)
+            device = ids / 'device'
+            device.touch()
+            selected = disk(path=str(device))
+            link = ids / selected.by_id
+            link.symlink_to(device)
+            installer.revalidate_disk(selected, [selected], ids)
+            for current in ([], [dataclasses.replace(selected, mounted=True)],
+                            [dataclasses.replace(selected, active_holders=True)],
+                            [dataclasses.replace(selected, size=selected.size + GIB)]):
+                with self.subTest(current=current), self.assertRaises(installer.InstallError):
+                    installer.revalidate_disk(selected, current, ids)
+            other = ids / 'other'
+            other.touch()
+            link.unlink()
+            link.symlink_to(other)
+            with self.assertRaisesRegex(installer.InstallError, 'stable disk ID changed'):
+                installer.revalidate_disk(selected, [selected], ids)
+
     def test_unsafe_disks_are_never_offered(self):
         cases = {'holds the installer boot medium': dict(holds_boot_medium=True),
                  'has mounted filesystems or active swap': dict(mounted=True),
                  'is read-only': dict(read_only=True),
                  'is smaller than 64 GiB': dict(size=63 * GIB),
-                 'has no stable /dev/disk/by-id name': dict(by_id='')}
+                 'has no stable /dev/disk/by-id name': dict(by_id=''),
+                 'has active device-mapper, RAID or other block-device holders': dict(active_holders=True)}
         for reason, change in cases.items():
             with self.subTest(reason=reason):
                 self.assertEqual(disk(**change).refusal(), reason)
@@ -84,7 +108,7 @@ class Plan(unittest.TestCase):
 
     def test_bootc_installs_composefs_systemd_boot_without_kernel_arguments(self):
         steps = installer.plan(disk(), PINS)
-        bootc = self.argv(steps, 'bootc').argv
+        bootc = next(step.argv for step in steps if step.argv[:3] == ('bootc', 'install', 'to-filesystem'))
         for flag in ('--composefs-backend', '--generic-image', '--skip-fetch-check'):
             self.assertIn(flag, bootc)
         self.assertEqual(bootc[bootc.index('--bootloader') + 1], 'systemd')
@@ -115,10 +139,16 @@ class Plan(unittest.TestCase):
         steps = installer.plan(disk(), PINS)
         binds = [i for i, s in enumerate(steps) if s.argv[:2] == ('mount', '--bind')]
         bootc = next(i for i, s in enumerate(steps) if s.argv[0] == 'bootc')
-        self.assertEqual(len(binds), 1)
-        self.assertLess(binds[0], bootc)
-        self.assertTrue(steps[binds[0]].argv[2].startswith(str(installer.TARGET) + '/'))
-        self.assertEqual(steps[binds[0]].argv[3], '/var/tmp')
+        self.assertEqual(len(binds), 2)
+        self.assertLess(binds[1], bootc)
+        scratch = steps[binds[0]].argv[2]
+        self.assertTrue(scratch.startswith(str(installer.TARGET) + '/'))
+        self.assertEqual(steps[binds[0]].argv[3], scratch)
+        self.assertEqual(steps[binds[1]].argv[2:], (scratch, '/var/tmp'))
+        release = next(i for i, step in enumerate(steps) if step.argv == ('umount', scratch))
+        remove = next(i for i, step in enumerate(steps) if step.argv[0] == 'rm')
+        self.assertLess(bootc, release)
+        self.assertLess(release, remove)
 
     def test_optional_key_enrollment(self):
         plain = installer.plan(disk(), PINS, recovery_key=False)
@@ -132,6 +162,19 @@ class Plan(unittest.TestCase):
         rendered = json.dumps([step.render() for step in installer.plan(disk(), PINS, fido2=True)])
         self.assertIn('<passphrase>', rendered)
         self.assertNotIn('correct horse', rendered)
+
+    def test_installed_state_and_signed_payload_supply_the_efi_transaction(self):
+        steps = installer.plan(disk(), PINS)
+        deployment = str(installer.DEPLOYMENT)
+        mount = ('bootc', 'install', 'mount', '--sysroot', str(installer.TARGET), '--latest', deployment)
+        updater = self.argv(steps, '/usr/libexec/finite/update-efi').argv
+        self.assertEqual(updater[updater.index('--install-root') + 1], deployment)
+        self.assertEqual(updater[updater.index('--state') + 1], deployment + '/var/lib/finite/efi-updates')
+        commands = [step.argv for step in steps]
+        self.assertLess(commands.index(mount), commands.index(updater))
+        self.assertLess(commands.index(updater), commands.index(('umount', '--recursive', deployment)))
+        self.assertLess(commands.index(('umount', '--recursive', deployment)),
+                        next(i for i, command in enumerate(commands) if command[0] == 'efibootmgr'))
 
 
 class Execute(unittest.TestCase):
@@ -159,18 +202,51 @@ class Execute(unittest.TestCase):
 
 
 class Environment(unittest.TestCase):
+    def test_local_payload_tag_cannot_substitute_other_image_bytes_or_profiles(self):
+        good = {'Digest': PINS['payloadDigest'], 'Architecture': 'amd64', 'Os': 'linux',
+                'Labels': {'io.finite.profile': 'finite-native',
+                           'io.finite.boot-architecture': 'native-composefs'}}
+        installer.verify_payload(PINS, good)
+        for change in ({'Digest': 'sha256:' + 'f' * 64}, {'Architecture': 'arm64'},
+                       {'Os': 'other'}, {'Labels': {'io.finite.profile': 'finite'}},
+                       {'Labels': {'io.finite.profile': 'finite-native-dev',
+                                   'io.finite.boot-architecture': 'native-composefs'}}):
+            with self.subTest(change=change), self.assertRaisesRegex(installer.InstallError, 'Embedded payload'):
+                installer.verify_payload(PINS, {**good, **change})
+
+    def test_wrong_repository_default_tag_and_source_transport_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            args = dict(efi_dir=Path(temporary), cmdline='finite.native-installer=1',
+                        bootc_version='bootc 1.17.5', bootc_sha256=PINS['bootcSha256'])
+            for change in ({'targetImgref': 'ghcr.io/closure-labs/finite:latest'},
+                           {'targetImgref': 'ghcr.io/closure-labs/finite-native:latest'},
+                           {'sourceImgref': 'docker://ghcr.io/closure-labs/finite:finite-native'},
+                           {'bootcSha256': ''}, {'schema': True}):
+                with self.subTest(change=change), self.assertRaises(installer.InstallError):
+                    installer.check_environment({**PINS, **change}, **args)
+
+    def test_payload_failure_stops_before_disk_selection_and_execution(self):
+        with patch.object(installer, 'load_pins', return_value=PINS), \
+                patch.object(installer, 'check_environment'), \
+                patch.object(installer, 'verify_payload', side_effect=installer.InstallError('bad payload')), \
+                patch.object(installer, 'discover') as discover, patch.object(installer, 'execute') as execute:
+            self.assertEqual(installer.main(['install']), 1)
+            discover.assert_not_called()
+            execute.assert_not_called()
+
     def test_requires_uefi_installer_media_and_pinned_runtime(self):
         with tempfile.TemporaryDirectory() as temporary:
             efi = Path(temporary)
-            good = dict(efi_dir=efi, cmdline='quiet finite.native-installer=1', bootc_version='bootc 1.17.5')
+            good = dict(efi_dir=efi, cmdline='quiet finite.native-installer=1', bootc_version='bootc 1.17.5', bootc_sha256=PINS['bootcSha256'])
             installer.check_environment(PINS, **good)
             for change, message in [(dict(efi_dir=efi / 'missing'), 'UEFI'),
                                     (dict(cmdline='quiet'), 'installer media'),
-                                    (dict(bootc_version='bootc 1.17.4'), 'differs from the pinned')]:
+                                    (dict(bootc_version='bootc 1.17.4'), 'differs from the pinned'),
+                                    (dict(bootc_sha256='c' * 64), 'runtime bytes differ')]:
                 with self.subTest(change=change), self.assertRaisesRegex(installer.InstallError, message):
                     installer.check_environment(PINS, **{**good, **change})
             for pins, message in [({**PINS, 'payloadDigest': 'latest'}, 'immutable'),
-                                  ({**PINS, 'schema': 2}, 'Invalid'),
+                                  ({**PINS, 'schema': 1}, 'Invalid'),
                                   ({k: v for k, v in PINS.items() if k != 'targetImgref'}, 'targetImgref')]:
                 with self.subTest(pins=pins), self.assertRaisesRegex(installer.InstallError, message):
                     installer.check_environment(pins, **good)
@@ -222,6 +298,10 @@ class Media(unittest.TestCase):
         content = (self.directory / 'Containerfile').read_text()
         self.assertIn('FROM ${PAYLOAD}', content)
         self.assertIn('--add dmsquash-live', content)
+        self.assertIn('find /kernel', content)
+        self.assertIn('install -m644 "/kernel/$kver/vmlinuz"', content)
+        self.assertIn('--omit \'bootc ostree\'', content)
+        self.assertIn('/usr/share/finite/bootc-runtime.json', content)
         self.assertIn('grub2-efi-x64-cdboot', content)
         self.assertIn('cp -ra /usr/lib/efi/*/*/EFI /boot/efi', content)
         self.assertIn('COPY iso.yaml /usr/lib/image-builder/bootc/iso.yaml', content)

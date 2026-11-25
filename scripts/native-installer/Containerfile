@@ -13,10 +13,13 @@ RUN dnf -y install dracut-live grub2-efi-x64-cdboot grub2-pc-modules grub2-tools
     && dnf clean all
 
 RUN set -eu; \
-    kernels=$(find /usr/lib/modules -mindepth 2 -maxdepth 2 -name vmlinuz | wc -l); \
+    kernels=$(find /kernel -mindepth 2 -maxdepth 2 -name vmlinuz | wc -l); \
     test "$kernels" -eq 1; \
-    kver=$(basename "$(dirname "$(find /usr/lib/modules -mindepth 2 -maxdepth 2 -name vmlinuz)")"); \
-    dracut --force --no-hostonly --reproducible --add dmsquash-live --kver "$kver" \
+    kver=$(basename "$(dirname "$(find /kernel -mindepth 2 -maxdepth 2 -name vmlinuz)")"); \
+    sbverify --cert /usr/share/finite/secure-boot/finite-boot.pem "/boot/EFI/Linux/$kver.efi"; \
+    test -s /usr/lib/finite/efi/manifest.json; \
+    install -m644 "/kernel/$kver/vmlinuz" "/usr/lib/modules/$kver/vmlinuz"; \
+    dracut --force --no-hostonly --reproducible --omit 'bootc ostree' --add dmsquash-live --kver "$kver" \
         "/usr/lib/modules/$kver/initramfs.img"; \
     lsinitrd "/usr/lib/modules/$kver/initramfs.img" | grep -q dmsquash-live; \
     mkdir -p /boot/efi; \
@@ -24,6 +27,7 @@ RUN set -eu; \
     test -s /boot/efi/EFI/fedora/shimx64.efi; \
     test -s /boot/efi/EFI/fedora/gcdx64.efi
 
+COPY README.md /usr/share/doc/finite/native-installer.md
 COPY finite-native-install /usr/libexec/finite/finite-native-install
 COPY finite-native-installer.service /usr/lib/systemd/system/finite-native-installer.service
 COPY iso.yaml /usr/lib/image-builder/bootc/iso.yaml
@@ -34,13 +38,14 @@ RUN systemctl enable finite-native-installer.service \
         finite-firstboot-rpm-ostree.service
 
 # Pins checked by finite-native-install before any disk work. The live root
-# drops the RPM database, so the runtime is pinned by its reported version.
+# may drop the RPM database; bind the actual runtime bytes as well as its version.
 RUN set -eu; \
     test -n "$PAYLOAD_REF"; \
     echo "$PAYLOAD_DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'; \
     version=$(bootc --version | sed -n 's/^bootc //p'); \
     test -n "$version"; \
     mkdir -p /usr/lib/finite/installer; \
-    printf '{"schema": 1, "bootcVersion": "%s", "payloadDigest": "%s", "sourceImgref": "containers-storage:%s", "targetImgref": "%s"}\n' \
-        "$version" "$PAYLOAD_DIGEST" "$PAYLOAD_REF" "$PAYLOAD_REF" > /usr/lib/finite/installer/pins.json; \
+    runtime_sha=$(python3 -c 'import hashlib,json; from pathlib import Path; r=json.loads(Path("/usr/share/finite/bootc-runtime.json").read_text()); expected=r["files"]["/usr/bin/bootc"]; actual=hashlib.sha256(Path("/usr/bin/bootc").read_bytes()).hexdigest(); assert actual == expected, "live runtime differs from signed payload"; print(expected)'); \
+    printf '{"schema": 2, "bootcVersion": "%s", "bootcSha256": "%s", "payloadDigest": "%s", "sourceImgref": "containers-storage:%s", "targetImgref": "%s"}\n' \
+        "$version" "$runtime_sha" "$PAYLOAD_DIGEST" "$PAYLOAD_REF" "$PAYLOAD_REF" > /usr/lib/finite/installer/pins.json; \
     python3 -c 'import json; json.load(open("/usr/lib/finite/installer/pins.json"))'

@@ -8,11 +8,6 @@ on:
         required: true
         default: finite-native
         options: [finite-native, finite-native-dev]
-      tag:
-        description: Native image tag the installed system will track
-        type: string
-        required: true
-        default: latest
       digest:
         description: Verified native image digest (sha256 followed by 64 hex digits)
         type: string
@@ -41,13 +36,12 @@ jobs:
       - name: Authenticate and build the native installer ISO
         env:
           CHANNEL: ${{ inputs.channel }}
-          TAG: ${{ inputs.tag }}
           DIGEST: ${{ inputs.digest }}
           REGISTRY_TOKEN: ${{ github.token }}
           REGISTRY_USER: ${{ github.actor }}
         run: |
           printf '%s' "$REGISTRY_TOKEN" | sudo podman login --username "$REGISTRY_USER" --password-stdin ghcr.io
-          bash scripts/native-installer/build-iso.sh "ghcr.io/closure-labs/$CHANNEL" "$TAG" "$DIGEST"
+          bash scripts/native-installer/build-iso.sh ghcr.io/closure-labs/finite "$CHANNEL" "$DIGEST"
       - name: Upload unqualified native installer ISO
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
