@@ -13,6 +13,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -666,6 +668,18 @@ class PublisherAuthentication(unittest.TestCase):
         self.assertEqual(len(evidence['verified']), 2)
         self.assertEqual({call.args[0][-1] for call in run.call_args_list},
                          {recipe['base'] + '@' + recipe['digest'] for recipe in upstream.recipes(self.root).values()})
+
+    def test_native_verification_refuses_a_recipe_digest_that_diverges(self):
+        recipe_file = self.root / 'recipes/finite-native.yml'
+        recipe = yaml.safe_load(recipe_file.read_text())
+        recipe['image-version'] = 'stable@' + NEW
+        recipe_file.write_text(yaml.safe_dump(recipe))
+        with patch.object(upstream.subprocess, 'run') as run:
+            self.assertEqual(len(upstream.verify(self.root)['verified']), 2)
+            run.reset_mock()
+            with self.assertRaisesRegex(ValueError, 'Inconsistent approved digests'):
+                upstream.verify(self.root, include_native=True)
+            run.assert_not_called()
 
 
 class DeterministicIdentity(unittest.TestCase):

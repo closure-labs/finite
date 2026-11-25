@@ -18,7 +18,7 @@ export NIX_CONFIG
 # environment contains plain Python and is added only inside seal-native.py.
 python3 -c 'import yaml'
 printf 'Authenticating and validating the %s recipe\n' "$profile"
-python3 scripts/ci/bluefin-upstream.py verify
+python3 scripts/ci/bluefin-upstream.py verify --include-native
 nice -n 19 bluebuild validate "recipes/$profile.yml"
 printf 'Staging the locked runtime and payload for %s\n' "$profile"
 nice -n 19 bash scripts/bluebuild/stage.sh "$profile"

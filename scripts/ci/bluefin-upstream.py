@@ -128,8 +128,8 @@ def authenticate(base, image_digest, root=ROOT):
     return {'image': reference, 'keySha256': policy['keySha256'], 'signatureFormat': 'legacy'}
 
 
-def verify(root=ROOT):
-    approved = recipes(root)
+def verify(root=ROOT, *, include_native=False):
+    approved = recipes(root, include_native=include_native)
     bases = {recipe['base']: recipe['digest'] for recipe in approved.values()}
     return {'verified': [authenticate(base, value, root) for base, value in sorted(bases.items())]}
 
@@ -253,8 +253,16 @@ def freshness(now=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['update', 'apply', 'verify', 'reconcile', 'recover', 'freshness'])
+    parser.add_argument('--include-native', action='store_true', help='verify foundation pins across all four recipes')
     args = parser.parse_args()
-    result = update(observed=json.loads(os.environ['OBSERVED_DIGESTS'])) if args.command == 'apply' else globals()[args.command]()
+    if args.include_native and args.command != 'verify':
+        parser.error('--include-native requires verify')
+    if args.include_native:
+        result = verify(include_native=True)
+    elif args.command == 'apply':
+        result = update(observed=json.loads(os.environ['OBSERVED_DIGESTS']))
+    else:
+        result = globals()[args.command]()
     if args.command == 'reconcile' and (impact := json.loads(os.environ.get('IMPACT', '{}'))):
         result = merge_impact(result, {key: json.loads(value) for key, value in impact.items()})
     print(json.dumps(result, indent=2))
