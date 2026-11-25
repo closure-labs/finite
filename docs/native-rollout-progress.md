@@ -96,6 +96,46 @@ These are contract/lint builds, not OS-image builds. No VM was started.
 - No ISO build, production seal, encrypted native boot, upgrade/rollback,
   workstation partition/firmware write, MOK enrollment or release occurred.
 
+## Hosted native ISO qualification
+
+The workstation had approximately 27 GiB of free storage and 4.3 GiB of
+available memory at preflight. The requested 3 GiB guest plus 3 GiB host
+reserve needs a different host. The upstream repository's disposable
+`qualification/native-iso` branch builds one full profile at a time and
+runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
+Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
+reboots the newly installed qcow2. Read the media and guest identities
+from the workflow artifacts. [Active run](https://github.com/closure-labs/finite/actions/runs/45703547295)
+
+The validation image uses the full native recipe plus a VM-only serial
+console and observation unit. The runner creates a disposable signing key
+and pre-enrolls its public certificate and the package's module certificate
+in the guest firmware file. The receipt requires enforcing SELinux,
+lockdown, LUKS-backed sysroot, strict composefs verity, shim, XBOOTLDR
+placement and signed ZFS and v4l2loopback loads. This scope covers fresh
+installation and the first encrypted boot. Interactive MOK enrollment,
+recovery key and FIDO2 unlock, upgrades, rollback and desktop login require
+their own observed results.
+
+Both native recipes passed BlueBuild 0.9.37's live schema validation after
+retrying with network access. The corrected source passed the pinned
+bluebuild group with 116 suites and 2,053 cases and the workflow group
+with two suites and 15 cases. The first hosted run `45701591964` was
+superseded to include the VM test. The next run `45702162585` passed
+toolchain setup and KVM access, then began compiling an importer using the
+rebased root Nixpkgs version. The rebased importer had a different Nix
+output path from the approved binary. The replacement run uses the pinned
+Nixpkgs revision `26f4107e`, which locally resolved to the reviewed
+bootc 1.17.1 binary SHA256
+`f26b09f987697c1755a3d65d6b45e31534e59cdd6ffee6c664a35b66acc20f0a`.
+
+A capped re-seal of a historical Fedora fixture with the proper explicit
+`rw` argument passed independent OCI import and UKI verification. Its
+bootable root matched
+`9c13a50e83b3452c669bc42671031205697b6bb741d025d9ba33ced6f297826d467b8d500e78fc084282f64dfe507f8b65d3b5f6f032d6410efba2a4e51bc0bd`.
+The local fixture demonstrates the importer and sealer cleanup changes.
+The full-profile results must come from the hosted VM jobs.
+
 ## Next execution sequence
 
 1. Finish native candidate qualification before widening publication. Adapt the
