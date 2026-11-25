@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45707478815)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45707828686)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -145,6 +145,22 @@ output path. The run then failed in upstream verification with
 pinned VM Python with PyYAML on the host PATH and limits the plain Python
 in the sealing tools to the seal subprocess. It preserves setup-nix's cache
 configuration and stages the image before compiling the importer.
+
+Run [45707478815](https://github.com/closure-labs/finite/actions/runs/45707478815)
+got through the pinned Python environment, upstream signature checks and
+recipe validation. Docker failed before packaging the RPM because the helper
+stages a `Containerfile` and Docker searches for `Dockerfile` by default.
+Change `kwzzqnqt` selects the staged file explicitly for Docker and Podman.
+Change `xxowoprp` checks the engine invocation, the staged file and the RPM
+receipt in the existing source tests. The pinned bluebuild and workflow groups
+passed with 2,055 and 15 cases, respectively. The next run entered the locked
+runtime RPM compile for `finite-native`; both ISO checks remain pending.
+
+Change `knurtqry` also validates the native recipe identities and pins before
+authenticating the two exact Bluefin manifests, using an opt-in mode on the
+shared verifier. All 62 Bluefin policy cases passed. GitHub run `45707828686`
+is pinned to `b82116d1`, which uses the same locked base digests and predates
+the extra verifier and test-only commits.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
