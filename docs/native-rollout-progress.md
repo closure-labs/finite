@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45718895044)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45719595387)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -181,12 +181,20 @@ applies RPM's digest verification mode for that one offline transaction
 after the exact file hash and Fedora major checks.
 [RPM verification modes](https://rpm.org/docs/6.0.x/man/rpm-config.5)
 
-The current retry at `dbebf626` configures the one-job, two-core Nix cap from
+The retry at `dbebf626` configures the one-job, two-core Nix cap from
 setup, wraps VM tool realization in the memory watchdog, and reserves the live
 validation serial port for the installer. The capped local full check stopped
 at the 3 GiB reserve. Seven runtime cases, 24 installer cases, six resource
-cases, actionlint, Zizmor and shellcheck passed in targeted checks. There is no
-successful ISO or fresh boot receipt yet.
+cases, actionlint, Zizmor and shellcheck passed in targeted checks. Run
+[45718895044](https://github.com/closure-labs/finite/actions/runs/45718895044)
+entered the RPM compile and was superseded by the shared-runner retry.
+
+The active run uses `b41f00b9`. Changes in `tqxumrys` keep both profiles on
+one ephemeral host to reuse the checked runtime RPM, shared Nix payload
+and pinned importer. Profile steps and VMs are serial. Each profile gets
+fresh installation media, a fresh target disk, an independent seal and
+its own checksums and guest transcript. A profile failure fails the overall
+job. There is no successful ISO or fresh boot receipt yet.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
