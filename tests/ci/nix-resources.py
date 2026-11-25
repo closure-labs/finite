@@ -40,6 +40,18 @@ class Resources(unittest.TestCase):
             with patch.object(resources.os, 'sched_getaffinity', return_value=set(range(16))):
                 self.assertEqual(resources.detect(proc, group), (2, 8 * resources.GIB))
 
+    def test_native_qualification_caps_setup_on_a_larger_runner(self):
+        for cpus, cores in ((4, 2), (1, 1)):
+            self.assertEqual(resources.budget(cpus, 16 * resources.GIB, 'native-qualification'),
+                             {'max-jobs': 1, 'cores': cores, 'eval-cores': cores})
+        with self.assertRaisesRegex(ValueError, 'Unknown Nix resource mode'):
+            resources.budget(4, 16 * resources.GIB, 'typo')
+        workflow = yaml.safe_load((ROOT / '.github/workflows/native-iso-validation.yml').read_text())
+        steps = workflow['jobs']['media']['steps']
+        setup = next(step for step in steps if step.get('uses') == '$/.github/actions/setup-nix')
+        self.assertEqual(setup['with']['resource-mode'], 'native-qualification')
+        self.assertTrue(any('watch-memory.py python3 scripts/ci/vm_tools.py' in step.get('run', '') for step in steps))
+
     def test_verify_rejects_ignored_settings_and_wrong_client(self):
         value = resources.budget(4, 16 * resources.GIB)
         config = {name: {'value': setting} for name, setting in value.items()}

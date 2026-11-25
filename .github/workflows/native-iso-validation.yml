@@ -31,6 +31,7 @@ jobs:
       - uses: $/.github/actions/setup-nix
         with:
           job-profile: image
+          resource-mode: native-qualification
       - uses: $/.github/actions/setup-cosign
       - name: Install the verified locked BlueBuild CLI
         run: bash scripts/bluebuild/install-cli.sh
@@ -40,7 +41,9 @@ jobs:
           driver: docker-container
           driver-opts: default-load=true
           use: false
-      - uses: $/.github/actions/setup-vm-tools
+      - name: Prepare pinned VM tools under the qualification cap
+        # Only VM tools and firmware paths checked by the provisioner enter the workflow environment.
+        run: python3 scripts/native-installer/watch-memory.py python3 scripts/ci/vm_tools.py # zizmor: ignore[github-env]
       - name: Check KVM access on the ephemeral runner
         run: |
           sudo setfacl -m "u:$(id -un):rw" /dev/kvm
