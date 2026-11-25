@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45707828686)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45713686563)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -158,9 +158,23 @@ runtime RPM compile for `finite-native`; both ISO checks remain pending.
 
 Change `knurtqry` also validates the native recipe identities and pins before
 authenticating the two exact Bluefin manifests, using an opt-in mode on the
-shared verifier. All 62 Bluefin policy cases passed. GitHub run `45707828686`
-is pinned to `b82116d1`, which uses the same locked base digests and predates
-the extra verifier and test-only commits.
+shared verifier. The next pinned check passed 116 bluebuild suites and 2,056
+cases plus two workflow suites and 15 cases.
+
+Run [45707828686](https://github.com/closure-labs/finite/actions/runs/45707828686)
+completed the stable bootc RPM build and common Nix payload, then reached
+layer 42 of the `finite-native` BlueBuild. The Fedora 44 bootstrap RPM
+required OpenSSL 3 sonames that the Fedora 45 root lacked. Registry metadata
+for both locked Bluefin roots shows `45.20261124`. Change `psqwwmnk` pins
+Fedora's `amd64` Fedora 45 manifest at
+`sha256:89fe812033e4b10bb8b05bd573fce914e7a11c2337772ede441c9382f874717b`
+and checks the Fedora release in both builder and destination before accepting
+the RPM. The upstream source archive remains pinned to the same revision and
+checksum. Its locked `openssl-sys` 0.9.118 supports OpenSSL 4.
+[Fedora 45 package](https://packages.fedoraproject.org/pkgs/openssl/openssl-libs/fedora-45.html)
+[Rust OpenSSL upstream release history](https://github.com/rust-openssl/rust-openssl/releases)
+The retry runs revision `92ec27b4` with this pin and the expanded native recipe
+verification. There is no successful ISO or fresh boot receipt yet.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
