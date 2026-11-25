@@ -16,10 +16,9 @@ fedora=pin['buildFedoraVersion']
 if subprocess.check_output(['rpm','--eval','%{?fedora}'],text=True).strip()!=str(fedora):
  raise SystemExit(f'Native bootc RPM requires a Fedora {fedora} image base')
 PY
-# Base images already carry bootc's runtime dependencies. RPM checks those
-# dependencies locally; do not consult moving mirrors or install a different
-# release while applying this checked source package.
-rpm -Uvh --oldpackage --replacepkgs "$work/bootc-runtime.rpm"
+# The preceding receipt check binds the locally built RPM bytes to the checked
+# source. Require internal RPM digests and dependencies for this offline install.
+rpm --define '_pkgverify_level digest' -Uvh --oldpackage --replacepkgs "$work/bootc-runtime.rpm"
 python3 - "$work" <<'PY'
 import hashlib,json,subprocess,sys
 from pathlib import Path
