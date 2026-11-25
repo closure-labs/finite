@@ -9,7 +9,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts/ci'))
@@ -108,6 +108,37 @@ class RuntimeSource(unittest.TestCase):
             {'status': 'ahead', 'merge_base_commit': {'sha': self.pin['requiredFix']}}])
         self.assertTrue(update.update(self.path, api, Mock(return_value=archive('1.18.0'))))
         self.assertEqual(json.loads(self.path.read_text())['ref'], 'v1.18.0')
+
+    def test_stage_passes_the_checked_in_containerfile_explicitly(self):
+        root = self.path.parent
+        archive_path = root / 'source.tar.gz'
+        archive_path.write_bytes(self.data)
+        self.pin['archiveSha256'] = hashlib.sha256(self.data).hexdigest()
+        sources = root / 'sources'
+        sources.mkdir()
+        (sources / self.path.name).write_text(json.dumps(self.pin))
+        scripts = root / 'scripts/bluebuild'
+        scripts.mkdir(parents=True)
+        for name in ('bootc-runtime.Containerfile', 'build-bootc-runtime.sh'):
+            (scripts / name).write_bytes((ROOT / 'scripts/bluebuild' / name).read_bytes())
+
+        def run(command, *, check):
+            self.assertTrue(check)
+            if command[1] == 'build':
+                context = Path(command[-1])
+                self.assertEqual(Path(command[command.index('--file') + 1]), context / 'Containerfile')
+                self.assertEqual((context / 'Containerfile').read_bytes(),
+                                 (scripts / 'bootc-runtime.Containerfile').read_bytes())
+                self.assertEqual(command[command.index('--memory') + 1], '2048m')
+            elif command[1] == 'cp':
+                Path(command[-1]).write_bytes(b'fixture output')
+
+        for engine in ('docker', 'podman'):
+            with self.subTest(engine=engine), patch.object(update.source, 'ROOT', root), \
+                    patch.object(update.source.subprocess, 'run', side_effect=run), \
+                    patch.object(update.source.subprocess, 'check_output', return_value='fixture\n'):
+                result = update.source.stage(engine, root / engine, archive_path)
+            self.assertEqual(result['rpmSha256'], hashlib.sha256(b'fixture output').hexdigest())
 
 
 if __name__ == '__main__':
