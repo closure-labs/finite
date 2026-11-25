@@ -101,7 +101,7 @@ class DownloadTests(unittest.TestCase):
 
     def test_upstream_verification_is_preserved_and_configuration_is_scoped(self):
         action = yaml.safe_load((ACTION / 'action.yml').read_text())
-        self.assertEqual(action['inputs']['cosign-release']['default'], 'v3.0.6')
+        self.assertEqual(action['inputs']['cosign-release']['default'], 'v3.1.3')
         steps = action['runs']['steps']
         self.assertEqual(len(steps), 1)
         self.assertTrue(pinned_installer(steps[0]['uses']), steps[0]['uses'])

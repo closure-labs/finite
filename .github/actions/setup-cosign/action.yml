@@ -4,7 +4,7 @@ inputs:
   cosign-release:
     description: Exact Cosign release accepted by the pinned upstream installer
     required: false
-    default: v3.0.6
+    default: v3.1.3
 runs:
   using: composite
   steps:
