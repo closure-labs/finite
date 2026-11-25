@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45719595387)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45725401794)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -189,12 +189,25 @@ cases, actionlint, Zizmor and shellcheck passed in targeted checks. Run
 [45718895044](https://github.com/closure-labs/finite/actions/runs/45718895044)
 entered the RPM compile and was superseded by the shared-runner retry.
 
-The active run uses `b41f00b9`. Changes in `tqxumrys` keep both profiles on
+Run [45719595387](https://github.com/closure-labs/finite/actions/runs/45719595387)
+used `b41f00b9`. Changes in `tqxumrys` keep both profiles on
 one ephemeral host to reuse the checked runtime RPM, shared Nix payload
 and pinned importer. Profile steps and VMs are serial. Each profile gets
 fresh installation media, a fresh target disk, an independent seal and
 its own checksums and guest transcript. A profile failure fails the overall
-job. There is no successful ISO or fresh boot receipt yet.
+job. The runner applied one Nix job with two build and evaluation cores.
+The stable build passed the corrected RPM transaction and the native initramfs
+step. The dev build reused the checked RPM and common payload within four
+seconds of the stable step finishing. Both full roots and their VM observation
+images built. The latter Docker image IDs were:
+
+- `finite-native`: `sha256:0d1082e0fce87a63f3791b449f9461a07eb652b5df4d9d602ea06c7e9ad82072`
+- `finite-native-dev`: `sha256:35a1043e77e8758e823c6c4fcb31a4d8a882d74bb5d7abd7f186ef9091fc044f`
+
+Both then stopped before applying the seal because `docker create` requires a
+command when the image supplies no default. Change `ktlkzqpw` gives the
+copy-only container an explicit placeholder and cleans it up on failure. The
+active run uses `24f80502`. There is no successful ISO or fresh boot receipt yet.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
