@@ -139,7 +139,7 @@ class BlueBuildContracts(unittest.TestCase):
         preparation = qualification['jobs']['prepare']['steps']
         preflight = next(s for s in preparation
                          if s.get('name') == 'Reject obsolete publication before reuse or VM work')
-        self.assertEqual(preflight['if'], '${{ !inputs.validation_only }}')
+        self.assertNotIn('if', preflight)
         self.assertIn('publication-current.py', preflight['run'])
         self.assertIn('--record', preflight['run'])
         self.assertLess(preparation.index(preflight),
@@ -150,14 +150,12 @@ class BlueBuildContracts(unittest.TestCase):
                           if s.get('id') == 'acceptance')
         self.assertNotIn('continue-on-error', acceptance)
         self.assertEqual(qualification['jobs']['phase']['needs'], 'prepare')
-        self.assertEqual(qualification['jobs']['phase']['strategy']['fail-fast'],
-                         "${{ inputs.validation_only && inputs.installer_benchmark != '' }}")
+        self.assertIs(qualification['jobs']['phase']['strategy']['fail-fast'], False)
         inputs = qualification.get('on', qualification.get(True))['workflow_call']['inputs']
-        self.assertIs(inputs['validation_only']['default'], False)
-        self.assertEqual(inputs['installer_benchmark']['default'], '')
         production = publication['jobs']['qualification']['with']
-        self.assertIs(production.get('validation_only', False), False)
-        self.assertEqual(production.get('installer_benchmark', ''), '')
+        for archived in ('validation_only', 'installer_benchmark', 'installer_compression'):
+            self.assertNotIn(archived, inputs)
+            self.assertNotIn(archived, production)
         self.assertEqual(qualification['jobs']['functional']['needs'], ['prepare', 'phase'])
         self.assertIn("needs.phase.result == 'success'", qualification['jobs']['functional']['if'])
         self.assertIn("needs.prepare.outputs.reused == 'true'", qualification['jobs']['functional']['if'])

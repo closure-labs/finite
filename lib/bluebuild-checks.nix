@@ -151,18 +151,9 @@ in {
     python3 tests/ci/secretspec.py
     python3 tests/ci/devenv-cache.py
     python3 tests/ci/cache-publish.py
-    python3 tests/ci/benchmark-cache-writer.py
     python3 tests/ci/prune-ci-caches.py
-    python3 tests/ci/ci-cache-benchmark.py
     python3 tests/ci/delivery-policy.py
-    python3 tests/ci/installer-benchmark.py
     python3 tests/bluebuild/installer-provenance.py
-    python3 tests/ci/image-tools-benchmark.py
-    python3 tests/ci/image-verification-benchmark.py
-    python3 tests/ci/image-transfer-benchmark.py
-    python3 tests/ci/security-reuse-benchmark.py
-    python3 tests/ci/database-overlap-benchmark.py
-    python3 tests/ci/qualification-reuse-benchmark.py
     python3 tests/ci/remediation-preflight.py
     python3 tests/ci/security-ownership.py
     python3 tests/ci/security-remediation-diff.py

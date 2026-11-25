@@ -1146,40 +1146,34 @@ class ExecutionGate(unittest.TestCase):
         call = workflow.get('on', workflow.get(True))['workflow_call']
         self.assertEqual(call['outputs']['evidence']['value'], '${{ jobs.functional.outputs.evidence }}')
 
-    def test_workflow_diagnostic_artifacts_and_cache_gates_are_distinct(self):
+    def test_workflow_is_production_only_with_distinct_cache_gates(self):
         workflow = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())
         call = workflow.get('on', workflow.get(True))['workflow_call']
-        self.assertFalse(call['inputs']['validation_only']['default'])
-        self.assertEqual(call['inputs']['installer_compression']['default'],'default')
-        for name in ('prepare','phase','functional'):
-            self.assertEqual(workflow['jobs'][name]['env']['FINITE_INSTALLER_COMPRESSION'],'${{ inputs.installer_compression }}')
+        for archived in ('validation_only', 'installer_benchmark', 'installer_compression'):
+            self.assertNotIn(archived, call['inputs'])
+        text = (ROOT / '.github/workflows/qualification.yml').read_text()
+        for archived in ('FINITE_VALIDATION_ONLY', 'FINITE_INSTALLER_BENCHMARK', 'FINITE_INSTALLER_COMPRESSION',
+                         'benchmark-controls.py', 'benchmark-image-tools.yml', 'qualification-diagnostic'):
+            self.assertNotIn(archived, text)
         for name in ('prepare','functional'):
             setup = next(step for step in workflow['jobs'][name]['steps'] if step.get('uses') == '$/.github/actions/setup-nix')
-            self.assertEqual(setup['if'], '${{ !inputs.validation_only }}')
-        phase_steps = workflow['jobs']['phase']['steps']
-        gate_index = next(i for i,step in enumerate(phase_steps) if step.get('id') == 'benchmark')
-        setup_index = next(i for i,step in enumerate(phase_steps) if step.get('uses') == '$/.github/actions/setup-nix')
-        self.assertLess(gate_index,setup_index)
+            self.assertNotIn('if', setup)
         retention = next(step for step in workflow['jobs']['functional']['steps'] if step.get('name') == 'Save qualification evidence')
-        self.assertEqual(retention['with']['retention-days'], '${{ inputs.validation_only && 14 || 90 }}')
+        self.assertEqual(retention['with']['retention-days'], 90)
         prepare = workflow['jobs']['prepare']
-        self.assertIn('benchmark-image-tools.yml', prepare['if'])
+        self.assertIn("github.ref == 'refs/heads/main'", prepare['if'])
         reuse = next(step for step in prepare['steps'] if step.get('id') == 'reuse')
-        self.assertIn('!inputs.validation_only', reuse['if'])
         self.assertIn("env.FINITE_QUALIFICATION_REUSE == 'true'", reuse['if'])
         self.assertIn('!inputs.force_qualification', reuse['if'])
         phase = workflow['jobs']['phase']
-        # Only explicit controlled trials may stop sibling VM phases early.
-        self.assertEqual(phase['strategy']['fail-fast'], "${{ inputs.validation_only && inputs.installer_benchmark != '' }}")
+        self.assertIs(phase['strategy']['fail-fast'], False)
         preserved = next(step for step in phase['steps'] if step.get('name') == 'Preserve pristine qualified candidate ISO for the pilot')
-        self.assertIn('!inputs.validation_only', preserved['if'])
         self.assertIn("steps.acceptance.outputs.functional_passed == 'true'", preserved['if'])
         self.assertIn("contains(format(',{0},', env.FINITE_QUALIFIED_ISO_CHANNELS), format(',{0},', inputs.channel))", preserved['if'])
-        for job, prefix in [('phase', 'qualification-diagnostic-phase'), ('functional', 'qualification-diagnostic')]:
+        for job, prefix in [('phase', 'qualification-phase-'), ('functional', 'qualification-')]:
             upload = next(step for step in workflow['jobs'][job]['steps']
                           if step.get('name') == ('Save phase evidence' if job == 'phase' else 'Save qualification evidence'))
-            self.assertIn(prefix, upload['with']['name'])
-            self.assertIn('inputs.validation_only', upload['with']['name'])
+            self.assertTrue(upload['with']['name'].startswith(prefix))
 
 
 class IsoScope(unittest.TestCase):

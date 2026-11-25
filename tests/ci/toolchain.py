@@ -52,7 +52,8 @@ class Toolchain(unittest.TestCase):
                     for item in value:
                         inspect(item)
             inspect(yaml.safe_load(path.read_text()))
-        self.assertEqual(installers, 2)
+        # Only the shared setup-nix action installs Nix; the benchmark installer is archived.
+        self.assertEqual(installers, 1)
 
     def test_publication_record_gate_precedes_reuse_and_both_vm_phases(self):
         publication = yaml.safe_load((ROOT / '.github/workflows/publication.yml').read_text())['jobs']
@@ -65,7 +66,7 @@ class Toolchain(unittest.TestCase):
         jobs = yaml.safe_load((ROOT / '.github/workflows/qualification.yml').read_text())['jobs']
         steps = jobs['prepare']['steps']
         gate = next(s for s in steps if s.get('name') == 'Reject obsolete publication before reuse or VM work')
-        self.assertEqual(gate['if'], '${{ !inputs.validation_only }}')
+        self.assertNotIn('if', gate)
         self.assertLess(steps.index(gate), next(i for i, s in enumerate(steps) if s.get('id') == 'reuse'))
         reuse = next(s for s in steps if s.get('id') == 'reuse')
         self.assertIn('--prepare-context', reuse['run'])

@@ -30,8 +30,6 @@ QUALIFICATION_ONLY = {
     '.github/actions/setup-cosign/action.yml', '.github/actions/setup-cosign/download/.curlrc',
     # Trusted metadata-only admission starts CI; it never changes OS inputs.
     '.github/workflows/ci-run-admission.yml', 'scripts/ci/ci-run-admission.py',
-    '.github/workflows/benchmark-image-tools.yml', 'scripts/ci/benchmark-image-tools.py',
-    'scripts/ci/installer-benchmark.py',
     "scripts/ci/release_handoff.py", "scripts/ci/nix-checks.py", "scripts/ci/nix_observation.py", "lib/check-sources.nix",
     'scripts/ci/source_proof.py',
     'scripts/ci/foundation_timings.py',
@@ -53,8 +51,7 @@ QUALIFICATION_ONLY = {
     'scripts/ci/cache-sqlite.py',
     'scripts/ci/ci-options.py', 'sources/secretspec.json',
     'secretspec.toml', 'devenv.nix', 'devenv.yaml', 'devenv-tasks.nix',
-    'scripts/ci/prune-ci-caches.py', 'scripts/ci/benchmark-ci-cache.py',
-    '.github/workflows/cache-maintenance.yml', '.github/workflows/benchmark-ci-cache.yml',
+    'scripts/ci/prune-ci-caches.py', '.github/workflows/cache-maintenance.yml',
     'scripts/ci/reuse-candidate-security.py',
     'automation/security/image-policy.json',
     'scripts/ci/approved-baseline.py', 'scripts/ci/security-remediation-diff.py',
@@ -93,14 +90,7 @@ QUALIFICATION_ONLY = {
     # packets; they are not image payload or ISO/VM qualification inputs.
     'scripts/ci/release-recovery.py', 'scripts/ci/create-release-draft.sh',
     '.github/workflows/release-recovery.yml',
-    'scripts/ci/benchmark-cache-writer.py', '.github/workflows/benchmark-cache-writer.yml',
-    'scripts/ci/benchmark-image-verification.py', '.github/workflows/benchmark-image-verification.yml',
-    'scripts/ci/benchmark-image-transfer.py', '.github/workflows/benchmark-image-transfer.yml',
-    'scripts/ci/benchmark-vm-tools.py', '.github/workflows/benchmark-vm-tools.yml',
     'scripts/ci/vm_tools.py', 'scripts/ci/vm-host.py', '.github/actions/setup-vm-tools/action.yml',
-    'scripts/ci/benchmark-security-reuse.py', '.github/workflows/benchmark-security-reuse.yml',
-    'scripts/ci/benchmark-database-overlap.py', '.github/workflows/benchmark-database-overlap.yml',
-    'scripts/ci/benchmark-qualification-reuse.py', '.github/workflows/benchmark-vm-reuse.yml',
     # Read-only cost observation does not build images or qualify candidates.
     # Keep this explicit so new CI helpers still take the conservative path.
     'scripts/ci/workflow-costs.py', 'scripts/ci/workflow_costs.py',
@@ -146,7 +136,7 @@ def classify(paths):
         if path in {
             'devenv.lock', 'scripts/ci/http-get.py',
             '.github/workflows/update-bluefin.yml', '.github/workflows/upstream-health.yml',
-            '.github/workflows/repository-security.yml', '.github/workflows/doppler-pilot.yml',
+            '.github/workflows/repository-security.yml',
             '.github/dependabot.yml', '.github/workflows/update-foundation.yml',
             '.github/workflows/update-flake-lock.yml', '.github/workflows/update-determinate-nix.yml',
             '.github/workflows/queue-dependabot.yml',

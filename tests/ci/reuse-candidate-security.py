@@ -626,19 +626,6 @@ class Inventory(unittest.TestCase):
                 fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
             api.assert_not_called()
 
-    def test_security_benchmark_inventory_consumer_is_manual_main_only(self):
-        base = {**environment(), 'GITHUB_WORKFLOW_REF':
-                'closure-labs/finite/.github/workflows/benchmark-security-reuse.yml@refs/heads/main'}
-        with patch.dict(os.environ, base, clear=True):
-            fetch.hosted()
-        for key, value in [('GITHUB_EVENT_NAME', 'schedule'), ('GITHUB_EVENT_NAME', 'push'),
-                           ('GITHUB_REF', 'refs/heads/branch'), ('GITHUB_REPOSITORY', 'fork/finite'),
-                           ('GITHUB_WORKFLOW_REF', base['GITHUB_WORKFLOW_REF'].replace('@refs/heads/main', '@refs/heads/branch'))]:
-            with patch.dict(os.environ, {**base, key: value}, clear=True), \
-                 patch.object(fetch, 'github') as api, self.assertRaises(ValueError):
-                fetch.retrieve(IMAGE, PROFILE, Path('/tmp/never-created'), '123')
-            api.assert_not_called()
-
     def test_paired_release_inventory_consumer_is_manual_main_only(self):
         base = {**environment(), 'GITHUB_WORKFLOW_REF':
                 'closure-labs/finite/.github/workflows/release-set.yml@refs/heads/main'}

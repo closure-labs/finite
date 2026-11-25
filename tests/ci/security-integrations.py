@@ -66,9 +66,10 @@ class Integrations(unittest.TestCase):
         self.assertEqual(build['permissions'], {'contents': 'read'})
         events = build.get('on', build.get(True))
         self.assertIn('pull_request', events)
-        # All PR-reachable jobs and the read-only shared payload producer,
-        # including the optional native benchmark.
-        for name in ('impact', 'docs', 'checks', 'payload', 'gate', 'vm-tools-benchmark', 'repository-secrets', 'incoming-scan'):
+        # All PR-reachable jobs and the read-only shared payload producer.
+        # The optional native VM tools benchmark is archived.
+        self.assertNotIn('vm-tools-benchmark', jobs)
+        for name in ('impact', 'docs', 'checks', 'payload', 'gate', 'repository-secrets', 'incoming-scan'):
             job = jobs[name]
             self.assertTrue(all(value == 'read' for value in job.get('permissions', {}).values()), name)
             self.assertNotIn('secrets.', str(job), name)
@@ -107,11 +108,7 @@ class Integrations(unittest.TestCase):
         pr = document('codeql')['jobs']['analyze']
         self.assertNotIn('secrets.', str(pr))
         self.assertEqual(pr['permissions'], {'contents': 'read'})
-        benchmark = document('benchmark-vm-tools')
-        self.assertNotIn('secrets.', str(benchmark))
-        self.assertTrue(all(value == 'read' for value in benchmark['permissions'].values()))
-        for job in benchmark['jobs'].values():
-            self.assertTrue(all(value == 'read' for value in job.get('permissions', {}).values()))
+        self.assertFalse((WORKFLOWS / 'benchmark-vm-tools.yml').exists())
 
     def test_harden_runner_is_pinned_first_hosted_audit_without_paid_features(self):
         count = 0

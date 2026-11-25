@@ -18,7 +18,6 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/measure.py',
     'files/installer/lorax-zstd.conf',
     'scripts/bluebuild/installer-compression.py', 'scripts/bluebuild/installer-provenance.py',
-    'scripts/bluebuild/benchmark-controls.py',
     "scripts/bluebuild/check-vm-gdm-labels.sh", "scripts/bluebuild/local-vm.sh",
     'automation/security/image-policy.json', 'automation/security/decision-proposal.schema.json', '.github/workflows/publication.yml',
     '.github/workflows/iso.yml', '.github/workflows/vm-acceptance.yml',
