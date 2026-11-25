@@ -20,7 +20,7 @@ def read(path):
 
 
 def validate_context(profile, digest, revision, identity):
-    if (profile not in ('finite', 'finite-dev') or not re.fullmatch('sha256:[0-9a-f]{64}', digest)
+    if (profile not in ('finite-native', 'finite-native-dev') or not re.fullmatch('sha256:[0-9a-f]{64}', digest)
             or not re.fullmatch('[0-9a-f]{40}', revision) or not re.fullmatch('v1:[0-9a-f]{64}', identity)):
         raise ValueError('Native handoff requires exact profile, digest, source and build identity')
 

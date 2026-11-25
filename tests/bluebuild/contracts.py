@@ -9,6 +9,8 @@ ROOT = Path(__file__).resolve().parents[2]
 EXPECTED = {
     'finite': ('bluefin', 'generic-x86_64', ['finite', 'latest']),
     'finite-dev': ('bluefin-dx', 'generic-x86_64', ['finite-dev']),
+    'finite-native': ('bluefin', 'generic-x86_64', ['finite-native']),
+    'finite-native-dev': ('bluefin-dx', 'generic-x86_64', ['finite-native-dev']),
 }
 
 def read(path):
@@ -76,16 +78,39 @@ class BlueBuildContracts(unittest.TestCase):
                                if any('check-upstream-kernel verify' in snippet for snippet in m.get('snippets', [])))
             finalize_step = next(i for i, m in enumerate(expanded)
                                  if 'finalize.sh' in m.get('scripts', []))
-            native_step = next(i for i, m in enumerate(expanded) if 'native-initramfs.sh' in m.get('scripts', []))
-            self.assertEqual(kinds.count('initramfs'), 0)
-            self.assertEqual(recipe['labels']['io.finite.boot-architecture'], 'native-composefs')
             self.assertLess(snapshot_step, kinds.index('dnf'))
-            self.assertLess(native_step, verify_step)
+            if profile.startswith('finite-native'):
+                native_step = next(i for i, m in enumerate(expanded) if 'native-initramfs.sh' in m.get('scripts', []))
+                self.assertEqual(kinds.count('initramfs'), 0)
+                self.assertEqual(recipe['labels']['io.finite.boot-architecture'], 'native-composefs')
+                self.assertLess(native_step, verify_step)
+            else:
+                self.assertEqual(kinds.count('initramfs'), 1)
+                self.assertNotIn('io.finite.boot-architecture', recipe['labels'])
+                self.assertNotIn('native-initramfs.sh', scripts)
+                self.assertNotIn('install-native-bootc.sh', scripts)
             self.assertLess(verify_step, finalize_step)
-            self.assertLess(native_step, finalize_step)
             self.assertLess(kinds.index('dnf'), kinds.index('files'))
             self.assertLess(kinds.index('signing'), len(kinds)-1)
         self.assertEqual(len(tags), len(set(tags)))
+
+    def test_ostree_publication_and_native_signing_are_separate(self):
+        publication = read('.github/workflows/publication.yml')
+        self.assertEqual(publication['jobs']['build']['uses'], '$/.github/workflows/image.yml')
+        self.assertIs(publication['jobs']['build']['with']['publish'], True)
+        native = read('.github/workflows/native-image.yml')
+        payload = ('payload_artifact_id', 'payload_sha256', 'payload_revision', 'payload_run', 'payload_attempt')
+        for name in payload:
+            self.assertIn(name, native[True]['workflow_call']['inputs'])
+            self.assertEqual(native['jobs']['root']['with'][name], '${{ inputs.' + name + ' }}')
+        self.assertEqual(native['env']['FINITE_CI_VARS'], '${{ toJSON(vars) }}')
+        self.assertEqual(native['jobs']['seal']['uses'], '$/.github/workflows/boot-signing.yml')
+        # Automatic publication stays on the qualified pair until the native VM
+        # workflow can authenticate encrypted native acceptance independently.
+        import sys
+        sys.path.insert(0, str(ROOT / 'scripts/ci'))
+        import impact
+        self.assertEqual(set(impact.PROFILES), {'finite', 'finite-dev'})
 
     def test_publication_is_guarded_and_gate_includes_failures(self):
         workflow = read('.github/workflows/build.yml')

@@ -86,7 +86,7 @@ def importer(archive, directory, bootc):
 
 
 def seal(args, secret):
-    if args.profile not in ('finite', 'finite-dev') or not re.fullmatch('[0-9a-f]{40}', args.revision):
+    if args.profile not in ('finite-native', 'finite-native-dev') or not re.fullmatch('[0-9a-f]{40}', args.revision):
         raise ValueError('An exact profile and source revision are required')
     if not 0 <= args.epoch <= 4102444799:
         raise ValueError('Unsupported reproducible signing epoch')

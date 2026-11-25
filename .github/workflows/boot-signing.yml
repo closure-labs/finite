@@ -51,7 +51,7 @@ jobs:
         run: |
           [[ $GITHUB_REPOSITORY == closure-labs/finite && $GITHUB_REF == refs/heads/main ]]
           [[ $SOURCE_REVISION == "$GITHUB_SHA" && $SOURCE_REVISION =~ ^[0-9a-f]{40}$ ]]
-          [[ $PROFILE == finite || $PROFILE == finite-dev ]]
+          [[ $PROFILE == finite-native || $PROFILE == finite-native-dev ]]
           [[ $SOURCE_DIGEST =~ ^sha256:[0-9a-f]{64}$ && $BUILD_IDENTITY =~ ^v1:[0-9a-f]{64}$ ]]
           [[ $ROOT_EVIDENCE == "root-image-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" ]]
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -59,6 +59,8 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
       - name: Reject obsolete source before boot signing setup
         env:
           GH_TOKEN: ${{ github.token }}

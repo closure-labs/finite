@@ -44,7 +44,7 @@ QUALIFICATION_ONLY = {
 
 
 def identity(profile, root, payload=None):
-    if profile not in ('finite', 'finite-dev'):
+    if profile not in ('finite', 'finite-dev', 'finite-native', 'finite-native-dev'):
         raise ValueError('Unsupported image profile')
     root = Path(root)
     if payload is None:

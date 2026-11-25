@@ -190,7 +190,7 @@ def resume(profile, run_id, digest, root=upstream.ROOT):
     if head != os.environ['GITHUB_SHA']:
         raise ValueError('Resume checkout differs from the current qualification revision')
     subprocess.run(['git', 'merge-base', '--is-ancestor', source_revision, head], cwd=root, check=True, timeout=30)
-    recipe = upstream.recipes(root)[profile]
+    recipe = upstream.recipe(profile, root)
     identity = upstream.image_identity(profile, root)
     # Repeat publisher authentication here, independently of workflow ordering.
     upstream.verify(root)
@@ -267,7 +267,7 @@ def authenticate_predecessor(profile, digest, root):
 
 
 def prepare(profile, publish, root=upstream.ROOT, source_revision=None, resume_origin=None):
-    recipe = upstream.recipes(root)[profile]
+    recipe = upstream.recipe(profile, root)
     build_identity = upstream.image_identity(profile, root)
     mode = os.environ.get('FINITE_QUALIFICATION_MODE', 'enforce')
     if mode != 'enforce':
@@ -380,6 +380,8 @@ def promotion_state(record):
 
 
 def promote(profile, root=upstream.ROOT):
+    if profile in upstream.NATIVE_PROFILES:
+        raise ValueError('Native channel promotion requires dedicated encrypted native qualification')
     evidence = root / '.bluebuild'
     record = json.loads((evidence / f'{profile}-publication.json').read_text())
     if not record['publish'] or record['profile'] != profile or record['tags'] != upstream.PROFILES[profile][1]:
@@ -453,7 +455,7 @@ def promote(profile, root=upstream.ROOT):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['prepare', 'promote', 'resume'])
-    parser.add_argument('profile', choices=upstream.PROFILES)
+    parser.add_argument('profile', choices={**upstream.PROFILES, **upstream.NATIVE_PROFILES})
     parser.add_argument('--publish', action='store_true')
     parser.add_argument('--run')
     parser.add_argument('--digest')

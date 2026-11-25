@@ -25,6 +25,11 @@ PROFILES = {
     'finite': ('bluefin', ['finite', 'latest']),
     'finite-dev': ('bluefin-dx', ['finite-dev']),
 }
+# Supported native recipes are staged separately until native qualification is wired.
+NATIVE_PROFILES = {
+    'finite-native': ('bluefin', ['finite-native']),
+    'finite-native-dev': ('bluefin-dx', ['finite-native-dev']),
+}
 DIGEST = re.compile(r'sha256:[0-9a-f]{64}')
 TRANSIENT = re.compile(r'too many requests|429|50[0-9]|timeout|timed out|connection reset|connection refused|temporary failure|no such host|server misbehaving|network is unreachable|unexpected EOF|TLS handshake', re.I)
 
@@ -35,15 +40,20 @@ def digest(value):
     return value
 
 
-def recipes(root=ROOT):
+def recipes(root=ROOT, *, include_native=False):
     result, foundations = {}, {}
-    for profile, (foundation, tags) in PROFILES.items():
+    profiles = {**PROFILES, **NATIVE_PROFILES} if include_native else PROFILES
+    for profile, (foundation, tags) in profiles.items():
         recipe = yaml.safe_load((root / 'recipes' / f'{profile}.yml').read_text())
         base = f'ghcr.io/ublue-os/{foundation}'
         if (recipe['version'] != 1 or recipe['name'] != 'finite'
                 or recipe['base-image'] != base or recipe['alt-tags'] != tags
                 or recipe['labels']['io.finite.profile'] != profile):
             raise ValueError(f'Unexpected recipe identity: {profile}')
+        architecture = recipe['labels'].get('io.finite.boot-architecture')
+        expected = 'native-composefs' if profile in NATIVE_PROFILES else None
+        if architecture != expected:
+            raise ValueError(f'Unexpected boot architecture: {profile}')
         version = recipe['image-version']
         if not version.startswith('stable@'):
             raise ValueError(f'{profile} must track stable with an immutable digest')
@@ -53,6 +63,11 @@ def recipes(root=ROOT):
         foundations[foundation] = approved
         result[profile] = {'base': base, 'digest': approved, 'tags': tags}
     return result
+
+
+def recipe(profile, root=ROOT):
+    """Read a supported recipe without adding it to automatic publication."""
+    return recipes(root, include_native=profile in NATIVE_PROFILES)[profile]
 
 
 def inspect(reference, raw=False, allow_missing=False):
@@ -120,7 +135,7 @@ def verify(root=ROOT):
 
 
 def update(root=ROOT, observed=None):
-    approved = recipes(root)
+    approved = recipes(root, include_native=True)
     # Complete every registry read before changing any file. Failures cannot
     # acknowledge a partially observed upstream update.
     bases = {r['base'] for r in approved.values()}

@@ -17,3 +17,7 @@ modules:
     scripts:
       - install-native-bootc.sh
       - native-initramfs.sh
+  - type: systemd@v1
+    system:
+      enabled:
+        - finite-efi-update.service

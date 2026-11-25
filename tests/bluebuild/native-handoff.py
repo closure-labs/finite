@@ -29,18 +29,18 @@ class Handoff(unittest.TestCase):
         image = handoff.oci.Image(archive)
         digest = image.index['manifests'][0]['digest']
         image.close()
-        self.args = argparse.Namespace(directory=self.work, profile='finite', digest=digest,
+        self.args = argparse.Namespace(directory=self.work, profile='finite-native', digest=digest,
             revision='a' * 40, identity='v1:' + 'b' * 64, info=self.work / 'info.json',
             archive=archive, receipt=self.work / 'receipt.json')
-        self.record = dict(profile='finite', publish=True, revision=self.args.revision,
+        self.record = dict(profile='finite-native', publish=True, revision=self.args.revision,
             sourceRevision=self.args.revision, buildIdentity=self.args.identity,
-            candidate='candidate-finite', qualificationMode='enforce', digest='sha256:' + 'c' * 64)
-        self.record_path = self.work / 'finite-publication.json'
+            candidate='candidate-finite-native', qualificationMode='enforce', digest='sha256:' + 'c' * 64)
+        self.record_path = self.work / 'finite-native-publication.json'
         self.save(self.record_path, self.record)
-        self.reference = self.work / 'finite-image-ref.txt'
+        self.reference = self.work / 'finite-native-image-ref.txt'
         self.reference.write_text(handoff.REPOSITORY + '@' + digest + '\n')
         self.info = dict(Digest=digest, Architecture='amd64', Os='linux', Labels={
-            'io.finite.profile': 'finite', 'io.finite.build-inputs': self.args.identity,
+            'io.finite.profile': 'finite-native', 'io.finite.build-inputs': self.args.identity,
             'io.finite.boot-architecture': 'native-composefs',
             'org.opencontainers.image.revision': self.args.revision,
             'org.opencontainers.image.base.digest': self.record['digest'],
@@ -49,7 +49,7 @@ class Handoff(unittest.TestCase):
         signer = handoff.read(ROOT / 'sources/boot-signing.json')
         importer = handoff.read(ROOT / 'sources/native-composefs-verifier.json')
         sha = handoff.oci.sha256(archive)
-        self.receipt = dict(schema=1, validationOnly=False, profile='finite',
+        self.receipt = dict(schema=1, validationOnly=False, profile='finite-native',
             sourceRevision=self.args.revision, sourceArchiveSha256=sha, archiveSha256=sha,
             certificateDerSha256=signer['certificateDerSha256'],
             importerSha256=importer['bootcSha256'], bootableRootDigest='d' * 128,
@@ -68,7 +68,7 @@ class Handoff(unittest.TestCase):
         self.assertEqual(record['digest'], self.record['digest'])
         self.assertEqual(record['bootSeal']['sourceDigest'], self.args.digest)
         self.assertEqual(record['bootSeal']['imageDigest'], self.args.digest)
-        self.assertEqual((self.work / 'finite-native-seal.json').read_bytes(), self.args.receipt.read_bytes())
+        self.assertEqual((self.work / 'finite-native-native-seal.json').read_bytes(), self.args.receipt.read_bytes())
 
     def test_wrong_source_profile_build_and_resume_are_rejected_before_signing(self):
         for field, value in [('publish', False), ('sourceRevision', 'f' * 40),
@@ -124,20 +124,20 @@ class Handoff(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError):
                 validate(changed, self.args.receipt.read_bytes(), self.args.digest, self.args.revision, ROOT)
 
-    def test_native_publication_cannot_promote_a_raw_image(self):
+    def test_native_promotion_stays_closed_until_encrypted_native_qualification(self):
         publication = runpy.run_path(str(ROOT / 'scripts/bluebuild/publication.py'))
         recipes = self.work / 'recipes'
         recipes.mkdir()
-        (recipes / 'finite.yml').write_text('labels:\n  io.finite.boot-architecture: native-composefs\n')
+        (recipes / 'finite-native.yml').write_text('labels:\n  io.finite.boot-architecture: native-composefs\n')
         evidence = self.work / '.bluebuild'
         evidence.mkdir()
-        record = {**self.record, 'tags': ['finite', 'latest'], 'publishedDigest': '',
+        record = {**self.record, 'tags': ['finite-native'], 'publishedDigest': '',
                   'previousDigest': '', 'recoveryReason': ''}
-        self.save(evidence / 'finite-publication.json', record)
-        (evidence / 'finite-image-ref.txt').write_bytes(self.reference.read_bytes())
+        self.save(evidence / 'finite-native-publication.json', record)
+        (evidence / 'finite-native-image-ref.txt').write_bytes(self.reference.read_bytes())
         with patch.dict('os.environ', GITHUB_SHA=self.args.revision), patch('subprocess.run') as run:
-            with self.assertRaisesRegex(ValueError, 'production sealing proof'):
-                publication['promote']('finite', self.work)
+            with self.assertRaisesRegex(ValueError, 'dedicated encrypted native qualification'):
+                publication['promote']('finite-native', self.work)
             run.assert_not_called()
 
 
@@ -161,14 +161,14 @@ class HistoricalSignatures(unittest.TestCase):
                 self.assertIn('--key', run.call_args.args[0])
                 self.assertNotIn('--certificate-identity', run.call_args.args[0])
         with patch('subprocess.run') as run:
-            authenticate('finite', policy['profiles']['finite-dev'], ROOT)
+            authenticate('finite-native', policy['profiles']['finite-dev'], ROOT)
             self.assertIn('--key', run.call_args.args[0])
 
     def test_failed_verification_has_no_fallback(self):
         import subprocess
         with patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, 'cosign')) as run:
             with self.assertRaises(subprocess.CalledProcessError):
-                self.publication['authenticate_predecessor']('finite', 'sha256:' + 'f' * 64, ROOT)
+                self.publication['authenticate_predecessor']('finite-native', 'sha256:' + 'f' * 64, ROOT)
             run.assert_called_once()
 
 

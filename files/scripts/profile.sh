@@ -5,7 +5,7 @@ foundation="${2:?foundation required}"
 hardware="${3:?hardware required}"
 channel="${4:?update channel required}"
 case "$profile:$foundation:$hardware:$channel" in
-finite:bluefin:generic-x86_64:finite|finite-dev:bluefin-dx:generic-x86_64:finite-dev) ;;
+finite:bluefin:generic-x86_64:finite|finite-dev:bluefin-dx:generic-x86_64:finite-dev|finite-native:bluefin:generic-x86_64:finite-native|finite-native-dev:bluefin-dx:generic-x86_64:finite-native-dev) ;;
 *) echo 'Unsupported Finite profile/foundation/hardware/channel' >&2; exit 2 ;;
 esac
 install -d /usr/share/finite

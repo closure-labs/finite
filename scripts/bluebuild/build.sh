@@ -3,7 +3,7 @@ set -euo pipefail
 profile="${1:?profile required}"
 publish="${2:-false}"
 case "$profile" in
-  finite|finite-dev) ;;
+  finite|finite-dev|finite-native|finite-native-dev) ;;
   *) echo "Unknown image profile: $profile" >&2; exit 1 ;;
 esac
 case "$publish" in

@@ -159,7 +159,7 @@ jobs:
           if [[ $PUBLISH == true ]]; then args+=(--publish); fi
           python3 scripts/bluebuild/publication.py prepare "$PROFILE" "${args[@]}"
           prefix=image
-          if [[ $PUBLISH == true ]]; then prefix=root-image; fi
+          if [[ $PUBLISH == true && ( $PROFILE == finite-native || $PROFILE == finite-native-dev ) ]]; then prefix=root-image; fi
           echo "evidence=$prefix-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >>"$GITHUB_OUTPUT"
       - name: Validate and resume immutable candidate
         id: resume
@@ -176,6 +176,9 @@ jobs:
       - name: Install the verified locked BlueBuild CLI
         if: inputs.resume_run == '' && inputs.resume_digest == ''
         run: bash scripts/bluebuild/install-cli.sh
+      - name: Stage pinned native bootc runtime
+        if: inputs.resume_run == '' && inputs.resume_digest == '' && (inputs.profile == 'finite-native' || inputs.profile == 'finite-native-dev')
+        run: python3 scripts/bluebuild/stage-bootc-runtime.py
       - name: Validate recipes and record generated Containerfile
         if: inputs.resume_run == '' && inputs.resume_digest == ''
         run: |
@@ -247,7 +250,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ${{ inputs.publish && inputs.resume_run == '' && format('root-image-{0}-{1}-{2}', inputs.profile, github.run_id, github.run_attempt) || format('image-{0}-{1}-{2}', inputs.profile, github.run_id, github.run_attempt) }}
+          name: ${{ inputs.publish && (inputs.profile == 'finite-native' || inputs.profile == 'finite-native-dev') && inputs.resume_run == '' && format('root-image-{0}-{1}-{2}', inputs.profile, github.run_id, github.run_attempt) || format('image-{0}-{1}-{2}', inputs.profile, github.run_id, github.run_attempt) }}
           # Retain the same-run producer artifact once, outside profile evidence.
           path: |
             .bluebuild/

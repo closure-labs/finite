@@ -4,7 +4,7 @@ set -euo pipefail
 expected="${1:?expected profile required}"
 repository="${2:-ghcr.io/closure-labs/finite}"
 case "$expected" in
-  finite|finite-dev) ;;
+  finite|finite-dev|finite-native|finite-native-dev) ;;
   *) echo 'Unsupported image profile' >&2; exit 2 ;;
 esac
 [[ $(cat /usr/share/finite/build-profile) == "$expected" ]]

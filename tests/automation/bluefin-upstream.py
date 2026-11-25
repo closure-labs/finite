@@ -38,10 +38,6 @@ class BluefinTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         shutil.copytree(ROOT / 'recipes', self.root / 'recipes')
-        # Historical publication fixtures predate native sealing. The native
-        # trust boundary has dedicated raw/sealed handoff and promotion tests.
-        for path in (self.root / 'recipes').glob('finite*.yml'):
-            path.write_text(path.read_text().replace('  io.finite.boot-architecture: native-composefs\n', ''))
         security = patch.object(publication.security, 'verify')
         security.start()
         self.addCleanup(security.stop)
@@ -82,6 +78,21 @@ class BluefinTests(unittest.TestCase):
             'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
         }}
 
+    def test_native_recipes_are_supported_without_joining_automatic_channels(self):
+        self.assertEqual(set(upstream.recipes(self.root)), {'finite', 'finite-dev'})
+        native = upstream.recipe('finite-native-dev', self.root)
+        self.assertEqual(native['base'], 'ghcr.io/ublue-os/bluefin-dx')
+        self.assertEqual(native['tags'], ['finite-native-dev'])
+        self.assertEqual(set(upstream.recipes(self.root, include_native=True)),
+                         {'finite', 'finite-dev', 'finite-native', 'finite-native-dev'})
+
+    def test_default_channel_cannot_silently_become_native(self):
+        path = self.root / 'recipes/finite.yml'
+        path.write_text(path.read_text().replace('labels:\n',
+            'labels:\n  io.finite.boot-architecture: native-composefs\n', 1))
+        with self.assertRaisesRegex(ValueError, 'boot architecture'):
+            upstream.recipes(self.root)
+
     def test_unchanged_poll_is_noop(self):
         before = self.snapshot()
         with patch.object(upstream, 'resolve', side_effect=lambda base: self.observed[base]):
@@ -92,7 +103,7 @@ class BluefinTests(unittest.TestCase):
         self.observed['ghcr.io/ublue-os/bluefin'] = NEW
         before = self.snapshot()
         result = upstream.update(self.root, self.observed)
-        self.assertEqual(set(result['profiles']), {'finite'})
+        self.assertEqual(set(result['profiles']), {'finite', 'finite-native'})
         for name, content in self.snapshot().items():
             if name.startswith('bluefin-dx'):
                 self.assertEqual(content, before[name])

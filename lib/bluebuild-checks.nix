@@ -19,6 +19,8 @@
       ../files/system
       ../files/dnf
       ../scripts/bluebuild
+      ../scripts/native-installer
+      ../scripts/vm-composefs/install-xbootldr.sh
       ../scripts/ci
       ../scripts/home
       ../scripts/native-installer
@@ -235,7 +237,7 @@ in {
     zizmor --offline --no-config --collect=all .github
     shellcheck --exclude=SC1091 files/scripts/*.sh scripts/bluebuild/*.sh experiments/containerfile/build.sh
     shellcheck -s bash files/installer/install_finite_fstab
-    shellcheck scripts/workstation/capture-recovery.sh scripts/workstation/backup-local.sh
+    shellcheck scripts/workstation/capture-recovery.sh scripts/workstation/backup-local.sh scripts/native-installer/build-iso.sh
     shellcheck files/system/usr/libexec/finite/check-initramfs
   '';
   repository-security = check "repository-security" (with pkgs; [jq python3 applications.repositorySecurityAudit]) ''
