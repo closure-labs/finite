@@ -40,8 +40,9 @@ timestamps include setup, all transfers and hashes, retention upload and post-jo
 handling. Producer source verification, native upload, OCI upload, origin upload
 and cleanup are measured separately and must remain in the cost assessment.
 
-After the consumer workflow completes, run
-`python3 scripts/ci/report-release-transport.py --run RUN_ID`. The report reads
+The benchmark workflow and its report are archived under `archive/`. After the
+consumer workflow completed, the experiment ran
+`python3 scripts/ci/report-release-transport.py --run RUN_ID`. The report read
 bounded, digest-verified native sample archives, binds their jobs and producer,
 and compares complete-job occupancy. It rejects duplicate or mismatched pairs.
 Five warm pairs and one cold pair must pass correctness; warm medians must

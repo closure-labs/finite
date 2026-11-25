@@ -95,7 +95,6 @@ QUALIFICATION_ONLY = {
     # Keep this explicit so new CI helpers still take the conservative path.
     'scripts/ci/workflow-costs.py', 'scripts/ci/workflow_costs.py',
     'scripts/ci/cost_receipts.py', '.github/workflows/workflow-costs.yml',
-    'scripts/ci/report-release-transport.py', 'scripts/ci/release_transport_benchmark.py',
 }
 # Read-only host secret scanning is not an image/payload input. Keep this an
 # exact inventory: unknown siblings and mixed image inputs stay conservative.

@@ -151,7 +151,8 @@ class Collection(unittest.TestCase):
         self.assertFalse(self.output.exists())
 
     def test_wrong_workflow_repository_and_diagnostic_origin_rejected(self):
-        for key, value in (('path', '.github/workflows/other.yml'), ('head_branch', 'other'),
+        for key, value in (('path', '.github/workflows/other.yml'), ('path', '.github/workflows/benchmark-image-tools.yml'),
+                           ('head_branch', 'other'),
                            ('event', 'pull_request'), ('head_repository', {'full_name': 'fork/finite'})):
             with self.subTest(key=key):
                 original = self.run[key]; self.run[key] = value

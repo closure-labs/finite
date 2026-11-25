@@ -13,8 +13,7 @@ MAX_RECEIPT = 1024**2
 
 
 def artifact_name(producer):
-    prefix = 'release-transport-origin' if producer.get('workflow') == 'benchmark-release-transport.yml' else 'release-set-origin'
-    return f'{prefix}-{producer["runId"]}-{producer["runAttempt"]}'
+    return f'release-set-origin-{producer["runId"]}-{producer["runAttempt"]}'
 
 
 def receipt(directory, producer, artifact, packet, job_id):
@@ -34,9 +33,9 @@ def receipt(directory, producer, artifact, packet, job_id):
             'packet': {'reference': packet['reference'], 'sha256': packet['sha256']}, 'files': files}
 
 
-def write(directory, producer, artifact, packet, collection, output, *, diagnostic=False):
+def write(directory, producer, artifact, packet, collection, output):
     jobs = collection(f'repos/{REPOSITORY}/actions/runs/{producer["runId"]}/attempts/{producer["runAttempt"]}/jobs', 'jobs')
-    matches = [j for j in jobs if j.get('name') == ('producer' if diagnostic else 'prepare') and j.get('run_id') == producer['runId']
+    matches = [j for j in jobs if j.get('name') == 'prepare' and j.get('run_id') == producer['runId']
                and j.get('run_attempt') == producer['runAttempt'] and j.get('head_sha') == producer['headSha']
                and j.get('status') == 'in_progress']
     if len(matches) != 1:
@@ -47,11 +46,11 @@ def write(directory, producer, artifact, packet, collection, output, *, diagnost
     return value
 
 
-def verify(directory, manifest, reference, artifact, collection, api, *, cached_archive=None, diagnostic=False):
+def verify(directory, manifest, reference, artifact, collection, api, *, cached_archive=None):
     """Return false only for an absent legacy receipt; invalid evidence fails closed."""
     producer = manifest['producer']
     run_id, attempt = producer['runId'], producer['runAttempt']
-    workflow = 'benchmark-release-transport.yml' if diagnostic else 'release-set.yml'
+    workflow = 'release-set.yml'
     if (producer.get('repository') != REPOSITORY or producer.get('workflow') != workflow
             or type(run_id) is not int or run_id <= 0 or type(attempt) is not int or attempt <= 0
             or not re.fullmatch('[0-9a-f]{40}', producer.get('headSha', ''))):
@@ -72,7 +71,7 @@ def verify(directory, manifest, reference, artifact, collection, api, *, cached_
         raise ValueError('Invalid native origin artifact binding')
     run = api(f'repos/{REPOSITORY}/actions/runs/{run_id}/attempts/{attempt}')
     if (run.get('id') != run_id or run.get('run_attempt') != attempt
-            or run.get('head_sha') != producer['headSha'] or (not diagnostic and run.get('head_branch') != 'main')
+            or run.get('head_sha') != producer['headSha'] or run.get('head_branch') != 'main'
             or run.get('head_repository', {}).get('full_name') != REPOSITORY
             or run.get('path') != '.github/workflows/' + workflow
             or run.get('event') != 'workflow_dispatch' or run.get('status') != 'completed'
@@ -88,20 +87,19 @@ def verify(directory, manifest, reference, artifact, collection, api, *, cached_
                                                   'jobId', 'sourceRevision', 'artifact', 'packet', 'files'}:
         raise ValueError('Invalid origin receipt schema')
     jobs = collection(f'repos/{REPOSITORY}/actions/runs/{run_id}/attempts/{attempt}/jobs', 'jobs')
-    matching = [j for j in jobs if j.get('id') == value['jobId'] and j.get('name') == ('producer' if diagnostic else 'prepare')
+    matching = [j for j in jobs if j.get('id') == value['jobId'] and j.get('name') == 'prepare'
                 and j.get('run_id') == run_id and j.get('run_attempt') == attempt
                 and j.get('head_sha') == producer['headSha'] and j.get('status') == 'completed'
                 and j.get('conclusion') == 'success'
                 and all(any(s.get('name') == name and s.get('conclusion') == 'success'
                             for s in j.get('steps', [])) for name in
-                        (('Persist authenticated diagnostic packet', 'Retain native diagnostic origin') if diagnostic else
-                         ('Propose the single official release approval', 'Retain native release product origin')))]
+                        ('Propose the single official release approval', 'Retain native release product origin'))]
     packet_identity = canonical_hash({'schema': 1, 'producer': producer, 'files': manifest['files']})
     if (type(value['schema']) is not int or value['schema'] != 1
             or value['kind'] != 'finite-release-product-origin' or value['authorizesPublication'] is not False
             or type(value['jobId']) is not int or value['jobId'] <= 0
             or value['producer'] != producer
-            or value['sourceRevision'] != (json.loads((Path(directory) / 'release-set.json').read_text())['payload']['sourceRevision'] if diagnostic else producer['headSha'])
+            or value['sourceRevision'] != producer['headSha']
             or value['artifact'] != {key: artifact[key] for key in ('id', 'name', 'digest', 'size_in_bytes')}
             or value['packet'] != {'reference': reference, 'sha256': packet_identity}
             or value['files'] != manifest['files'] or len(matching) != 1):
