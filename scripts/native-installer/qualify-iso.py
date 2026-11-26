@@ -16,7 +16,7 @@ MEMORY_MIB = 3072
 RESERVE_MIB = 3072
 DISK_SERIAL = 'FINITEQUALIFICATION'
 MOK_GUID = '605dab50-e046-4300-abb6-3dd810dd8b23'
-GUEST_FAILURE = re.compile(rb'(?:Installation stopped:|Kernel panic)[^\r\n]*\r?\n')
+GUEST_FAILURE = re.compile(rb'(?:Installation stopped:|Kernel panic|FINITE_NATIVE_FRESH_BOOT_FAILED)[^\r\n]*\r?\n')
 
 
 def available_mib():
@@ -130,6 +130,7 @@ def qualify(args):
             guest.expect(rb'Repeat the passphrase:')
             guest.send(password)
             guest.expect(rb'Installation complete\.')
+    print(f'{profile} installation completed; starting first encrypted boot', flush=True)
     with (args.evidence / 'first-boot-serial.log').open('xb') as serial:
         with Guest(common, serial, 900) as guest:
             guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
@@ -137,7 +138,8 @@ def qualify(args):
             match = guest.expect(rb'FINITE_NATIVE_FRESH_BOOT (\{[^\r\n]+\})')
             facts = json.loads(match[1])
     if (facts['profile'] != profile or facts['bootableRootDigest'] != seal['bootableRootDigest']
-            or any(facts.get(key) is not True for key in ('secureBoot', 'selinuxEnforcing', 'encryptedRoot'))
+            or any(facts.get(key) is not True for key in (
+                'secureBoot', 'selinuxEnforcing', 'encryptedRoot', 'efiUpdaterSucceeded'))
             or facts.get('signedModules') != ['zfs', 'v4l2loopback']
             or facts.get('espBytes') != 600 * 1024**2 or facts.get('xbootldrBytes') != 4 * 1024**3):
         raise ValueError('Observed guest acceptance differs from the exact native seal or required boot facts')

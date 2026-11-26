@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 
 from finite_mok import enrolled_mok_certificates
 
@@ -48,6 +49,13 @@ def main():
     require(Path('/efi/EFI/BOOT/BOOTX64.EFI').is_file(), 'Maintained fallback shim is missing')
     state = Path('/var/lib/finite/efi-updates')
     require(any(state.glob('*/journal.json')), 'Persistent EFI recovery journal missing')
+    updater = 'finite-efi-update.service'
+    service = dict(line.split('=', 1) for line in capture(
+        'systemctl', 'show', '--property=Result', '--property=ExecMainStartTimestampMonotonic', updater
+    ).splitlines())
+    if service.get('Result') != 'success' or int(service.get('ExecMainStartTimestampMonotonic', '0')) <= 0:
+        subprocess.run(['journalctl', '--boot', '--unit', updater, '--no-pager', '--lines=12'], timeout=30)
+        raise ValueError('The installed EFI updater did not complete successfully')
     runtime = json.loads(Path('/usr/share/finite/bootc-runtime.json').read_text())
     for name, expected in runtime['files'].items():
         with open(name, 'rb') as stream:
@@ -62,10 +70,14 @@ def main():
     print('FINITE_NATIVE_FRESH_BOOT ' + json.dumps({
         'profile': Path('/usr/share/finite/build-profile').read_text().strip(),
         'bootableRootDigest': digest[0], 'secureBoot': True, 'selinuxEnforcing': True,
-        'encryptedRoot': True, 'signedModules': ['zfs', 'v4l2loopback'],
+        'encryptedRoot': True, 'efiUpdaterSucceeded': True, 'signedModules': ['zfs', 'v4l2loopback'],
         'espBytes': 600 * 1024**2, 'xbootldrBytes': 4 * 1024**3,
     }), flush=True)
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (KeyError, OSError, ValueError, subprocess.SubprocessError) as error:
+        print(f'FINITE_NATIVE_FRESH_BOOT_FAILED {error}', file=sys.stderr, flush=True)
+        sys.exit(1)

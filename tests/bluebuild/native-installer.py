@@ -411,19 +411,21 @@ class Media(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('qualify_iso', self.directory / 'qualify-iso.py')
         qual = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(qual)
-        guest = qual.Guest.__new__(qual.Guest)
-        guest.deadline = time.monotonic() + 10
-        guest.output = b''
-        guest.log = BytesIO()
-        guest.selector = SimpleNamespace(select=lambda timeout: True)
-        guest.process = SimpleNamespace(stdout=SimpleNamespace(fileno=lambda: 0))
-        chunks = [b'Installer output\r\nInstallation stopped: Embe',
-                  b'dded payload manifest digest differs from the pinned native image\r\n']
-        with patch.object(qual, 'available_mib', return_value=qual.RESERVE_MIB), \
-                patch.object(qual.os, 'read', side_effect=chunks), \
-                self.assertRaisesRegex(RuntimeError, 'Guest reported a failure'):
-            guest.expect(rb'Installation complete\.')
-        self.assertEqual(guest.log.getvalue(), b''.join(chunks))
+        for message in (b'Installation stopped: Embedded payload manifest digest differs',
+                        b'FINITE_NATIVE_FRESH_BOOT_FAILED The installed EFI updater failed'):
+            with self.subTest(message=message):
+                guest = qual.Guest.__new__(qual.Guest)
+                guest.deadline = time.monotonic() + 10
+                guest.output = b''
+                guest.log = BytesIO()
+                guest.selector = SimpleNamespace(select=lambda timeout: True)
+                guest.process = SimpleNamespace(stdout=SimpleNamespace(fileno=lambda: 0))
+                chunks = [b'Guest output\r\n' + message[:-5], message[-5:] + b'\r\n']
+                with patch.object(qual, 'available_mib', return_value=qual.RESERVE_MIB), \
+                        patch.object(qual.os, 'read', side_effect=chunks), \
+                        self.assertRaisesRegex(RuntimeError, 'Guest reported a failure'):
+                    guest.expect(rb'Installation complete\.')
+                self.assertEqual(guest.log.getvalue(), b''.join(chunks))
 
     def test_workflow_is_manual_main_only_and_uploads_unqualified_media(self):
         import yaml
