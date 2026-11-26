@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import subprocess
 
+from finite_mok import enrolled_mok_certificates
+
 
 def capture(*args):
     return subprocess.check_output(args, text=True, timeout=120).strip()
@@ -50,7 +52,8 @@ def main():
     for name, expected in runtime['files'].items():
         with open(name, 'rb') as stream:
             require(hashlib.file_digest(stream, 'sha256').hexdigest() == expected, 'Runtime bytes differ: ' + name)
-    capture('mokutil', '--test-key', '/etc/pki/akmods/certs/akmods-ublue.der')
+    require(Path('/etc/pki/akmods/certs/akmods-ublue.der').read_bytes() in enrolled_mok_certificates(),
+            'Module-signing certificate is absent from the enrolled MOKs')
     # Module insertion under lockdown is the actual acceptance condition.
     for module in ('zfs', 'v4l2loopback'):
         capture('modprobe', module)

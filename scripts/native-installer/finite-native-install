@@ -22,6 +22,8 @@ import re
 import subprocess
 import sys
 
+from finite_mok import enrolled_mok_certificates
+
 ESP_MIB = 600
 XBOOTLDR_MIB = 4096
 MIN_DISK_BYTES = 64 * 1024**3
@@ -36,6 +38,7 @@ DEPLOYMENT = Path('/run/finite-install/deployment')
 PINS = Path('/usr/lib/finite/installer/pins.json')
 OFFLINE_SOURCE = 'oci:/usr/lib/finite/installer/payload'
 BOOT_CERT = Path('/usr/share/finite/secure-boot/finite-boot.pem')
+MOK_BOOT_CERT = Path('/run/finite-install/finite-boot.der')
 MODULE_CERT = Path('/etc/pki/akmods/certs/akmods-ublue.der')
 SHIM_LOADER = r'\EFI\finite\shimx64.efi'
 
@@ -398,8 +401,8 @@ def load_pins(path=PINS):
 
 
 def enroll_mok(run=subprocess.run):
-    certificates = ['/run/finite-install/finite-boot.der', str(MODULE_CERT)]
-    missing = [cert for cert in certificates if run(['mokutil', '--test-key', cert]).returncode != 0]
+    enrolled = enrolled_mok_certificates(run)
+    missing = [str(cert) for cert in (MOK_BOOT_CERT, MODULE_CERT) if cert.read_bytes() not in enrolled]
     if missing:
         print('Set the one-time password for MokManager enrollment on next boot.', flush=True)
         run(['mokutil', '--import', *missing], check=True)
@@ -440,7 +443,7 @@ def main(argv=None):
         secret = passphrase()
         subprocess.run(['mkdir', '-p', '/run/finite-install'], check=True)
         subprocess.run(['openssl', 'x509', '-in', str(BOOT_CERT), '-outform', 'DER',
-                        '-out', '/run/finite-install/finite-boot.der'], check=True)
+                        '-out', str(MOK_BOOT_CERT)], check=True)
         revalidate_disk(disk)
         execute(steps, secret)
         print('\nInstallation complete. If certificates were queued, choose "Enroll MOK" on the next boot\n'

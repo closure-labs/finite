@@ -6,11 +6,12 @@ from io import BytesIO
 import json
 import dataclasses
 from pathlib import Path
+import sys
 import tempfile
 import time
 from types import SimpleNamespace
 import unittest
-from subprocess import CompletedProcess
+from subprocess import CalledProcessError, CompletedProcess
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -18,7 +19,8 @@ SCRIPT = ROOT / 'scripts/native-installer/finite-native-install'
 loader = SourceFileLoader('finite_native_install', str(SCRIPT))
 spec = importlib.util.spec_from_loader(loader.name, loader)
 installer = importlib.util.module_from_spec(spec)
-loader.exec_module(installer)
+with patch.object(sys, 'path', [str(ROOT / 'files/system/usr/libexec/finite'), *sys.path]):
+    loader.exec_module(installer)
 
 GIB = 1024**3
 PINS = {'schema': 3, 'bootcSha256': 'b' * 64, 'bootcVersion': '1.17.5', 'payloadDigest': 'sha256:' + 'a' * 64,
@@ -327,14 +329,35 @@ class TargetConfiguration(unittest.TestCase):
 
 class Enrollment(unittest.TestCase):
     def test_pre_enrolled_keys_skip_prompt_and_missing_key_is_queued(self):
-        with patch.object(installer, 'print', create=True):
-            with patch('subprocess.run', return_value=CompletedProcess([], 0)) as run:
+        with tempfile.TemporaryDirectory() as temporary:
+            boot = Path(temporary) / 'boot.der'
+            module = Path(temporary) / 'module.der'
+            boot.write_bytes(b'boot cert')
+            module.write_bytes(b'module cert')
+            with patch.object(installer, 'MOK_BOOT_CERT', boot), patch.object(installer, 'MODULE_CERT', module):
+                for exports, missing in (([boot, module], []), ([module], [boot])):
+                    commands = []
+
+                    def run(argv, **kwargs):
+                        commands.append(argv)
+                        if argv[1] == '--export':
+                            destination = Path(kwargs['cwd'])
+                            for index, cert in enumerate(exports):
+                                (destination / f'MOK-{index}.der').write_bytes(cert.read_bytes())
+                        return CompletedProcess(argv, 0)
+
+                    with patch.object(installer, 'print', create=True):
+                        installer.enroll_mok(run)
+                    expected = [['mokutil', '--export']]
+                    if missing:
+                        expected.append(['mokutil', '--import', *map(str, missing)])
+                    self.assertEqual(commands, expected)
+
+    def test_failed_mok_export_does_not_queue_enrollment(self):
+        with patch('subprocess.run', side_effect=CalledProcessError(1, ['mokutil', '--export'])) as run:
+            with self.assertRaises(CalledProcessError):
                 installer.enroll_mok(run)
-                self.assertEqual([entry.args[0][1] for entry in run.call_args_list], ['--test-key'] * 2)
-            with patch('subprocess.run', side_effect=[CompletedProcess([], 1), CompletedProcess([], 0),
-                                                       CompletedProcess([], 0)]) as run:
-                installer.enroll_mok(run)
-                run.assert_called_with(['mokutil', '--import', '/run/finite-install/finite-boot.der'], check=True)
+            run.assert_called_once()
 
 
 class Media(unittest.TestCase):
