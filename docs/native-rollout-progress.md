@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45782220573)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45803664314)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -275,9 +275,26 @@ that Python source at mode `0644`, and its systemd service runs it with Python.
 Change `suvxmqsp` gives the offline installer the same `/usr/bin/python3`
 command prefix and keeps its explicit deployment, ESP and recovery-journal
 arguments. All 54 targeted cases passed, including the service invocation
-contract. Run [45782220573](https://github.com/closure-labs/finite/actions/runs/45782220573)
-qualifies both profiles at `359a1ca0`. Both fresh-install and first-boot
-acceptance receipts remain pending.
+contract.
+
+Run [45782220573](https://github.com/closure-labs/finite/actions/runs/45782220573)
+at `359a1ca0` completed the stable installation and committed the EFI update.
+The stable ISO SHA-256 was
+`32a8e09e0314b44dde7455f3d6ac3619ca6f5dbcd406f43ca79d228d4bd98984`.
+[Artifact 15108695380](https://github.com/closure-labs/finite/actions/runs/45782220573/artifacts/15108695380)
+shows the installed guest unlocking LUKS2 and reaching the login prompt. The
+runtime EFI updater and first-boot observer failed when `/efi` was absent from
+the installed mount table. The serial log also shows `mokutil --test-key`
+reporting both keys as enrolled while the installer treated its exit status
+as missing enrollment.
+
+Changes `nwpztnro`, `qsvsqtpz` and `mkxnzlmu` persist `/efi` and `/boot` by the
+installed GPT partition UUIDs, match exported MOK certificates by DER bytes,
+and require a successful runtime EFI update in the fresh-boot receipt. A
+first-boot failure now prints a complete capture marker and the EFI journal
+tail when applicable. All 59 targeted native and MOK tests passed. Run
+[45803664314](https://github.com/closure-labs/finite/actions/runs/45803664314)
+tests both profiles at `c78451f8`. Both fresh acceptance receipts remain pending.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
