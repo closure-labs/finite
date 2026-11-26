@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45803664314)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45823572183)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -303,7 +303,29 @@ holds the passing `fresh-acceptance.json`, checksum inventory, seal and both
 transcripts. The receipt matches the strict composefs root and signing
 certificate and confirms Secure Boot, enforcing SELinux, LUKS2-backed sysroot,
 the runtime EFI refresh, both boot partitions and signed ZFS and v4l2loopback.
-The same runner is building `finite-native-dev`. Its acceptance remains pending.
+The same run built and verified the `finite-native-dev` ISO with SHA-256
+`863ce327a6c8591b1dee5aad3026cb6d0e727f3c40a9ea1347debc7cf02a3780`.
+[Artifact 15118830878](https://github.com/closure-labs/finite/actions/runs/45803664314/artifacts/15118830878)
+contains its strict seal and installer startup log. OVMF launched the SATA
+DVD's shim, which returned `Device Error` reading `\EFI\BOOT\grubx64.efi`.
+The guest exited before reaching Linux or selecting a disk. The dev live tree
+compressed to 11,981.45 MiB, up from 6,117.63 MiB in the previous dev ISO that
+reached installer preflight. The size difference is observed. The reason for
+the firmware read error remains undetermined.
+
+Change `umpkpluv` attaches the exact ISO as a read-only VirtIO disk and boots
+its existing GPT EFI System Partition. The first boot of the installed system
+has only the disposable target disk attached. The run retains both the GPT and
+the El Torito layout and records the tested boot transport in each receipt.
+All 60 targeted source checks passed. Run
+[45823572183](https://github.com/closure-labs/finite/actions/runs/45823572183)
+tests both profiles with this transport at `9275f951`. The stable profile
+passed with ISO SHA-256
+`0148449ac7bce1a41e8d39c14d5402094a10df17dbb29b3ef63b627b3c74e915`.
+[Artifact 15130110133](https://github.com/closure-labs/finite/actions/runs/45823572183/artifacts/15130110133)
+contains the exact seal, certificate, GPT and El Torito layout, and successful
+installation and first-boot receipt. The development profile is running on
+the same capped hosted runner.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
