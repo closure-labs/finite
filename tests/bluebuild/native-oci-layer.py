@@ -14,10 +14,11 @@ sys.path.insert(0, str(ROOT / 'scripts/bluebuild'))
 import native_oci as oci
 
 
-def fixture(path, corrupt=False):
+def fixture(path, corrupt=False, pax_headers=None):
     data = io.BytesIO()
     with tarfile.open(fileobj=data, mode='w') as archive:
         member = tarfile.TarInfo('original')
+        member.pax_headers = pax_headers or {}
         member.size = 4
         archive.addfile(member, io.BytesIO(b'root'))
     layer = data.getvalue()
@@ -64,6 +65,28 @@ class NativeLayer(unittest.TestCase):
             entry = archive.getmember('boot/EFI/Linux/kernel.efi')
             self.assertEqual((entry.uid, entry.gid, entry.mtime, entry.mode), (0, 0, 0, 0o644))
             self.assertEqual(archive.extractfile(entry).read(), b'signed fixture')
+
+    def test_sealing_layers_preserve_file_capability_metadata(self):
+        # Linux VFS capability revision 2 with CAP_NET_RAW in the permitted set.
+        capability = bytes.fromhex('0100000200200000000000000000000000000000').decode('ascii')
+        key = 'SCHILY.xattr.security.capability'
+        fixture(self.source, pax_headers={key: capability})
+        source = oci.Image(self.source)
+        self.addCleanup(source.close)
+        original = source.manifest['layers'][0]
+        name = oci.blob_name(original)
+        expected = source.archive.extractfile(source.members[name]).read()
+
+        loader, sealed = self.root / 'loader.tar', self.root / 'sealed.tar'
+        oci.append(self.source, loader, [oci.File('usr/lib/finite/efi/grubx64.efi', b'loader')])
+        oci.append(loader, sealed, [oci.File('boot/EFI/Linux/kernel.efi', b'uki')])
+        completed = oci.Image(sealed)
+        self.addCleanup(completed.close)
+        self.assertEqual(completed.manifest['layers'][0], original)
+        preserved = completed.archive.extractfile(completed.members[name]).read()
+        self.assertEqual(preserved, expected)
+        with tarfile.open(fileobj=io.BytesIO(preserved)) as archive:
+            self.assertEqual(archive.getmember('original').pax_headers[key], capability)
 
     def test_corrupt_blob_cannot_create_a_completed_output(self):
         fixture(self.source, corrupt=True)

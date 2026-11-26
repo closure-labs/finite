@@ -153,6 +153,8 @@ def seal(args, secret):
     finally:
         image.close()
     oci.extract_layout(source, work / 'oci')
+    # Rootless unpack reads the signing inputs. The OCI layers used for the
+    # output and root digest retain their original capability xattrs.
     run(['umoci', 'unpack', '--rootless', '--image', f'{work / "oci"}:candidate', work / 'bundle'])
     if not args.keep_work:
         shutil.rmtree(work / 'oci')
