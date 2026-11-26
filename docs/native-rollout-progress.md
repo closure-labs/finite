@@ -343,6 +343,40 @@ bootable root matched
 The local fixture demonstrates the importer and sealer cleanup changes. The
 hosted job above provides the full-profile fresh-install evidence.
 
+## Hosted upgrades and rollback
+
+Change `uvttrxyp` adds the sequential capped lifecycle jobs. The fixtures
+pair the stable kernel `7.2.11-300.fc45.x86_64` with the pinned Fedora 45
+loader `262-3.fc45` and a full update image using kernel
+`7.3.4-300.fc45.x86_64` and loader `262.1-1.fc45`. The update uses the
+authenticated Bluefin and Bluefin DX manifests recorded in
+`sources/native-lifecycle-fixture.json`. Each guest imports its update
+through `bootc switch` from a read-only VirtIO OCI archive. Five boots
+cover staging, the new root, the new running EFI loader, the restored
+root and the restored running loader. Receipts require matching signed
+root and EFI identities, Secure Boot, SELinux, signed modules and
+persistent `/etc` and `/var` state.
+[Fedora baseline package](https://packages.fedoraproject.org/pkgs/systemd/systemd-boot-unsigned/fedora-45.html)
+
+The stable job in run `45863337122` built both roots and an ISO with
+SHA-256 `4ceb61304c0cfef3b28956d019c57ec433eb003195bbe47720b8c539b858d212`.
+The guest installed, booted the older kernel and loader, and staged the
+sealed update. The host stopped at a nested brace in a partial serial
+read, before an upgraded boot. Change `lrnxlqly` requires complete JSON
+lines and frames the full bootc status as numbered 256-byte chunks.
+The replacement run `45877540862` exercises that fix for both profiles.
+[Stable failure evidence](https://github.com/closure-labs/finite/actions/runs/45863337122/artifacts/15143609769)
+[Replacement run](https://github.com/closure-labs/finite/actions/runs/45877540862)
+
+The local `qualification/native-migration` bookmark prepares the
+workstation-layout rehearsal. Changes `pmmnzpkr`, `nwsysplz` and
+`vvpvlpot` add the exact sparse GPT fixture, old OSTree and new
+`root-native` subvolumes, shared home and Nix state, independent LUKS
+keyslots, and three isolated failure cases. The local regular-file
+checks verified GPT and keyslot arithmetic. The hosted rehearsal
+follows both lifecycle passes and supplies the evidence needed for the
+hardware runbook.
+
 ## Next execution sequence
 
 1. Extend full-profile qualification to cover real kernel and loader upgrades,
