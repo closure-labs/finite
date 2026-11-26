@@ -7,6 +7,8 @@ import runpy
 import subprocess
 import sys
 
+from serial_records import emit_record
+
 
 def run(*args):
     return subprocess.check_output(args, text=True, timeout=120).strip()
@@ -68,12 +70,12 @@ def main():
     require(not any(row.startswith('BootNext: ') for row in firmware), 'One-time boot entry not consumed')
     boot_type = run('findmnt', '-n', '-o', 'FSTYPE', '--mountpoint', '/boot')
     require(boot_type == ('vfat' if native else 'ext4'), 'Boot filesystem differs')
-    print('FINITE_MIGRATION_BOOT ' + json.dumps({
+    emit_record('FINITE_MIGRATION_BOOT', {
         'native': native, 'bootOrder': order, 'bootCurrent': current,
         'bootId': Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
         'preflight': preflight, 'secureBoot': True, 'selinuxEnforcing': True,
         'uid': 1234, 'gid': 2345, 'sharedHome': True, 'sharedNix': True,
-    }), flush=True)
+    })
     run('sync')
     run('systemctl', '--no-block', 'poweroff')
 

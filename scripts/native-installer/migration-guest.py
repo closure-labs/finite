@@ -13,6 +13,7 @@ import sys
 import tempfile
 
 import migration_layout as layout
+from serial_records import emit_record
 
 WORK = Path('/run/finite-migration')
 TOP = WORK / 'top'
@@ -48,7 +49,7 @@ def sha256(path):
 
 
 def mark(phase, **facts):
-    print('FINITE_MIGRATION ' + json.dumps({'phase': phase, **facts}), flush=True)
+    emit_record('FINITE_MIGRATION', {'phase': phase, **facts})
 
 
 def mount(device, target, options=None):
@@ -102,6 +103,8 @@ def add_observation(root):
     (etc / 'finite-migration/observe.py').write_bytes(OBSERVATION.read_bytes())
     (etc / 'finite-migration/preflight.py').write_bytes(
         Path('/usr/libexec/finite/systemd-boot-preflight.py').read_bytes())
+    (etc / 'finite-migration/serial_records.py').write_bytes(
+        OBSERVATION.with_name('serial_records.py').read_bytes())
     unit_path = etc / 'systemd/system/finite-migration-observe.service'
     unit_path.write_text(unit)
     wants = unit_path.parent / 'multi-user.target.wants'

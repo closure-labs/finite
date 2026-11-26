@@ -80,8 +80,9 @@ def qualify(args):
                     guest.expect(rb'LUKS alternate passphrase:')
                     guest.send(alternate)
                 for event in [*events, 'shutdown']:
-                    match = guest.expect(rb'FINITE_MIGRATION (\{"phase": "' + event.encode() + rb'"[^\r\n]*\})')
-                    observations[event] = json.loads(match[1])
+                    outcome = guest.record(b'FINITE_MIGRATION')
+                    require(outcome['phase'] == event, 'Out-of-order rescue checkpoint for ' + phase)
+                    observations[event] = outcome
                 guest.shutdown()
         return observations
 
@@ -91,7 +92,7 @@ def qualify(args):
             with Guest(guest_command(disk, vars_file, phase), log, 900) as guest:
                 guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
                 guest.send(alternate if phase == 'new' else password)
-                result = json.loads(guest.expect(rb'FINITE_MIGRATION_BOOT (\{[^\r\n]+\})')[1])
+                result = guest.record(b'FINITE_MIGRATION_BOOT')
                 guest.shutdown()
         result['unlockKeyslot'] = 'alternate' if phase == 'new' else 'primary'
         return result
