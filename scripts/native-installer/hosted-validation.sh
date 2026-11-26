@@ -60,6 +60,11 @@ openssl x509 -inform DER -in "$work/module.der" -out "$work/module.pem"
 skopeo copy "docker-daemon:localhost/finite-validation:$profile" "oci-archive:$work/raw.oci.tar"
 docker image rm "localhost/finite-validation:$profile" "localhost/finite-validation-root:$profile"
 docker image rm --force "${candidates[0]}"
+# The archive is now the only input to sealing. Drop both Docker build caches
+# on the disposable runner before allocating canonical import and ISO trees.
+docker buildx prune --builder bluebuild --all --force
+docker builder prune --all --force
+df -h -- "$work"
 printf 'Building the pinned importer and sealing the %s archive\n' "$profile"
 tools=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-boot-tools --no-link --print-out-paths)
 importer=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-bootc --no-link --print-out-paths)
@@ -85,7 +90,6 @@ podman_started=true
 ISO_OUTPUT_DIR="$output" nice -n 19 bash scripts/native-installer/build-iso.sh ghcr.io/closure-labs/finite "$profile" "$digest" \
   "$work/sealed.oci.tar" "$work/seal/sealed.json"
 (cd "$output" && sha256sum --check SHA256SUMS)
-rm "$work/sealed.oci.tar"
 printf 'Booting the %s installer in the capped VM\n' "$profile"
 nice -n 19 python3 scripts/native-installer/qualify-iso.py \
   --iso "$output/finite-native-installer-$profile.iso" \

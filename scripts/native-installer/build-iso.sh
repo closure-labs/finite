@@ -34,6 +34,9 @@ revision=${GITHUB_SHA:?}
 validation=false
 if [[ -n $validation_archive || -n $validation_receipt ]]; then
   [[ ${GITHUB_REF:-} == refs/heads/qualification/native-iso && $# == 5 ]]
+  # The hosted validator transfers ownership of its fresh temporary archive.
+  [[ $validation_archive == "${RUNNER_TEMP:?}"/native-iso.????????/sealed.oci.tar ]]
+  [[ -f $validation_archive && $(realpath -- "$validation_archive") == "$validation_archive" ]]
   archive_hash=$(sha256sum -- "$validation_archive" | cut -d' ' -f1)
   jq -e --arg sha "$archive_hash" --arg profile "$tag" --arg revision "$revision" '
     .schema == 1 and .validationOnly == true and .archiveSha256 == $sha and
@@ -54,6 +57,9 @@ architecture=$(sudo podman image inspect --format '{{index .Labels "io.finite.bo
 [[ $profile == "$tag" && $architecture == native-composefs ]] || {
   echo 'Payload must be the matching native profile, authenticated by digest.' >&2; exit 2;
 }
+if [[ $validation == true ]]; then
+  rm -- "$validation_archive"
+fi
 sudo podman build --pull=never \
   --build-arg "PAYLOAD=$payload" --build-arg "PAYLOAD_REF=$payload" --build-arg "PAYLOAD_DIGEST=$digest" \
   --build-arg "VALIDATION=$validation" \
@@ -62,10 +68,14 @@ sudo podman build --pull=never \
 sudo podman pull "$builder"
 
 mkdir -p "$output"
+cache=$(mktemp -d "${RUNNER_TEMP:?}/native-osbuild.XXXXXXXX")
+trap 'sudo rm -rf -- "$cache"' EXIT
+df -h -- "$cache" "$output"
 sudo podman run --rm --privileged --security-opt label=disable \
   -v /var/lib/containers/storage:/var/lib/containers/storage \
   -v "$output":/output \
-  "$builder" build --output-dir /output \
+  -v "$cache":/osbuild-cache \
+  "$builder" build --output-dir /output --cache /osbuild-cache \
   --bootc-ref "$installer" --bootc-installer-payload-ref "$payload" --bootc-default-fs ext4 \
   generic-iso
 sudo chown -R "$(id -u):$(id -g)" "$output"
