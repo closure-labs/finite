@@ -174,7 +174,10 @@ class Plan(unittest.TestCase):
         steps = installer.plan(disk(), PINS)
         deployment = str(installer.DEPLOYMENT)
         mount = ('bootc', 'install', 'mount', '--sysroot', str(installer.TARGET), '--latest', deployment)
-        updater = self.argv(steps, '/usr/libexec/finite/update-efi').argv
+        updater = self.argv(steps, '/usr/bin/python3').argv
+        self.assertEqual(updater[:2], ('/usr/bin/python3', '/usr/libexec/finite/update-efi'))
+        unit = ROOT / 'files/system/usr/lib/systemd/system/finite-efi-update.service'
+        self.assertIn('ExecStart=' + ' '.join(updater[:2]), unit.read_text().splitlines())
         self.assertEqual(updater[updater.index('--install-root') + 1], deployment)
         self.assertEqual(updater[updater.index('--state') + 1], deployment + '/var/lib/finite/efi-updates')
         commands = [step.argv for step in steps]

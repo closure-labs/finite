@@ -166,7 +166,7 @@ def plan(disk, pins, *, fido2=False, recovery_key=True):
         Step('Enable maintained shim fallback files in the installed configuration',
              ('/usr/libexec/finite/finite-native-install', 'configure-target')),
         Step('Install shim, MokManager and the signed systemd-boot',
-             ('/usr/libexec/finite/update-efi', '--install-root', deployment,
+             ('/usr/bin/python3', '/usr/libexec/finite/update-efi', '--install-root', deployment,
               '--esp', target + '/efi', '--state', deployment + '/var/lib/finite/efi-updates')),
         Step('Label the installed configuration and EFI recovery journal',
              ('chroot', deployment, 'restorecon', '-RF', '/etc/finite', '/var/lib/finite/efi-updates')),
