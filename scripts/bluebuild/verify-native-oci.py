@@ -49,7 +49,9 @@ def check_importer(bootc, lock, validation_sha=None):
     if validation_sha is not None:
         if not (os.environ.get('GITHUB_ACTIONS') == 'true'
                 and os.environ.get('GITHUB_REPOSITORY') == 'closure-labs/finite'
-                and os.environ.get('GITHUB_REF') == 'refs/heads/qualification/native-iso'
+                and os.environ.get('GITHUB_REF') in {
+                    'refs/heads/qualification/native-iso', 'refs/heads/qualification/native-lifecycle',
+                }
                 and bootc.is_relative_to('/nix/store')
                 and re.fullmatch('[0-9a-f]{64}', validation_sha)):
             raise ValueError('Runner-built importer requires the dedicated disposable qualification workflow')

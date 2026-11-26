@@ -88,6 +88,99 @@ class Guest:
         self.process.stdin.write(value.encode() + b'\r')
         self.process.stdin.flush()
 
+    def shutdown(self):
+        while time.monotonic() < self.deadline:
+            if available_mib() < RESERVE_MIB:
+                raise RuntimeError('Host fell below the 3 GiB available-memory reserve')
+            if self.selector.select(timeout=1):
+                data = os.read(self.process.stdout.fileno(), 65536)
+                if not data:
+                    if self.process.wait(timeout=10) != 0:
+                        raise RuntimeError('QEMU exited unsuccessfully after shutdown')
+                    return
+                self.log.write(data)
+                self.log.flush()
+        raise RuntimeError('Timed out waiting for clean guest shutdown')
+
+
+def boot_facts(guest, password, seal):
+    guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
+    guest.send(password)
+    match = guest.expect(rb'FINITE_NATIVE_FRESH_BOOT (\{[^\r\n]+\})')
+    facts = json.loads(match[1])
+    if (facts['profile'] != seal['profile'] or facts['bootableRootDigest'] != seal['bootableRootDigest']
+            or any(facts.get(key) is not True for key in (
+                'secureBoot', 'selinuxEnforcing', 'encryptedRoot', 'efiUpdaterSucceeded'))
+            or facts.get('signedModules') != ['zfs', 'v4l2loopback']
+            or facts.get('espBytes') != 600 * 1024**2 or facts.get('xbootldrBytes') != 4 * 1024**3):
+        raise ValueError('Observed guest acceptance differs from the exact native seal or required boot facts')
+    return facts
+
+
+def verify_update(base, update, archive):
+    if (update['profile'] != base['profile'] or update['sourceRevision'] != base['sourceRevision']
+            or update['certificateDerSha256'] != base['certificateDerSha256']
+            or update['validationOnly'] is not True or update['integrity']['strictVerity'] is not True
+            or update['integrity']['archiveSha256'] != update['archiveSha256']
+            or update['integrity']['bootableRootDigest'] != update['bootableRootDigest']
+            or update['archiveSha256'] != file_sha256(archive)):
+        raise ValueError('Update is not the exact verified archive for this validation profile')
+    for field in ('kernelRelease', 'bootableRootDigest'):
+        if update[field] == base[field]:
+            raise ValueError('Upgrade fixture did not change ' + field)
+    for field in ('unsignedSha256', 'signedSha256'):
+        if update['validationLoader'][field] == base['validationLoader'][field]:
+            raise ValueError('Upgrade fixture did not change the EFI payload bytes')
+
+
+def qualify_lifecycle(args, state, common, password, base, update):
+    inputs = args.update_archive.resolve(strict=True).parent
+    media = state / 'update.raw'
+    with media.open('xb') as stream:
+        stream.truncate(args.update_archive.stat().st_size + 512 * 1024**2)
+    subprocess.run(['mkfs.ext4', '-q', '-F', '-m', '0', '-d', inputs, media], check=True, timeout=900)
+    extra = ['-drive', f'if=none,id=update,format=raw,readonly=on,file={media}',
+             '-device', 'virtio-blk-pci,drive=update,serial=FINITEUPDATE']
+    phases = [('stage', base), ('updated', update), ('rollback', update), ('restored', base), ('verified', base)]
+    observed = {}
+    boot_ids = set()
+    for phase, expected in phases:
+        print(f'{base["profile"]}: booting lifecycle phase {phase}', flush=True)
+        with (args.evidence / f'{phase}-serial.log').open('xb') as serial:
+            with Guest(common + ['-smbios', f'type=1,serial=finite-lifecycle-{phase}']
+                       + (extra if phase == 'stage' else []), serial, 2400 if phase == 'stage' else 900) as guest:
+                facts = boot_facts(guest, password, expected)
+                loader = expected['validationLoader']['signedSha256']
+                if (facts['kernelRelease'] != expected['kernelRelease'] or facts['espLoaderSha256'] != loader
+                        or facts['fallbackLoaderSha256'] != loader or not facts['loaderInfo'].startswith('systemd-boot ')
+                        or facts['bootId'] in boot_ids):
+                    raise ValueError(f'{phase}: unexpected kernel, EFI files, loader identity, or repeated boot')
+                boot_ids.add(facts['bootId'])
+                if phase != 'stage' and (len(facts['persistence']) != 2 or not all(facts['persistence'].values())):
+                    raise ValueError(f'{phase}: /etc or /var persistence differs')
+                if phase in {'stage', 'rollback'}:
+                    match = guest.expect(rb'FINITE_NATIVE_TRANSITION (\{[^\r\n]+\})')
+                    transition = json.loads(match[1])
+                    if transition['phase'] != phase or (phase == 'stage' and not transition['status'].get('staged')):
+                        raise ValueError(f'{phase}: unexpected bootc transition state')
+                    (args.evidence / f'{phase}-status.json').write_text(json.dumps(transition, indent=2) + '\n')
+                guest.expect(rb'FINITE_NATIVE_SHUTDOWN ' + phase.encode() + rb'\r?\n')
+                guest.shutdown()
+                observed[phase] = facts
+        if phase == 'stage':
+            media.unlink()
+    if (observed['stage']['loaderInfo'] != args.baseline_loader
+            or observed['rollback']['loaderInfo'] != args.updated_loader
+            or observed['verified']['loaderInfo'] != args.baseline_loader):
+        raise ValueError('Running EFI loader versions did not follow the baseline, upgrade and rollback')
+    return {
+        'updateArchiveSha256': update['archiveSha256'],
+        'loaderBinaryChanged': True,
+        'phases': observed,
+        'upgradeAccepted': True,
+        'rollbackAccepted': True,
+    }
+
 
 def qualify(args):
     iso = args.iso.resolve(strict=True)
@@ -103,6 +196,18 @@ def qualify(args):
     if f'{iso_hash}  {iso.name}' not in checksum or (
             f'{file_sha256(iso.parent / "installation.json")}  installation.json' not in checksum):
         raise ValueError('ISO or installation metadata checksum differs')
+    update = None
+    mok_certificates = [args.certificate, args.module_certificate]
+    if args.update_archive:
+        archive = args.update_archive.resolve(strict=True)
+        if (archive.name != 'update.oci.tar' or {path.name for path in archive.parent.iterdir()} != {
+                'update.oci.tar', 'update.json'} or not args.update_module_certificate
+                or not args.baseline_loader or not args.updated_loader or args.baseline_loader == args.updated_loader):
+            raise ValueError('Use a dedicated directory with a sealed update and specify both expected loader versions')
+        update = json.loads(archive.with_name('update.json').read_text())
+        verify_update(seal, update, archive)
+        if args.update_module_certificate.read_bytes() != args.module_certificate.read_bytes():
+            mok_certificates.append(args.update_module_certificate)
     if not os.access('/dev/kvm', os.R_OK | os.W_OK):
         raise RuntimeError('KVM must be available before qualification')
     state = args.state.resolve()
@@ -113,9 +218,10 @@ def qualify(args):
                        stdout=layout, stderr=subprocess.STDOUT, check=True, timeout=30)
     firmware = Path(os.environ['FINITE_VM_FIRMWARE_DIR'])
     vars_file = state / 'OVMF_VARS.fd'
-    subprocess.run(['virt-fw-vars', '--input', firmware / 'OVMF_VARS_4M.ms.fd',
-                    '--output', vars_file, '--add-mok', MOK_GUID, args.certificate,
-                    '--add-mok', MOK_GUID, args.module_certificate], check=True, timeout=30)
+    command = ['virt-fw-vars', '--input', firmware / 'OVMF_VARS_4M.ms.fd', '--output', vars_file]
+    for certificate in mok_certificates:
+        command.extend(['--add-mok', MOK_GUID, certificate])
+    subprocess.run(command, check=True, timeout=30)
     disk = state / 'target.qcow2'
     subprocess.run(['qemu-img', 'create', '-f', 'qcow2', disk, '64G'], check=True, timeout=30)
     common = ['-enable-kvm', '-machine', 'q35,smm=on', '-cpu', 'host', '-smp', '2',
@@ -140,18 +246,14 @@ def qualify(args):
             guest.send(password)
             guest.expect(rb'Installation complete\.')
     print(f'{profile} installation completed; starting first encrypted boot', flush=True)
-    with (args.evidence / 'first-boot-serial.log').open('xb') as serial:
-        with Guest(common, serial, 900) as guest:
-            guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
-            guest.send(password)
-            match = guest.expect(rb'FINITE_NATIVE_FRESH_BOOT (\{[^\r\n]+\})')
-            facts = json.loads(match[1])
-    if (facts['profile'] != profile or facts['bootableRootDigest'] != seal['bootableRootDigest']
-            or any(facts.get(key) is not True for key in (
-                'secureBoot', 'selinuxEnforcing', 'encryptedRoot', 'efiUpdaterSucceeded'))
-            or facts.get('signedModules') != ['zfs', 'v4l2loopback']
-            or facts.get('espBytes') != 600 * 1024**2 or facts.get('xbootldrBytes') != 4 * 1024**3):
-        raise ValueError('Observed guest acceptance differs from the exact native seal or required boot facts')
+    lifecycle = None
+    if update:
+        lifecycle = qualify_lifecycle(args, state, common, password, seal, update)
+        facts = lifecycle['phases']['stage']
+    else:
+        with (args.evidence / 'first-boot-serial.log').open('xb') as serial:
+            with Guest(common, serial, 900) as guest:
+                facts = boot_facts(guest, password, seal)
     report = {'schema': 1, 'scope': 'fresh encrypted installation and boot', 'validationOnly': True,
               'sourceRevision': seal['sourceRevision'], 'image': metadata['payload'], 'isoSha256': iso_hash,
               'bootCertificateDerSha256': seal['certificateDerSha256'],
@@ -160,15 +262,23 @@ def qualify(args):
               'hostReserveMiB': RESERVE_MIB, 'vcpu': 2, 'freshAccepted': True, **facts}
     (args.evidence / 'fresh-acceptance.json').write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))
+    if lifecycle:
+        lifecycle = {**report, 'scope': 'fresh install, offline bootc switch, and rollback', **lifecycle}
+        (args.evidence / 'lifecycle-acceptance.json').write_text(json.dumps(lifecycle, indent=2) + '\n')
+        print(f'{profile}: accepted offline upgrade and rollback', flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('iso', 'seal', 'certificate', 'module-certificate', 'state', 'evidence'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--update-archive', type=Path)
+    parser.add_argument('--update-module-certificate', type=Path)
+    parser.add_argument('--baseline-loader')
+    parser.add_argument('--updated-loader')
     try:
         qualify(parser.parse_args())
-    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
+    except (KeyError, OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         sys.exit(f'Native ISO guest qualification failed: {error}')
 
 

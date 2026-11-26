@@ -224,6 +224,8 @@ def seal(args, secret):
         sign(unsigned_uki, signed_uki)
         uki_files = [oci.File(f'boot/EFI/Linux/{release}.efi', signed_uki)]
         oci.append(unsigned_root, output, uki_files, existing_directories=existing_parents(root, uki_files))
+    if args.validation_only:
+        validation_loader = {'unsignedSha256': oci.sha256(loader), 'signedSha256': payloads['grubx64.efi']}
     if not args.keep_work:
         # The independent import below needs neither the signing rootfs nor
         # its intermediate archive. Release both before allocating another rootfs.
@@ -242,6 +244,8 @@ def seal(args, secret):
               'kernelRelease': release, 'epoch': args.epoch, 'validationOnly': args.validation_only,
               'tools': str(tools), 'importerSha256': importer_sha,
               'integrity': json.loads((work / 'integrity.json').read_text())}
+    if args.validation_only:
+        report['validationLoader'] = validation_loader
     with (work / 'sealed.json').open('x') as stream:
         json.dump(report, stream, indent=2)
         stream.write('\n')

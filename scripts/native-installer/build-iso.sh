@@ -35,7 +35,8 @@ trap 'sudo rm -rf -- "$cache"' EXIT
 # Only the dedicated validation run accepts an archive sealed with a VM key.
 validation=false
 if [[ -n $validation_archive || -n $validation_receipt ]]; then
-  [[ ${GITHUB_REF:-} == refs/heads/qualification/native-iso && $# == 5 ]]
+  [[ (${GITHUB_REF:-} == refs/heads/qualification/native-iso ||
+       ${GITHUB_REF:-} == refs/heads/qualification/native-lifecycle) && $# == 5 ]]
   # The hosted validator transfers ownership of its fresh temporary archive.
   [[ $validation_archive == "${RUNNER_TEMP:?}"/native-iso.????????/sealed.oci.tar ]]
   [[ -f $validation_archive && $(realpath -- "$validation_archive") == "$validation_archive" ]]
