@@ -294,7 +294,16 @@ and require a successful runtime EFI update in the fresh-boot receipt. A
 first-boot failure now prints a complete capture marker and the EFI journal
 tail when applicable. All 59 targeted native and MOK tests passed. Run
 [45803664314](https://github.com/closure-labs/finite/actions/runs/45803664314)
-tests both profiles at `c78451f8`. Both fresh acceptance receipts remain pending.
+tests both profiles at `c78451f8`. `finite-native` built, checksum-verified its
+ISO, completed the offline install and passed the first encrypted boot in one
+two-vCPU, 3 GiB guest with a 3 GiB runner reserve. Its exact ISO SHA-256 is
+`3a605a195a43b2d001b977064d25381ad260a813ec3ba3ec0cad382ecbe978a5`.
+[Artifact 15115561134](https://github.com/closure-labs/finite/actions/runs/45803664314/artifacts/15115561134)
+holds the passing `fresh-acceptance.json`, checksum inventory, seal and both
+transcripts. The receipt matches the strict composefs root and signing
+certificate and confirms Secure Boot, enforcing SELinux, LUKS2-backed sysroot,
+the runtime EFI refresh, both boot partitions and signed ZFS and v4l2loopback.
+The same runner is building `finite-native-dev`. Its acceptance remains pending.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
