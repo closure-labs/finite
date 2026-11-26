@@ -364,9 +364,17 @@ The guest installed, booted the older kernel and loader, and staged the
 sealed update. The host stopped at a nested brace in a partial serial
 read, before an upgraded boot. Change `lrnxlqly` requires complete JSON
 lines and frames the full bootc status as numbered 256-byte chunks.
-The replacement run `45877540862` exercises that fix for both profiles.
+Run `45877540862` recovered all seven transition chunks. The staged
+root digest matched the independently verified candidate and the audit
+log recorded successful finalization before poweroff. The console
+appended a kernel message directly to the preceding boot receipt, so
+the host did not reopen the disk for the upgraded boot. Change
+`wzokysmv` adds numbered Base64 frames with explicit terminators for
+the boot, transition and shutdown receipts. Run `45889758659` tests
+both profiles with this protocol.
 [Stable failure evidence](https://github.com/closure-labs/finite/actions/runs/45863337122/artifacts/15143609769)
-[Replacement run](https://github.com/closure-labs/finite/actions/runs/45877540862)
+[Second stable artifact](https://github.com/closure-labs/finite/actions/runs/45877540862/artifacts/15151330081)
+[Current run](https://github.com/closure-labs/finite/actions/runs/45889758659)
 
 The local `qualification/native-migration` bookmark prepares the
 workstation-layout rehearsal. Changes `pmmnzpkr`, `nwsysplz` and
