@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45757155098)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45757338767)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -241,11 +241,12 @@ the image into a second `containers-storage` instance during ISO assembly,
 where the original manifest digest could change. The serial collector killed
 each guest on the error prefix and cut off the rest of the diagnostic.
 
-The retry at `ef1c26cd` embeds the authenticated OCI layout directly, verifies
+The retry at `964750b5` embeds the authenticated OCI layout directly, verifies
 the original manifest SHA-256 during media build and guest preflight, and keeps
 the installed native registry update tag. The capped guest records complete
 error lines, and each profile uploads evidence as soon as its step finishes.
-Both full VM acceptance receipts remain pending.
+The 330-minute job timeout accommodates both bounded guest runs after the
+observed 200-minute assembly run. Both full VM acceptance receipts remain pending.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
