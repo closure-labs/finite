@@ -29,6 +29,13 @@ def file_sha256(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
+def install_media(iso):
+    # The hybrid ISO includes a GPT ESP for disk/USB boot. OVMF's optical
+    # path failed to read GRUB from the larger development ISO.
+    return ['-drive', f'if=none,id=media,format=raw,readonly=on,file={iso}',
+            '-device', 'virtio-blk-pci,drive=media,bootindex=1,serial=FINITEINSTALLMEDIA']
+
+
 class Guest:
     def __init__(self, arguments, log, timeout):
         if available_mib() < MEMORY_MIB + RESERVE_MIB:
@@ -101,6 +108,9 @@ def qualify(args):
     state = args.state.resolve()
     state.mkdir(mode=0o700)
     args.evidence.mkdir(parents=True, exist_ok=True)
+    with (args.evidence / 'media-layout.log').open('xb') as layout:
+        subprocess.run(['xorriso', '-indev', iso, '-report_system_area', 'plain', '-report_el_torito', 'plain'],
+                       stdout=layout, stderr=subprocess.STDOUT, check=True, timeout=30)
     firmware = Path(os.environ['FINITE_VM_FIRMWARE_DIR'])
     vars_file = state / 'OVMF_VARS.fd'
     subprocess.run(['virt-fw-vars', '--input', firmware / 'OVMF_VARS_4M.ms.fd',
@@ -119,9 +129,8 @@ def qualify(args):
     # The only writable guest disk is a fresh qcow2 we created. The
     # disposable password stays in memory and is never passed on a command line.
     password = secrets.token_hex(16)
-    install = ['-boot', 'd', '-cdrom', str(iso)]
     with (args.evidence / 'install-serial.log').open('xb') as serial:
-        with Guest(common + install, serial, 2400) as guest:
+        with Guest(common + install_media(iso), serial, 2400) as guest:
             guest.expect(rb'Finite native installer[^\r\n]*Secure Boot enabled')
             guest.expect(rb'Type the disk ID "virtio-FINITEQUALIFICATION" to continue:')
             guest.send('virtio-' + DISK_SERIAL)
@@ -146,6 +155,7 @@ def qualify(args):
     report = {'schema': 1, 'scope': 'fresh encrypted installation and boot', 'validationOnly': True,
               'sourceRevision': seal['sourceRevision'], 'image': metadata['payload'], 'isoSha256': iso_hash,
               'bootCertificateDerSha256': seal['certificateDerSha256'],
+              'installerMedium': 'read-only hybrid ISO attached as a VirtIO disk',
               'mokEnrollment': 'pre-enrolled disposable OVMF variables', 'memoryMiB': MEMORY_MIB,
               'hostReserveMiB': RESERVE_MIB, 'vcpu': 2, 'freshAccepted': True, **facts}
     (args.evidence / 'fresh-acceptance.json').write_text(json.dumps(report, indent=2) + '\n')

@@ -427,6 +427,17 @@ class Media(unittest.TestCase):
                     guest.expect(rb'Installation complete\.')
                 self.assertEqual(guest.log.getvalue(), b''.join(chunks))
 
+    def test_hybrid_iso_uses_a_distinct_read_only_boot_device(self):
+        spec = importlib.util.spec_from_file_location('qualify_iso', self.directory / 'qualify-iso.py')
+        qual = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(qual)
+        args = qual.install_media(Path('/tmp/finite-native-dev.iso'))
+        self.assertEqual(args, [
+            '-drive', 'if=none,id=media,format=raw,readonly=on,file=/tmp/finite-native-dev.iso',
+            '-device', 'virtio-blk-pci,drive=media,bootindex=1,serial=FINITEINSTALLMEDIA',
+        ])
+        self.assertNotEqual('FINITEINSTALLMEDIA', qual.DISK_SERIAL)
+
     def test_workflow_is_manual_main_only_and_uploads_unqualified_media(self):
         import yaml
         workflow = yaml.safe_load((ROOT / '.github/workflows/native-iso.yml').read_text())
