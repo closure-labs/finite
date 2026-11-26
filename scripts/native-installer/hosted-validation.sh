@@ -14,14 +14,17 @@ mkdir -p "$evidence"
 work=$(mktemp -d "$RUNNER_TEMP/native-iso.XXXXXXXX")
 podman_started=false
 container=''
+release_media_images() {
+  sudo podman image rm --ignore "localhost/finite-native-installer:$profile" \
+    "ghcr.io/closure-labs/finite:$profile"
+}
 cleanup() {
   if [[ -n $container ]]; then
     docker rm "$container" || true
   fi
   rm -rf -- "$work"
   if [[ $podman_started == true ]]; then
-    sudo podman image rm --ignore "localhost/finite-native-installer:$profile" \
-      "ghcr.io/closure-labs/finite:$profile" || true
+    release_media_images || true
   fi
   if [[ -d $output ]]; then
     # The serial transcript and exact checksums are the retained evidence.
@@ -90,6 +93,11 @@ podman_started=true
 ISO_OUTPUT_DIR="$output" nice -n 19 bash scripts/native-installer/build-iso.sh ghcr.io/closure-labs/finite "$profile" "$digest" \
   "$work/sealed.oci.tar" "$work/seal/sealed.json"
 (cd "$output" && sha256sum --check SHA256SUMS)
+# Installation consumes the embedded payload from the verified ISO. Give the
+# sparse guest disk the space held by the two assembly-only Podman images.
+release_media_images
+podman_started=false
+df -h -- "$work" "$output"
 printf 'Booting the %s installer in the capped VM\n' "$profile"
 nice -n 19 python3 scripts/native-installer/qualify-iso.py \
   --iso "$output/finite-native-installer-$profile.iso" \
