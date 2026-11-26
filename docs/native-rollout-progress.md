@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45735032665)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45757155098)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -219,12 +219,33 @@ The runner started with 88 GiB free and skipped cleanup at the old threshold.
 During osbuild's embedded payload copy it had 26 MiB left and the write failed
 with `ENOSPC`. The dev archive then hit `ENOSPC` in the canonical bootc import.
 
-The active retry at `16d4599a` increases the runner cleanup threshold, drops
+The retry at `16d4599a` increases the runner cleanup threshold, drops
 both Docker build caches after OCI export, releases the sealed archive after
 matching Podman import, and removes the per-build osbuild cache at exit. It
 also removes the two assembly-only Podman images after ISO checksum verification
 and before allocating the QEMU guest disk. Free space is logged before sealing,
-osbuild and QEMU. There is no successful ISO or fresh boot receipt yet.
+osbuild and QEMU.
+
+Run [45735032665](https://github.com/closure-labs/finite/actions/runs/45735032665)
+successfully assembled and checksum-verified both native ISOs. Both sets of
+installation records and strict native seal records are retained in
+[artifact 15088485817](https://github.com/closure-labs/finite/actions/runs/45735032665/artifacts/15088485817).
+Their validation-only ISO SHA-256 values are:
+
+- `finite-native`: `2f0b3a05c6d5d8ef4c37750163fd7548946de7484e6bb09cafb4d2c19f8f60fa`
+- `finite-native-dev`: `886722533d164c6625206b7b727f2d486b482c37283f389451a92b4d7cf970fc`
+
+Both guests reached the installer under UEFI and stopped before disk selection.
+Stable began the embedded-payload error. The original offline transport copied
+the image into a second `containers-storage` instance during ISO assembly,
+where the original manifest digest could change. The serial collector killed
+each guest on the error prefix and cut off the rest of the diagnostic.
+
+The retry at `ef1c26cd` embeds the authenticated OCI layout directly, verifies
+the original manifest SHA-256 during media build and guest preflight, and keeps
+the installed native registry update tag. The capped guest records complete
+error lines, and each profile uploads evidence as soon as its step finishes.
+Both full VM acceptance receipts remain pending.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
