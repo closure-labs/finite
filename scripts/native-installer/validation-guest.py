@@ -61,7 +61,7 @@ def lifecycle(phase):
         status = json.loads(capture('bootc', 'status', '--json'))['status']
         emit_record('FINITE_NATIVE_TRANSITION', {'phase': phase, 'status': status})
     capture('sync')
-    print('FINITE_NATIVE_SHUTDOWN ' + phase, flush=True)
+    emit_record('FINITE_NATIVE_SHUTDOWN', {'phase': phase})
     capture('systemctl', '--no-block', 'poweroff')
 
 
@@ -124,7 +124,7 @@ def main():
             'fallbackLoaderSha256': sha256(Path('/efi/EFI/BOOT/grubx64.efi')),
             'persistence': {str(path): path.is_file() and path.read_text() == SENTINEL for path in SENTINELS},
         })
-    print('FINITE_NATIVE_FRESH_BOOT ' + json.dumps(facts), flush=True)
+    emit_record('FINITE_NATIVE_FRESH_BOOT', facts)
     if phase != identifier:
         lifecycle(phase)
 

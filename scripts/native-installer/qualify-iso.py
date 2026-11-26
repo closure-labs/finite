@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Install and boot an exact disposable native ISO with one capped KVM guest."""
 import argparse
+import base64
 import hashlib
 import json
 import os
@@ -78,7 +79,7 @@ class Guest:
             if self.selector.select(timeout=1):
                 data = os.read(self.process.stdout.fileno(), 65536)
                 if not data:
-                    raise RuntimeError('QEMU exited before completing the expected guest phase')
+                    raise RuntimeError('QEMU exited while waiting for guest output: ' + repr(expression))
                 self.log.write(data)
                 self.log.flush()
                 self.output = (self.output + data)[-262144:]
@@ -88,13 +89,11 @@ class Guest:
         self.process.stdin.write(value.encode() + b'\r')
         self.process.stdin.flush()
 
-    def json_line(self, marker):
-        match = self.expect(re.escape(marker) + rb' (\{[^\r\n]+\})\r*\n')
-        return json.loads(match[1])
-
     def record(self, marker):
         prefix = re.escape(marker) + b' '
-        frame = rb' ([^\r\n]{1,256})\r*\n'
+        # Kernel and journal messages can share the same console line.
+        # The end marker is outside the Base64 alphabet.
+        frame = rb' ([A-Za-z0-9+/=]{1,256})\|END\|'
         first = self.expect(prefix + rb'1/([1-9][0-9]{0,2})' + frame)
         total = int(first[1])
         if total > 256:
@@ -103,7 +102,7 @@ class Guest:
         for index in range(2, total + 1):
             ordinal = f'{index}/{total}'.encode()
             parts.append(self.expect(prefix + ordinal + frame)[1])
-        return json.loads(b''.join(parts))
+        return json.loads(base64.b64decode(b''.join(parts), validate=True))
 
     def shutdown(self):
         while time.monotonic() < self.deadline:
@@ -123,7 +122,7 @@ class Guest:
 def boot_facts(guest, password, seal):
     guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
     guest.send(password)
-    facts = guest.json_line(b'FINITE_NATIVE_FRESH_BOOT')
+    facts = guest.record(b'FINITE_NATIVE_FRESH_BOOT')
     if (facts['profile'] != seal['profile'] or facts['bootableRootDigest'] != seal['bootableRootDigest']
             or any(facts.get(key) is not True for key in (
                 'secureBoot', 'selinuxEnforcing', 'encryptedRoot', 'efiUpdaterSucceeded'))
@@ -176,10 +175,17 @@ def qualify_lifecycle(args, state, common, password, base, update):
                     raise ValueError(f'{phase}: /etc or /var persistence differs')
                 if phase in {'stage', 'rollback'}:
                     transition = guest.record(b'FINITE_NATIVE_TRANSITION')
-                    if transition['phase'] != phase or (phase == 'stage' and not transition['status'].get('staged')):
+                    status = transition['status']
+                    if transition['phase'] != phase:
                         raise ValueError(f'{phase}: unexpected bootc transition state')
+                    if phase == 'stage':
+                        staged = status.get('staged') or {}
+                        composefs = staged.get('composefs') or {}
+                        if composefs.get('verity') != update['bootableRootDigest']:
+                            raise ValueError('Staged deployment root differs from the verified update')
                     (args.evidence / f'{phase}-status.json').write_text(json.dumps(transition, indent=2) + '\n')
-                guest.expect(rb'FINITE_NATIVE_SHUTDOWN ' + phase.encode() + rb'\r?\n')
+                if guest.record(b'FINITE_NATIVE_SHUTDOWN')['phase'] != phase:
+                    raise ValueError(f'{phase}: unexpected shutdown receipt')
                 guest.shutdown()
                 observed[phase] = facts
         if phase == 'stage':

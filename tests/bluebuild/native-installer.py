@@ -440,7 +440,7 @@ class Media(unittest.TestCase):
         ])
         self.assertNotEqual('FINITEINSTALLMEDIA', qual.DISK_SERIAL)
 
-    def test_serial_json_waits_for_full_lines_and_reassembles_large_receipts(self):
+    def test_serial_records_handle_fragmented_reads_and_missing_console_newlines(self):
         qual = runpy.run_path(str(self.directory / 'qualify-iso.py'))
         emit = runpy.run_path(str(self.directory / 'serial_records.py'))['emit_record']
         guest = qual['Guest'].__new__(qual['Guest'])
@@ -449,21 +449,25 @@ class Media(unittest.TestCase):
         guest.log = BytesIO()
         guest.selector = SimpleNamespace(select=lambda timeout: True)
         guest.process = SimpleNamespace(stdout=SimpleNamespace(fileno=lambda: 0))
-        small = [b'BOOT {"nested":{"root":"old"}', b',"ready":true}\r\r\n']
+        first = {'nested': {'root': 'old'}, 'ready': True}
         payload = {'phase': 'stage', 'status': {'deployed': 'a' * 1024, 'staged': 'b' * 1024}}
         stream = StringIO()
         with redirect_stdout(stream):
+            emit('BOOT', first)
             emit('TRANSITION', payload)
         lines = stream.getvalue().splitlines()
-        self.assertGreater(len(lines), 1)
+        self.assertGreater(len(lines), 2)
         self.assertTrue(all(len(line) < 300 for line in lines))
-        wire = '\r\r\n'.join('journal prefix ' + line for line in lines).encode() + b'\r\r\n'
-        fragmented = [wire[offset:offset + 41] for offset in range(0, len(wire), 41)]
+        wire = ''.join('journal prefix ' + line + '[26.778346] EXT4-fs: mounted filesystem\r\n'
+                       for line in lines).encode()
+        split = wire.index(b'|END|')
+        fragmented = [wire[:split]] + [wire[offset:offset + 41] for offset in range(split, len(wire), 41)]
         with patch.dict(qual['Guest'].expect.__globals__, available_mib=lambda: qual['RESERVE_MIB']), \
-                patch.object(qual['os'], 'read', side_effect=[*small, *fragmented]):
-            self.assertEqual(guest.json_line(b'BOOT'), {'nested': {'root': 'old'}, 'ready': True})
+                patch.object(qual['os'], 'read', side_effect=fragmented):
+            self.assertEqual(guest.record(b'BOOT'), first)
             self.assertEqual(guest.record(b'TRANSITION'), payload)
-        self.assertEqual(guest.log.getvalue(), b''.join(small) + wire)
+        self.assertIn(b'|END|', guest.log.getvalue())
+        self.assertTrue(wire.startswith(guest.log.getvalue()))
 
     def test_workflow_is_manual_main_only_and_uploads_unqualified_media(self):
         import yaml
