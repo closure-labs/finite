@@ -59,6 +59,7 @@ def qualify(args):
                    check=True, timeout=30)
     iso_harness['prepare_readonly_inputs'](media, inputs, args.legacy_archive.stat().st_size)
     password = secrets.token_hex(16)
+    alternate = secrets.token_hex(16)
 
     def guest_command(disk, vars_file, phase):
         return iso_harness['qemu_arguments'](firmware, vars_file, disk, 'FINITEMIGRATION') + [
@@ -75,6 +76,9 @@ def qualify(args):
             with Guest(command, log, 2400) as guest:
                 guest.expect(rb'LUKS passphrase:')
                 guest.send(password)
+                if phase == 'legacy':
+                    guest.expect(rb'LUKS alternate passphrase:')
+                    guest.send(alternate)
                 for event in [*events, 'shutdown']:
                     match = guest.expect(rb'FINITE_MIGRATION (\{"phase": "' + event.encode() + rb'"[^\r\n]*\})')
                     observations[event] = json.loads(match[1])
@@ -86,9 +90,10 @@ def qualify(args):
         with (args.evidence / f'{name}-serial.log').open('xb') as log:
             with Guest(guest_command(disk, vars_file, phase), log, 900) as guest:
                 guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
-                guest.send(password)
+                guest.send(alternate if phase == 'new' else password)
                 result = json.loads(guest.expect(rb'FINITE_MIGRATION_BOOT (\{[^\r\n]+\})')[1])
                 guest.shutdown()
+        result['unlockKeyslot'] = 'alternate' if phase == 'new' else 'primary'
         return result
 
     def fork(name):
@@ -105,10 +110,15 @@ def qualify(args):
     boots = {'legacyBefore': before}
     recovery = {}
     for phase, events in (
-            ('shrink-fault', ['before-gpt-change']), ('efi-fault', ['before-gpt-change', 'partitioned', 'efi-recovered'])):
+            ('shrink-fault', ['before-gpt-change']),
+            ('efi-fault', ['before-gpt-change', 'partitioned', 'efi-recovered']),
+            ('selector-fault', ['before-gpt-change', 'partitioned', 'native-armed'])):
         disk, vars_file = fork(phase)
         recovery[phase] = rescue(disk, vars_file, phase, events)
         boots[phase] = boot(disk, vars_file, 'old', phase + '-old-boot')
+        if phase == 'selector-fault':
+            require(boots[phase]['bootCurrent'] != recovery[phase]['native-armed']['bootNext'],
+                    'Failed native selection did not return to the existing boot entry')
         disk.unlink()
         vars_file.unlink()
     disk, vars_file = fork('native')

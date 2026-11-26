@@ -30,6 +30,11 @@ def main():
         require(preflight['loader_image'] == r'\EFI\finite\grubx64.efi'
                 and preflight['stub'] and preflight['stub'].startswith('systemd-stub '),
                 'Unexpected running EFI loader or UKI')
+        require(any(level in preflight['kernel_lockdown'] for level in ('[integrity]', '[confidentiality]')),
+                'Kernel lockdown is inactive')
+        deployment = json.loads(run('bootc', 'status', '--json'))['status']['booted']['composefs']
+        require(deployment['bootloader'] == 'systemd' and deployment['bootType'] == 'Uki'
+                and deployment['missingVerityAllowed'] is False, 'Unexpected native integrity policy')
         require(not any(arg.startswith(('root=', 'rootflags=', 'rd.luks.')) for arg in command_line),
                 'Native boot is using machine-specific root or LUKS arguments')
         require(run('findmnt', '-n', '-o', 'FSROOT', '--mountpoint', '/sysroot') == '/root-native',
@@ -76,5 +81,5 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except (OSError, ValueError, subprocess.SubprocessError) as error:
+    except (KeyError, OSError, ValueError, subprocess.SubprocessError) as error:
         sys.exit(f'FINITE_MIGRATION_FAILED {error}')

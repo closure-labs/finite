@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """Create and migrate the dedicated file-backed workstation rehearsal disk."""
+import getpass
 import hashlib
 import json
 import os
@@ -9,6 +10,7 @@ import runpy
 import stat
 import subprocess
 import sys
+import tempfile
 
 import migration_layout as layout
 
@@ -119,7 +121,7 @@ def account_and_home(root, fsuuid):
             '/etc/fstab', '/etc/passwd', '/etc/group', '/etc/shadow', '/etc/gshadow')
 
 
-def legacy(disk, secret):
+def legacy(disk, secret, alternate):
     require(not run('lsblk', '-nr', '-o', 'PARTTYPE', disk), 'Legacy creation requires a blank fixture')
     process('sfdisk', disk, stdin=layout.original_table(disk).encode())
     process('udevadm', 'settle')
@@ -128,6 +130,14 @@ def legacy(disk, secret):
     process('mkfs.fat', '-F', '32', '-n', 'FINITEESP', esp)
     process('mkfs.ext4', '-L', 'LEGACYBOOT', boot)
     process('cryptsetup', 'luksFormat', '--type', 'luks2', '--batch-mode', '--key-file=-', root, stdin=secret)
+    # Both synthetic keys stay on the host or in the guest's private /run.
+    # The raw file is ephemeral and never attached to a qualification receipt.
+    with tempfile.NamedTemporaryFile(prefix='luks-key-', dir=WORK) as key:
+        key.write(alternate)
+        key.flush()
+        process('cryptsetup', 'luksAddKey', '--batch-mode', '--key-file=-', root, key.name, stdin=secret)
+    keyslots = json.loads(run('cryptsetup', 'luksDump', '--dump-json-metadata', root))['keyslots']
+    require(len(keyslots) == 2, 'Fixture requires a distinct alternate LUKS keyslot')
     open_root(root, secret)
     process('mkfs.btrfs', '-L', 'REHEARSAL', DEVICE)
     mount(DEVICE, TOP, 'subvolid=5')
@@ -167,7 +177,7 @@ def legacy(disk, secret):
     process('umount', TOP, MEDIA)
     process('cryptsetup', 'close', MAPPER)
     _, order = boot_firmware()
-    mark('legacy-created', bootOrder=order, gpt=table(disk))
+    mark('legacy-created', bootOrder=order, gpt=table(disk), luksKeyslots=len(keyslots))
 
 
 def resize(disk, secret, *, interrupt=False):
@@ -211,7 +221,7 @@ def efi_inventory(esp, names):
             for path in (esp / name).rglob('*') if path.is_file()}
 
 
-def native(disk, *, interrupt_efi=False):
+def native(disk, phase):
     installer = runpy.run_path('/usr/libexec/finite/finite-native-install')
     pins = installer['load_pins']()
     installer['check_environment'](pins)
@@ -257,7 +267,7 @@ def native(disk, *, interrupt_efi=False):
     account_and_home(DEPLOYMENT, run('blkid', '-s', 'UUID', '-o', 'value', DEVICE))
     state = DEPLOYMENT / 'var/lib/finite/efi-updates'
     updater = '/usr/libexec/finite/update-efi'
-    if interrupt_efi:
+    if phase == 'efi-fault':
         update = runpy.run_path(updater)
         functions = update['apply'].__globals__
         atomic_bytes = functions['atomic_bytes']
@@ -290,14 +300,17 @@ def native(disk, *, interrupt_efi=False):
         _, after = boot_firmware()
         require(after == order, 'Native installation changed the existing BootOrder')
         firmware_label = 'Finite native rehearsal'
+        loader_name = 'not-installed.efi' if phase == 'selector-fault' else 'shimx64.efi'
+        require((esp / 'EFI/finite' / loader_name).exists() == (phase != 'selector-fault'),
+                'Unexpected native selection target')
         process('efibootmgr', '--create-only', '--disk', disk, '--part', '1', '--label', firmware_label,
-                '--loader', r'\EFI\finite\shimx64.efi')
+                '--loader', r'\EFI\finite' + '\\' + loader_name)
         values, after = boot_firmware()
         numbers = [match[1] for line in values
                    if (match := re.match(r'Boot([0-9A-Fa-f]{4})\*?\s+' + firmware_label, line))]
         require(len(numbers) == 1 and after == order, 'Could not create a separate native boot entry')
         process('efibootmgr', '--bootnext', numbers[0])
-        mark('native-armed', bootOrder=order, bootNext=numbers[0], oldEfi=original)
+        mark('native-armed', bootOrder=order, bootNext=numbers[0], selectedLoader=loader_name, oldEfi=original)
     require(efi_inventory(esp, old_efi) == original, 'Original EFI files differ after staging')
     process('umount', '--recursive', DEPLOYMENT)
     process('umount', '--recursive', TARGET)
@@ -307,18 +320,20 @@ def native(disk, *, interrupt_efi=False):
 
 def main():
     phase = Path('/sys/class/dmi/id/product_serial').read_text().strip().removeprefix('finite-migration-')
-    require(phase in {'legacy', 'shrink-fault', 'efi-fault', 'native'}, 'Unexpected rescue rehearsal phase')
+    require(phase in {'legacy', 'shrink-fault', 'efi-fault', 'selector-fault', 'native'},
+            'Unexpected rescue rehearsal phase')
     disk = disk_for(phase)
-    print('FINITE_MIGRATION_PASSPHRASE:', flush=True)
     # A real tty with echo disabled keeps even the disposable password out of
     # retained serial transcripts. cryptsetup reads it through stdin pipes.
-    import getpass
     secret = getpass.getpass('LUKS passphrase: ').encode()
     require(bool(secret), 'Empty disposable LUKS passphrase')
     if phase == 'legacy':
-        legacy(disk, secret)
+        WORK.mkdir()
+        alternate = getpass.getpass('LUKS alternate passphrase: ').encode()
+        require(alternate and alternate != secret, 'Expected a distinct alternate LUKS passphrase')
+        legacy(disk, secret, alternate)
     elif resize(disk, secret, interrupt=phase == 'shrink-fault'):
-        native(disk, interrupt_efi=phase == 'efi-fault')
+        native(disk, phase)
     process('sync')
     mark('shutdown', action=phase)
     process('systemctl', '--no-block', 'poweroff')
