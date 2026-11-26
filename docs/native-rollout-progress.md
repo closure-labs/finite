@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45766034663)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45782220573)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -264,8 +264,20 @@ Installer `v3.24.2` returned HTTP 403. The exact release URL subsequently return
 HTTP 200 and its 78,449,072 bytes matched the locked SHA-256
 `22ed14ee1b24d100d388f1fc245e3062bd5982433d159cffa6dec34c0eb15dab`.
 [Attempt 2](https://github.com/closure-labs/finite/actions/runs/45766034663/attempts/2)
-reruns the same revision. Both fresh-install and first-boot acceptance receipts
-remain pending.
+reran the same revision and passed the dependency fetch. The stable ISO SHA-256 is
+`4298e643bf8f65b6de6570d96cb92709708e79e8e45faf0af67bc59fe22162bc`.
+[Artifact 15097714623](https://github.com/closure-labs/finite/actions/runs/45766034663/artifacts/15097714623)
+shows the guest passing scratch cleanup, verifying XBOOTLDR placement, mounting
+the installed deployment and writing the fallback shim configuration. Step 23
+failed with `Permission denied: '/usr/libexec/finite/update-efi'`. The image ships
+that Python source at mode `0644`, and its systemd service runs it with Python.
+
+Change `suvxmqsp` gives the offline installer the same `/usr/bin/python3`
+command prefix and keeps its explicit deployment, ESP and recovery-journal
+arguments. All 54 targeted cases passed, including the service invocation
+contract. Run [45782220573](https://github.com/closure-labs/finite/actions/runs/45782220573)
+qualifies both profiles at `359a1ca0`. Both fresh-install and first-boot
+acceptance receipts remain pending.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
