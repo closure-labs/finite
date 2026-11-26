@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 from finite_mok import enrolled_mok_certificates
+from serial_records import emit_record
 
 SENTINELS = (Path('/etc/finite-validation-persistence'), Path('/var/lib/finite-validation-persistence'))
 SENTINEL = 'finite native lifecycle\n'
@@ -58,7 +59,7 @@ def lifecycle(phase):
         require(phase in {'updated', 'restored', 'verified'}, 'Unexpected lifecycle phase')
     if phase in {'stage', 'rollback'}:
         status = json.loads(capture('bootc', 'status', '--json'))['status']
-        print('FINITE_NATIVE_TRANSITION ' + json.dumps({'phase': phase, 'status': status}), flush=True)
+        emit_record('FINITE_NATIVE_TRANSITION', {'phase': phase, 'status': status})
     capture('sync')
     print('FINITE_NATIVE_SHUTDOWN ' + phase, flush=True)
     capture('systemctl', '--no-block', 'poweroff')

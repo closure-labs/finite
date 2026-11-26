@@ -88,6 +88,23 @@ class Guest:
         self.process.stdin.write(value.encode() + b'\r')
         self.process.stdin.flush()
 
+    def json_line(self, marker):
+        match = self.expect(re.escape(marker) + rb' (\{[^\r\n]+\})\r*\n')
+        return json.loads(match[1])
+
+    def record(self, marker):
+        prefix = re.escape(marker) + b' '
+        frame = rb' ([^\r\n]{1,256})\r*\n'
+        first = self.expect(prefix + rb'1/([1-9][0-9]{0,2})' + frame)
+        total = int(first[1])
+        if total > 256:
+            raise ValueError('Serial evidence exceeds the record size limit')
+        parts = [first[2]]
+        for index in range(2, total + 1):
+            ordinal = f'{index}/{total}'.encode()
+            parts.append(self.expect(prefix + ordinal + frame)[1])
+        return json.loads(b''.join(parts))
+
     def shutdown(self):
         while time.monotonic() < self.deadline:
             if available_mib() < RESERVE_MIB:
@@ -106,8 +123,7 @@ class Guest:
 def boot_facts(guest, password, seal):
     guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
     guest.send(password)
-    match = guest.expect(rb'FINITE_NATIVE_FRESH_BOOT (\{[^\r\n]+\})')
-    facts = json.loads(match[1])
+    facts = guest.json_line(b'FINITE_NATIVE_FRESH_BOOT')
     if (facts['profile'] != seal['profile'] or facts['bootableRootDigest'] != seal['bootableRootDigest']
             or any(facts.get(key) is not True for key in (
                 'secureBoot', 'selinuxEnforcing', 'encryptedRoot', 'efiUpdaterSucceeded'))
@@ -159,8 +175,7 @@ def qualify_lifecycle(args, state, common, password, base, update):
                 if phase != 'stage' and (len(facts['persistence']) != 2 or not all(facts['persistence'].values())):
                     raise ValueError(f'{phase}: /etc or /var persistence differs')
                 if phase in {'stage', 'rollback'}:
-                    match = guest.expect(rb'FINITE_NATIVE_TRANSITION (\{[^\r\n]+\})')
-                    transition = json.loads(match[1])
+                    transition = guest.record(b'FINITE_NATIVE_TRANSITION')
                     if transition['phase'] != phase or (phase == 'stage' and not transition['status'].get('staged')):
                         raise ValueError(f'{phase}: unexpected bootc transition state')
                     (args.evidence / f'{phase}-status.json').write_text(json.dumps(transition, indent=2) + '\n')

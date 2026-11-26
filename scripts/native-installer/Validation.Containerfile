@@ -1,6 +1,7 @@
 ARG NATIVE_ROOT
 FROM ${NATIVE_ROOT}
 COPY validation-guest.py /usr/libexec/finite/validation-guest.py
+COPY serial_records.py /usr/libexec/finite/serial_records.py
 COPY validation-guest.service /usr/lib/systemd/system/validation-guest.service
 # Only the disposable lifecycle baseline supplies the older, pinned EFI binary.
 COPY loader/ /usr/lib/systemd/boot/efi/

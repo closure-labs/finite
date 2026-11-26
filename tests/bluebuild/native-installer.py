@@ -2,10 +2,12 @@
 """The native installer's disk choice, layout and command contract, without touching disks."""
 from importlib.machinery import SourceFileLoader
 import importlib.util
-from io import BytesIO
+from contextlib import redirect_stdout
+from io import BytesIO, StringIO
 import json
 import dataclasses
 from pathlib import Path
+import runpy
 import sys
 import tempfile
 import time
@@ -437,6 +439,31 @@ class Media(unittest.TestCase):
             '-device', 'virtio-blk-pci,drive=media,bootindex=1,serial=FINITEINSTALLMEDIA',
         ])
         self.assertNotEqual('FINITEINSTALLMEDIA', qual.DISK_SERIAL)
+
+    def test_serial_json_waits_for_full_lines_and_reassembles_large_receipts(self):
+        qual = runpy.run_path(str(self.directory / 'qualify-iso.py'))
+        emit = runpy.run_path(str(self.directory / 'serial_records.py'))['emit_record']
+        guest = qual['Guest'].__new__(qual['Guest'])
+        guest.deadline = time.monotonic() + 10
+        guest.output = b''
+        guest.log = BytesIO()
+        guest.selector = SimpleNamespace(select=lambda timeout: True)
+        guest.process = SimpleNamespace(stdout=SimpleNamespace(fileno=lambda: 0))
+        small = [b'BOOT {"nested":{"root":"old"}', b',"ready":true}\r\r\n']
+        payload = {'phase': 'stage', 'status': {'deployed': 'a' * 1024, 'staged': 'b' * 1024}}
+        stream = StringIO()
+        with redirect_stdout(stream):
+            emit('TRANSITION', payload)
+        lines = stream.getvalue().splitlines()
+        self.assertGreater(len(lines), 1)
+        self.assertTrue(all(len(line) < 300 for line in lines))
+        wire = '\r\r\n'.join('journal prefix ' + line for line in lines).encode() + b'\r\r\n'
+        fragmented = [wire[offset:offset + 41] for offset in range(0, len(wire), 41)]
+        with patch.dict(qual['Guest'].expect.__globals__, available_mib=lambda: qual['RESERVE_MIB']), \
+                patch.object(qual['os'], 'read', side_effect=[*small, *fragmented]):
+            self.assertEqual(guest.json_line(b'BOOT'), {'nested': {'root': 'old'}, 'ready': True})
+            self.assertEqual(guest.record(b'TRANSITION'), payload)
+        self.assertEqual(guest.log.getvalue(), b''.join(small) + wire)
 
     def test_workflow_is_manual_main_only_and_uploads_unqualified_media(self):
         import yaml

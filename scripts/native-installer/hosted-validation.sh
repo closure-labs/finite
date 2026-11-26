@@ -56,7 +56,7 @@ tools=''
 fixture=sources/native-lifecycle-fixture.json
 context="$work/validation-context"
 mkdir -p "$context/loader"
-cp scripts/native-installer/{Validation.Containerfile,validation-guest.py,validation-guest.service} "$context/"
+cp scripts/native-installer/{Validation.Containerfile,validation-guest.py,validation-guest.service,serial_records.py} "$context/"
 # Only the host signer uses the disposable key. Both generations share one
 # boot certificate so the upgrade does not depend on a new trust enrollment.
 openssl req -new -newkey rsa:3072 -nodes -x509 -sha256 -days 7 -subj "/CN=Finite native qualification/" \
