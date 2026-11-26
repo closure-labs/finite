@@ -6,6 +6,7 @@ FROM ${PAYLOAD}
 ARG PAYLOAD_REF
 ARG PAYLOAD_DIGEST
 ARG VALIDATION=false
+ARG MIGRATION=false
 
 # Live boot: dmsquash-live in the initramfs; Fedora-signed shim + cdboot GRUB
 # for the ISO's own Secure Boot chain; ISO assembly tools used by image-builder.
@@ -44,6 +45,17 @@ RUN set -eu; if [ "$VALIDATION" = true ]; then \
 RUN systemctl enable finite-native-installer.service \
     && systemctl mask finite-efi-update.service bootloader-update.service rpm-ostreed.service \
         finite-firstboot-rpm-ostree.service
+
+# This rescue harness only exists in the disposable migration qualification ISO.
+RUN set -eu; if [ "$MIGRATION" = true ]; then \
+      test "$VALIDATION" = true; \
+      install -m 0644 /run/migration-harness/migration-guest.py /run/migration-harness/migration_layout.py \
+        /run/migration-harness/observe-migration.py /usr/libexec/finite/; \
+      install -m 0644 /run/migration-preflight.py /usr/libexec/finite/systemd-boot-preflight.py; \
+      install -m 0644 /run/migration-harness/migration-guest.service /usr/lib/systemd/system/; \
+      systemctl disable finite-native-installer.service; \
+      systemctl enable migration-guest.service; \
+    fi
 
 # Unpack the verified OCI layout into the ISO's live filesystem. Reading it as a
 # directory lets preflight inspect the original manifest without RAM-backed unpacking.

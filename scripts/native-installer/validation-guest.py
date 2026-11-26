@@ -67,6 +67,12 @@ def lifecycle(phase):
 
 def main():
     require(capture('systemd-detect-virt', '--vm') in {'kvm', 'qemu'}, 'Expected a disposable VM')
+    serial = Path('/sys/class/dmi/id/product_serial')
+    identifier = serial.read_text().strip() if serial.is_file() else ''
+    if identifier.startswith('finite-migration-'):
+        # The migration-specific observer verifies both boot chains and the
+        # Btrfs mounts without imposing the fresh install's fallback policy.
+        return
     require(capture('mokutil', '--sb-state').splitlines()[0] == 'SecureBoot enabled', 'Secure Boot disabled')
     require(capture('getenforce') == 'Enforcing', 'SELinux is not enforcing')
     lockdown = Path('/sys/kernel/security/lockdown').read_text()
@@ -118,8 +124,6 @@ def main():
         'encryptedRoot': True, 'efiUpdaterSucceeded': True, 'zfsProvided': zfs_provided, 'signedModules': modules,
         'espBytes': 600 * 1024**2, 'xbootldrBytes': 4 * 1024**3,
     }
-    serial = Path('/sys/class/dmi/id/product_serial')
-    identifier = serial.read_text().strip() if serial.is_file() else ''
     phase = identifier.removeprefix('finite-lifecycle-')
     if phase != identifier:
         facts.update({

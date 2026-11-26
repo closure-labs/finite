@@ -18,7 +18,8 @@ MEMORY_MIB = 3072
 RESERVE_MIB = 3072
 DISK_SERIAL = 'FINITEQUALIFICATION'
 MOK_GUID = '605dab50-e046-4300-abb6-3dd810dd8b23'
-GUEST_FAILURE = re.compile(rb'(?:Installation stopped:|Kernel panic|FINITE_NATIVE_FRESH_BOOT_FAILED)[^\r\n]*\r?\n')
+GUEST_FAILURE = re.compile(rb'(?:Installation stopped:|Kernel panic|FINITE_NATIVE_FRESH_BOOT_FAILED|'
+                           rb'FINITE_MIGRATION_FAILED)[^\r\n]*\r?\n')
 
 
 def available_mib():
@@ -36,6 +37,23 @@ def install_media(iso):
     # path failed to read GRUB from the larger development ISO.
     return ['-drive', f'if=none,id=media,format=raw,readonly=on,file={iso}',
             '-device', 'virtio-blk-pci,drive=media,bootindex=1,serial=FINITEINSTALLMEDIA']
+
+
+def qemu_arguments(firmware, vars_file, disk, disk_serial):
+    return ['-enable-kvm', '-machine', 'q35,smm=on', '-cpu', 'host', '-smp', '2',
+            '-m', str(MEMORY_MIB), '-display', 'none', '-serial', 'stdio', '-monitor', 'none',
+            '-no-reboot', '-nic', 'none',
+            '-global', 'driver=cfi.pflash01,property=secure,value=on',
+            '-drive', f'if=pflash,format=raw,readonly=on,file={firmware / "OVMF_CODE_4M.secboot.fd"}',
+            '-drive', f'if=pflash,format=raw,file={vars_file}',
+            '-drive', f'if=none,id=target,format=qcow2,file={disk}',
+            '-device', f'virtio-blk-pci,drive=target,serial={disk_serial}']
+
+
+def prepare_readonly_inputs(media, directory, capacity):
+    with media.open('xb') as stream:
+        stream.truncate(capacity + 512 * 1024**2)
+    subprocess.run(['mkfs.ext4', '-q', '-F', '-m', '0', '-d', directory, media], check=True, timeout=900)
 
 
 class Guest:
@@ -168,9 +186,7 @@ def verify_update(base, update, archive):
 def qualify_lifecycle(args, state, common, password, base, update):
     inputs = args.update_archive.resolve(strict=True).parent
     media = state / 'update.raw'
-    with media.open('xb') as stream:
-        stream.truncate(args.update_archive.stat().st_size + 512 * 1024**2)
-    subprocess.run(['mkfs.ext4', '-q', '-F', '-m', '0', '-d', inputs, media], check=True, timeout=900)
+    prepare_readonly_inputs(media, inputs, args.update_archive.stat().st_size)
     extra = ['-drive', f'if=none,id=update,format=raw,readonly=on,file={media}',
              '-device', 'virtio-blk-pci,drive=update,serial=FINITEUPDATE']
     phases = [('stage', base), ('updated', update), ('rollback', update), ('restored', base), ('verified', base)]
@@ -265,14 +281,7 @@ def qualify(args):
     subprocess.run(command, check=True, timeout=30)
     disk = state / 'target.qcow2'
     subprocess.run(['qemu-img', 'create', '-f', 'qcow2', disk, '64G'], check=True, timeout=30)
-    common = ['-enable-kvm', '-machine', 'q35,smm=on', '-cpu', 'host', '-smp', '2',
-              '-m', str(MEMORY_MIB), '-display', 'none', '-serial', 'stdio', '-monitor', 'none',
-              '-no-reboot', '-nic', 'none',
-              '-global', 'driver=cfi.pflash01,property=secure,value=on',
-              '-drive', f'if=pflash,format=raw,readonly=on,file={firmware / "OVMF_CODE_4M.secboot.fd"}',
-              '-drive', f'if=pflash,format=raw,file={vars_file}',
-              '-drive', f'if=none,id=target,format=qcow2,file={disk}',
-              '-device', f'virtio-blk-pci,drive=target,serial={DISK_SERIAL}']
+    common = qemu_arguments(firmware, vars_file, disk, DISK_SERIAL)
     # The only writable guest disk is a fresh qcow2 we created. The
     # disposable password stays in memory and is never passed on a command line.
     password = secrets.token_hex(16)

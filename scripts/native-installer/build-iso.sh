@@ -34,9 +34,12 @@ trap 'sudo rm -rf -- "$cache"' EXIT
 # Both paths require an immutable manifest before building a derived live root.
 # Only the dedicated validation run accepts an archive sealed with a VM key.
 validation=false
+migration=false
+migration_inputs=()
 if [[ -n $validation_archive || -n $validation_receipt ]]; then
   [[ (${GITHUB_REF:-} == refs/heads/qualification/native-iso ||
-       ${GITHUB_REF:-} == refs/heads/qualification/native-lifecycle) && $# == 5 ]]
+       ${GITHUB_REF:-} == refs/heads/qualification/native-lifecycle ||
+       ${GITHUB_REF:-} == refs/heads/qualification/native-migration) && $# == 5 ]]
   # The hosted validator transfers ownership of its fresh temporary archive.
   [[ $validation_archive == "${RUNNER_TEMP:?}"/native-iso.????????/sealed.oci.tar ]]
   [[ -f $validation_archive && $(realpath -- "$validation_archive") == "$validation_archive" ]]
@@ -48,6 +51,14 @@ if [[ -n $validation_archive || -n $validation_receipt ]]; then
   ' "$validation_receipt" >/dev/null
   payload_archive=$validation_archive
   validation=true
+  if [[ $GITHUB_REF == refs/heads/qualification/native-migration ]]; then
+    [[ $tag == finite-native ]]
+    migration=true
+    migration_inputs=(
+      --volume "$here:/run/migration-harness:ro"
+      --volume "$root/scripts/workstation/systemd-boot-preflight.py:/run/migration-preflight.py:ro"
+    )
+  fi
 else
   [[ ${GITHUB_REF:-} == refs/heads/main && $# == 3 ]]
   cosign verify --new-bundle-format=false --key "$root/cosign.pub" "$repository@$digest" >/dev/null
@@ -63,8 +74,9 @@ architecture=$(sudo podman image inspect --format '{{index .Labels "io.finite.bo
 }
 sudo podman build --pull=never \
   --build-arg "PAYLOAD=$payload" --build-arg "PAYLOAD_REF=$payload" --build-arg "PAYLOAD_DIGEST=$digest" \
-  --build-arg "VALIDATION=$validation" \
+  --build-arg "VALIDATION=$validation" --build-arg "MIGRATION=$migration" \
   --volume "$payload_archive:/run/finite-payload.oci.tar:ro" \
+  "${migration_inputs[@]}" \
   --label "io.finite.native-installer.payload=$repository@$digest" \
   --tag "$installer" "$here"
 rm -- "$payload_archive"
@@ -87,8 +99,9 @@ final="$output/finite-native-installer-$tag.iso"
 [[ ${isos[0]} == "$final" ]] || mv "${isos[0]}" "$final"
 installer_id=$(sudo podman image inspect --format '{{.Id}}' "$installer")
 jq -n --arg payload "$repository@$digest" --arg tag "$payload" --arg installer "$installer_id" \
-  --arg builder "$builder" --arg revision "$revision" --argjson validation "$validation" \
+  --arg builder "$builder" --arg revision "$revision" --argjson validation "$validation" --argjson migration "$migration" \
   '{schema: 1, payload: $payload, payloadTag: $tag, installerImageId: $installer,
-    imageBuilder: $builder, finiteRevision: $revision, validationOnly: $validation}' >"$output/installation.json"
+    imageBuilder: $builder, finiteRevision: $revision, validationOnly: $validation}
+    | if $migration then .migrationRehearsal = true else . end' >"$output/installation.json"
 (cd "$output" && sha256sum -- "$(basename "$final")" installation.json >SHA256SUMS)
 echo "Native installer ISO: $final"

@@ -133,6 +133,7 @@ class DownloadTests(unittest.TestCase):
             ('native-iso.yml', 'iso'),
             ('native-iso-validation.yml', 'media'),
             ('native-lifecycle-validation.yml', 'lifecycle'),
+            ('native-migration-rehearsal.yml', 'rehearsal'),
             ('publication.yml', 'sign'),
             ('qualification.yml', 'phase'),
             ('release-recovery.yml', 'sign-release'),

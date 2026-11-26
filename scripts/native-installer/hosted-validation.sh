@@ -2,13 +2,16 @@
 # Disposable native source/ISO validation on the dedicated upstream GitHub branch.
 set -euo pipefail
 [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite ]]
+migration=false
 case ${GITHUB_REF:-} in
   refs/heads/qualification/native-iso) lifecycle=false ;;
   refs/heads/qualification/native-lifecycle) lifecycle=true ;;
+  refs/heads/qualification/native-migration) lifecycle=false; migration=true ;;
   *) exit 2 ;;
 esac
 profile=${1:?native profile required}
 [[ $profile == finite-native || $profile == finite-native-dev ]]
+[[ $migration == false || $profile == finite-native ]]
 [[ ${GITHUB_SHA:?} == "$(git rev-parse HEAD)" ]]
 umask 077
 output="$PWD/.bluebuild/native-iso/$profile"
@@ -194,6 +197,33 @@ PY
     --updated-loader "$(jq -er .updateLoaderInfo "$fixture")")
 fi
 rm -- "$work/vm.key"
+if [[ $migration == true ]]; then
+  printf 'Building the Finite OSTree installation fixture\n'
+  nice -n 19 bluebuild validate recipes/finite.yml
+  nice -n 19 bash scripts/bluebuild/build.sh finite false
+  mapfile -t legacy < <(docker image ls --filter 'label=io.finite.profile=finite' --format '{{.ID}}' | sort -u)
+  [[ ${#legacy[@]} == 1 ]]
+  docker tag "${legacy[0]}" localhost/finite-migration-legacy:fixture
+  mkdir "$work/legacy"
+  skopeo copy docker-daemon:localhost/finite-migration-legacy:fixture "oci-archive:$work/legacy/legacy.oci.tar"
+  skopeo inspect --no-tags "oci-archive:$work/legacy/legacy.oci.tar" | jq -e --arg revision "$GITHUB_SHA" '
+    select(.Architecture == "amd64" and .Os == "linux" and .Labels["io.finite.profile"] == "finite" and
+           .Labels["org.opencontainers.image.revision"] == $revision)
+    | {digest: .Digest, profile: .Labels["io.finite.profile"], revision: .Labels["org.opencontainers.image.revision"]}
+  ' > "$evidence/legacy-source.json"
+  docker image rm --force "${legacy[0]}"
+  docker buildx prune --builder bluebuild --all --force
+  docker builder prune --all --force
+  sha256sum "$work/legacy/legacy.oci.tar" | cut -d' ' -f1 > "$work/legacy/legacy.sha256"
+  cp -- "$work/legacy/legacy.sha256" "$evidence/"
+  df -h -- "$work" "$output"
+  nice -n 19 python3 scripts/native-installer/qualify-migration.py \
+    --iso "$output/finite-native-installer-$profile.iso" --seal "$work/seal/sealed.json" \
+    --legacy-archive "$work/legacy/legacy.oci.tar" \
+    --certificate "$work/vm.pem" --module-certificate "$work/module.pem" \
+    --state "$work/guest" --evidence "$evidence"
+  exit
+fi
 printf 'Booting the %s installer in the capped VM\n' "$profile"
 nice -n 19 python3 scripts/native-installer/qualify-iso.py \
   --iso "$output/finite-native-installer-$profile.iso" \
