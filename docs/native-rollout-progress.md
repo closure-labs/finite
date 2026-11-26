@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45757338767)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45766034663)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -241,12 +241,31 @@ the image into a second `containers-storage` instance during ISO assembly,
 where the original manifest digest could change. The serial collector killed
 each guest on the error prefix and cut off the rest of the diagnostic.
 
-The retry at `964750b5` embeds the authenticated OCI layout directly, verifies
-the original manifest SHA-256 during media build and guest preflight, and keeps
-the installed native registry update tag. The capped guest records complete
-error lines, and each profile uploads evidence as soon as its step finishes.
-The 330-minute job timeout accommodates both bounded guest runs after the
-observed 200-minute assembly run. Both full VM acceptance receipts remain pending.
+Run [45757338767](https://github.com/closure-labs/finite/actions/runs/45757338767)
+at `964750b5` embedded the authenticated OCI layout directly and verified the
+original manifest SHA-256 during media build and live preflight. The stable
+ISO SHA-256 is `1621dd4d26a4983b5833c605e32144a6fafa4cf017d55261b2258c9229bca94b`.
+Its strict seal and full serial transcript are in
+[artifact 15092065583](https://github.com/closure-labs/finite/actions/runs/45757338767/artifacts/15092065583).
+The Secure Boot guest partitioned the disposable disk, set up LUKS2 and ext4
+verity, and bootc imported all 100 layers and installed systemd-boot. The
+installer then stopped at `Remove scratch space` with `Read-only file system`.
+The new retry superseded the dev step before it produced its ISO.
+
+Change `qlqpwwmt` keeps the locked bootc filesystem finalization. It reopens only
+the encrypted backing filesystem for scratch removal and persistent EFI setup,
+then returns it to read-only after the offline deployment is detached. The
+composefs deployment root and finalized XBOOTLDR stay read-only. All 54
+targeted native tests passed. Run
+[45766034663](https://github.com/closure-labs/finite/actions/runs/45766034663)
+tests both profiles at `015dbf25` with the correction. In attempt 1, both failed
+before building media when the fixed-output Nix fetch of Determinate Nix
+Installer `v3.24.2` returned HTTP 403. The exact release URL subsequently returned
+HTTP 200 and its 78,449,072 bytes matched the locked SHA-256
+`22ed14ee1b24d100d388f1fc245e3062bd5982433d159cffa6dec34c0eb15dab`.
+[Attempt 2](https://github.com/closure-labs/finite/actions/runs/45766034663/attempts/2)
+reruns the same revision. Both fresh-install and first-boot acceptance receipts
+remain pending.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
