@@ -1,10 +1,9 @@
 # Native installer prototype
 
-This is experimental whole-disk media, not the workstation migration tool.
-It has source-level tests but no end-to-end ISO or encrypted Secure Boot
-qualification. It erases the selected disk. Do not use it to convert an existing
-OSTree installation or preserve its data. The parallel workstation migration
-remains gated by the [rollout record](../../docs/native-rollout-progress.md).
+This experimental whole-disk installer erases the selected disk. Both native
+profiles passed fresh installation and the first encrypted Secure Boot in capped
+hosted VMs using read-only hybrid media and disposable signing keys. Workstation
+migration uses the separate parallel-install procedure. [Rollout record and VM evidence](../../docs/native-rollout-progress.md#hosted-native-iso-qualification)
 
 Build media only on the ephemeral hosted runner, using an authenticated native
 payload in `ghcr.io/closure-labs/finite` and its distinct `finite-native` or
@@ -14,7 +13,8 @@ boot, and records the payload digest and bootc binary hash in schema-3 pins.
 The target payload remains a separate OCI layout in the live filesystem. Its
 manifest and compressed layer bytes survive ISO assembly in their original
 form. The installer reads this layout offline and keeps the native update tag
-as its installed target reference. The uploaded ISO is explicitly unqualified.
+as its installed target reference. Production media require their own release
+qualification.
 
 Boot the media in UEFI mode. From its rescue console, the read-only command is:
 
@@ -61,7 +61,6 @@ may remain at `/run/finite-install/deployment`. Release only mounts and mappings
 created by this run before attempting another fresh installation. Preserve an EFI
 journal for inspection/recovery; do not erase it to bypass an interrupted update.
 
-Before user-facing release, qualify actual ISO boot, encrypted root discovery,
-MOK enrollment, first-boot account creation, real kernel/loader upgrade and
-rollback, interruption cleanup and rescue recovery for both native profiles.
-No working desktop account-creation flow is supplied by this prototype yet.
+Before user-facing release, qualify production-signed media, interactive MOK
+enrollment, first-boot account creation, real kernel and loader upgrades and
+rollback, interruption cleanup, and rescue recovery for both native profiles.

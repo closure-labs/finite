@@ -1,9 +1,9 @@
 # Native rollout continuation — 2026-11-25
 
-The [operator-approved Claude plan](plans/PLAN-native-systemd-boot-rollout.md)
-selects separate native tags and an operator-run parallel workstation migration.
-This record is the continuation point for future agents. Source checks below
-are not ISO, VM, release or hardware acceptance. `VERSION` is still `0.8.3-dev`.
+The plan selects separate native tags and an operator-run parallel workstation
+migration. Both native ISO profiles passed hosted fresh-install and encrypted
+first-boot qualification using disposable signing keys. `VERSION` is still
+`0.8.3-dev`. [Operator-approved rollout plan](plans/PLAN-native-systemd-boot-rollout.md)
 
 ## History and preserved work
 
@@ -27,9 +27,8 @@ are not ISO, VM, release or hardware acceptance. `VERSION` is still `0.8.3-dev`.
   ancestor of this stack at this checkpoint. Its merge/live audit still needs
   reconciliation; this continuation did not recheck or delete organization
   credentials or any Doppler-side identity.
-- Retained the existing [installer research](native-installer-research.md),
-  rather than repeating its Anaconda investigation. The installer prototypes
-  already implement the custom path; neither has end-to-end qualification.
+- The Anaconda investigation led to the custom installer path implemented by
+  the prototypes. [Installer research](native-installer-research.md)
 
 ## Current changes
 
@@ -37,7 +36,8 @@ are not ISO, VM, release or hardware acceptance. `VERSION` is still `0.8.3-dev`.
 | --- | --- | --- |
 | `mtvzotoy`, descendants | Native boot stack rebased onto current main; all five payload inputs and `FINITE_CI_VARS` forwarded | Production-key full-profile qualification remains open |
 | `znumxztt` | Separate native recipes, metadata/update channels, build/identity support and native-only runtime staging | Automatic native publication remains closed |
-| `xnkqwxpk` | Native media identity checks, disk revalidation, live kernel/scratch fixes and offline EFI transaction | ISO execution, account creation and failure-unwind remain unqualified |
+| `xnkqwxpk` | Native media identity checks, disk revalidation, live kernel/scratch fixes and offline EFI transaction | Account creation and interrupted-install cleanup remain open |
+| `umpkpluv` | Both native ISOs pass capped fresh-install and encrypted first-boot checks over read-only VirtIO media | Production-key qualification, upgrades and rollback remain open |
 | `xtqwuvkl` | This handoff, approved plan and retained research | Update this record with subsequent exact artifacts/results |
 
 The registry layout is:
@@ -67,14 +67,15 @@ block-device holders, and revalidates the selected stable ID just before wiping.
 It restores the live kernel from `/kernel`, makes target-disk scratch a mount
 boundary for bootc's empty-root check, mounts the installed deployment, and uses
 its signed EFI payload/certificate and persistent journal. Runtime EFI guards
-still reject OSTree and non-strict composefs boots. No disk was written here.
+still reject OSTree and non-strict composefs boots. All test installs used
+disposable qcow2 disks on hosted runners.
 
 The installer fixes use the exact runtime source, not an assumed CLI:
 [bootc mount API at the pin](https://github.com/bootc-dev/bootc/blob/8275daa9227f7c4ee893c0b05b4134dc2ff11283/crates/lib/src/mount.rs),
 [empty-root checks at the pin](https://github.com/bootc-dev/bootc/blob/8275daa9227f7c4ee893c0b05b4134dc2ff11283/crates/lib/src/install.rs),
 and [image-builder v91.0.0 ISO contract](https://github.com/osbuild/image-builder/blob/v91.0.0/doc/20-advanced/20-bootc/10-isos.md).
 
-## Verification
+## Local source verification
 
 Pinned checks used the current root lock through the lightweight local helper
 `artifacts/native-checks.nix`: `nice -n 19`, Nix `--max-jobs 1 --cores 2`, and a
@@ -92,8 +93,6 @@ These are contract/lint builds, not OS-image builds. No VM was started.
 - BlueBuild 0.9.37 passed live schema validation for both native recipes after
   retrying access to the schema endpoint. The pinned base signatures also
   verified with the corresponding Bluefin project keys.
-- No ISO build, production seal, encrypted native boot, upgrade/rollback,
-  workstation partition/firmware write, MOK enrollment or release occurred.
 
 ## Hosted native ISO qualification
 
@@ -103,8 +102,8 @@ reserve needs a different host. The upstream repository's disposable
 `qualification/native-iso` branch builds one full profile at a time and
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
-reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45823572183)
+reboots the newly installed qcow2. The workflow artifacts contain the media
+and guest identities. [Passing run](https://github.com/closure-labs/finite/actions/runs/45823572183)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -317,36 +316,44 @@ Change `umpkpluv` attaches the exact ISO as a read-only VirtIO disk and boots
 its existing GPT EFI System Partition. The first boot of the installed system
 has only the disposable target disk attached. The run retains both the GPT and
 the El Torito layout and records the tested boot transport in each receipt.
-All 60 targeted source checks passed. Run
-[45823572183](https://github.com/closure-labs/finite/actions/runs/45823572183)
-tests both profiles with this transport at `9275f951`. The stable profile
-passed with ISO SHA-256
-`0148449ac7bce1a41e8d39c14d5402094a10df17dbb29b3ef63b627b3c74e915`.
-[Artifact 15130110133](https://github.com/closure-labs/finite/actions/runs/45823572183/artifacts/15130110133)
-contains the exact seal, certificate, GPT and El Torito layout, and successful
-installation and first-boot receipt. The development profile is running on
-the same capped hosted runner.
+All 60 targeted source checks passed. Both profiles built and passed the capped
+VM checks in run `45823572183`, attempt 1, job `139921807416`, at source revision
+`9275f951d92e0937126eaf83e481830cad5ca02f`. [Passing job](https://github.com/closure-labs/finite/actions/runs/45823572183/job/139921807416)
+
+| Profile | ISO SHA-256 | Evidence |
+| --- | --- | --- |
+| `finite-native` | `0148449ac7bce1a41e8d39c14d5402094a10df17dbb29b3ef63b627b3c74e915` | [Artifact 15130110133](https://github.com/closure-labs/finite/actions/runs/45823572183/artifacts/15130110133) |
+| `finite-native-dev` | `2ef7115f2c17380f92c8214cc976911f98133de93deb2cb72647e95514cf73bf` | [Artifact 15136253627](https://github.com/closure-labs/finite/actions/runs/45823572183/artifacts/15136253627) |
+
+The runner verified both ISO files against their inventories. Each retained
+`fresh-acceptance.json` matches the checksum inventory, source revision, sealed
+OCI manifest, strict composefs root digest, public certificate and first-boot
+serial facts. Both guests reported Secure Boot, enforcing SELinux, LUKS2-backed
+sysroot, a successful EFI updater, a 600 MiB ESP and a 4 GiB XBOOTLDR, and loaded
+signed ZFS and v4l2loopback modules. The guests ran sequentially with two vCPUs,
+3 GiB RAM and a 3 GiB runner reserve. The installer and first-boot transcripts,
+runtime receipts, validation seals and GPT and El Torito layouts are retained
+alongside the acceptance receipts. The earlier optical dev failure remains
+open. The passing dev receipt covers hybrid disk boot.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
 bootable root matched
 `9c13a50e83b3452c669bc42671031205697b6bb741d025d9ba33ced6f297826d467b8d500e78fc084282f64dfe507f8b65d3b5f6f032d6410efba2a4e51bc0bd`.
-The local fixture demonstrates the importer and sealer cleanup changes.
-The full-profile results must come from the hosted VM jobs.
+The local fixture demonstrates the importer and sealer cleanup changes. The
+hosted job above provides the full-profile fresh-install evidence.
 
 ## Next execution sequence
 
-1. Finish native candidate qualification before widening publication. Adapt the
-   existing `scripts/vm-composefs` harness to both full native profiles and the
-   actual encrypted native installer. Require authenticated exact-image,
-   source, importer, certificate and ISO identities; enforcing Secure Boot and
-   SELinux; encrypted-root discovery; UKI placement on XBOOTLDR; persistent
-   configuration; real kernel/loader upgrades; rollback; rejection and recovery.
-   The prior small unencrypted fixture does not establish these properties.
-2. Finish and qualify first-boot account creation and interrupted-install cleanup.
-   Test the self-bind scratch boundary and offline EFI mount/journal in actual
-   media. Test MOK enrollment without private keys on the ISO. FIDO2 remains
-   optional/unqualified: retain passphrase/recovery-key unlock first.
+1. Extend full-profile qualification to cover real kernel and loader upgrades,
+   rollback, rejection and recovery. Bind those receipts to authenticated
+   image, source, importer, certificate and media identities. Carry forward
+   the Secure Boot, SELinux, encrypted-root, XBOOTLDR and persistence checks
+   from the fresh-install job.
+2. Qualify first-boot account creation, interrupted-install cleanup and
+   interactive MOK enrollment. The passing install exercised the scratch
+   self-bind and committed the offline EFI journal with pre-enrolled public
+   certificates. Qualify recovery-key unlock before the optional FIDO2 path.
 3. Wire the native qualifier and `native-image.yml` into publication, then widen
    the profile contracts together: `impact.PROFILES`, `payloads.py`, explicit
    selection/matrices, `collect-qualification.py`, `decision_controller.py`,
