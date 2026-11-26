@@ -36,10 +36,20 @@ def sha(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def stage(engine, output, archive=None, memory_mib=2048):
+def stage(engine, output, archive=None, memory_mib=2048, validation_fedora44=False):
     pin_path = ROOT / 'sources/bootc-runtime.json'
-    pin = validate(json.loads(pin_path.read_text()))
-    lock_hash = sha(pin_path)
+    lock = pin_path.read_bytes()
+    pin = json.loads(lock)
+    if validation_fedora44:
+        if (os.environ.get('GITHUB_ACTIONS') != 'true'
+                or os.environ.get('GITHUB_REPOSITORY') != 'closure-labs/finite'
+                or os.environ.get('GITHUB_REF') != 'refs/heads/qualification/native-lifecycle'):
+            raise ValueError('Fedora 44 runtime fixture requires the dedicated hosted lifecycle branch')
+        fixture = json.loads((ROOT / 'sources/native-lifecycle-fixture.json').read_text())
+        pin.update(buildBase=fixture['baselineRuntimeBuildBase'], buildFedoraVersion=44)
+        lock = (json.dumps(pin, indent=2) + '\n').encode()
+    validate(pin)
+    lock_hash = hashlib.sha256(lock).hexdigest()
     # Reuse only exact source AND packaging inputs, and rehash the RPM bytes.
     inputs = hashlib.sha256(b''.join((ROOT / 'scripts/bluebuild' / name).read_bytes()
                             for name in ('bootc-runtime.Containerfile', 'build-bootc-runtime.sh'))).hexdigest()
@@ -70,7 +80,7 @@ def stage(engine, output, archive=None, memory_mib=2048):
             source.write_bytes(data)
         if sha(source) != pin['archiveSha256']:
             raise ValueError('Upstream runtime archive differs from the reviewed source hash')
-        shutil.copyfile(pin_path, work / 'source-lock.json')
+        (work / 'source-lock.json').write_bytes(lock)
         shutil.copyfile(ROOT / 'scripts/bluebuild/build-bootc-runtime.sh', work / 'build-runtime.sh')
         shutil.copyfile(ROOT / 'scripts/bluebuild/bootc-runtime.Containerfile', work / 'Containerfile')
         tag = 'localhost/finite-bootc-runtime:' + lock_hash[:16] + '-' + inputs[:12]
@@ -108,5 +118,6 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, default=ROOT / 'files/bootc-runtime')
     parser.add_argument('--archive', type=Path)
     parser.add_argument('--memory-mib', type=int, choices=[1536, 2048, 3072], default=2048)
+    parser.add_argument('--validation-fedora44', action='store_true')
     args = parser.parse_args()
-    stage(args.engine, args.output.resolve(), args.archive, args.memory_mib)
+    stage(args.engine, args.output.resolve(), args.archive, args.memory_mib, args.validation_fedora44)

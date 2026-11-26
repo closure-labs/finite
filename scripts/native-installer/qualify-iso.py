@@ -190,9 +190,11 @@ def qualify_lifecycle(args, state, common, password, base, update):
                 observed[phase] = facts
         if phase == 'stage':
             media.unlink()
-    if (observed['stage']['loaderInfo'] != args.baseline_loader
-            or observed['rollback']['loaderInfo'] != args.updated_loader
-            or observed['verified']['loaderInfo'] != args.baseline_loader):
+    baseline = observed['stage']['loaderInfo']
+    updated = observed['rollback']['loaderInfo']
+    if (not re.match(r'systemd-boot ' + args.baseline_loader + r'[.-]', baseline)
+            or not re.match(r'systemd-boot ' + args.updated_loader + r'[.-]', updated)
+            or observed['verified']['loaderInfo'] != baseline):
         raise ValueError('Running EFI loader versions did not follow the baseline, upgrade and rollback')
     return {
         'updateArchiveSha256': update['archiveSha256'],
@@ -223,7 +225,8 @@ def qualify(args):
         archive = args.update_archive.resolve(strict=True)
         if (archive.name != 'update.oci.tar' or {path.name for path in archive.parent.iterdir()} != {
                 'update.oci.tar', 'update.json'} or not args.update_module_certificate
-                or not args.baseline_loader or not args.updated_loader or args.baseline_loader == args.updated_loader):
+                or any(not re.fullmatch('[0-9]+', version or '') for version in (
+                    args.baseline_loader, args.updated_loader)) or args.baseline_loader == args.updated_loader):
             raise ValueError('Use a dedicated directory with a sealed update and specify both expected loader versions')
         update = json.loads(archive.with_name('update.json').read_text())
         verify_update(seal, update, archive)
