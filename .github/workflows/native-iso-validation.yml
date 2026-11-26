@@ -46,18 +46,30 @@ jobs:
           test -r /dev/kvm && test -w /dev/kvm
       - name: Build and test finite-native
         run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh finite-native
-      - name: Build and test finite-native-dev
-        if: ${{ !cancelled() && steps.kvm.outcome == 'success' }}
-        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh finite-native-dev
-      - name: Retain media build identity
+      - name: Retain finite-native evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-iso-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          name: native-iso-validation-${{ github.run_id }}-${{ github.run_attempt }}-finite-native
           path: |
-            .bluebuild/native-validation/
-            .bluebuild/native-iso/*/installation.json
-            .bluebuild/native-iso/*/SHA256SUMS
+            .bluebuild/native-validation/finite-native/
+            .bluebuild/native-iso/finite-native/installation.json
+            .bluebuild/native-iso/finite-native/SHA256SUMS
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 7
+      - name: Build and test finite-native-dev
+        if: ${{ !cancelled() && steps.kvm.outcome == 'success' }}
+        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh finite-native-dev
+      - name: Retain finite-native-dev evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-iso-validation-${{ github.run_id }}-${{ github.run_attempt }}-finite-native-dev
+          path: |
+            .bluebuild/native-validation/finite-native-dev/
+            .bluebuild/native-iso/finite-native-dev/installation.json
+            .bluebuild/native-iso/finite-native-dev/SHA256SUMS
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 7
