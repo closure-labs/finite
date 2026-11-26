@@ -15,7 +15,9 @@ jobs:
     name: Qualify both native profiles in sequence
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-iso'
     runs-on: ubuntu-24.04
-    timeout-minutes: 210
+    # The observed two-ISO build took 200 minutes before either guest installed.
+    # Leave 55 minutes per guest for install and first boot, plus evidence upload.
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
