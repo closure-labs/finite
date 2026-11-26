@@ -50,6 +50,18 @@ printf 'Authenticating and validating the %s recipe\n' "$profile"
 python3 scripts/ci/bluefin-upstream.py verify --include-native
 nice -n 19 bluebuild validate "recipes/$profile.yml"
 fixture=sources/native-lifecycle-fixture.json
+install_lifecycle_runtime() {
+  local generation=$1
+  shift
+  local source="$RUNNER_TEMP/native-lifecycle-runtimes/$generation"
+  [[ ! -e files/bootc-runtime && -d $source && ! -L $source ]]
+  for name in bootc-runtime.rpm source-lock.json receipt.json; do
+    [[ -f $source/$name && ! -L $source/$name ]]
+  done
+  # The stage helper rechecks the source, packaging-input and RPM hashes.
+  nice -n 19 python3 scripts/bluebuild/stage-bootc-runtime.py --output "$source" "$@"
+  cp -a -- "$source" files/bootc-runtime
+}
 if [[ $lifecycle == true ]]; then
   cp -- "recipes/$profile.yml" "$work/recipe.before"
   python3 - "$profile" "$evidence" "$fixture" <<'PY'
@@ -88,10 +100,9 @@ if count != 1:
 path.write_text(revised)
 PY
   nice -n 19 bluebuild validate "recipes/$profile.yml"
-  # The shared payload is independent of Fedora's image base. The bootc RPM
-  # uses the same pinned source but must match the destination's Fedora ABI.
-  nice -n 19 bash scripts/bluebuild/stage.sh finite
-  nice -n 19 python3 scripts/bluebuild/stage-bootc-runtime.py --validation-fedora44
+  [[ -d files/payload/home-manager-template ]]
+  cp -- .bluebuild/lifecycle-payload.json "$evidence/shared-payload.json"
+  install_lifecycle_runtime 44 --validation-fedora44
 else
   printf 'Staging the locked runtime and payload for %s\n' "$profile"
   nice -n 19 bash scripts/bluebuild/stage.sh "$profile"
@@ -183,7 +194,7 @@ if [[ $lifecycle == true ]]; then
   mkdir "$work/update"
   mv -- "$work/recipe.before" "recipes/$profile.yml"
   mv -- files/bootc-runtime "$work/baseline-runtime"
-  nice -n 19 python3 scripts/bluebuild/stage-bootc-runtime.py
+  install_lifecycle_runtime 45
   cp files/bootc-runtime/receipt.json "$evidence/update-runtime.json"
   build_sealed_archive "$work/update/update.oci.tar" "$work/update-seal" "$work/update-module.pem" \
     "$(jq -er .update.kernelRelease "$fixture")"
