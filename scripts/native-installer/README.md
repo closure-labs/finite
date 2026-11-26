@@ -35,12 +35,15 @@ FIDO2 enrollment is optional and remains unqualified with the sealed command lin
 keep the passphrase/recovery key. The installer never passes machine-specific
 `--karg` options to the sealed UKI.
 
-After installing, `bootc install mount --sysroot ... --latest ...` exposes the
-new deployment's `/etc` and `/var`. The EFI updater reads its signed payload and
-certificate, stores its recovery journal in that deployment's persistent
+After bootc finalizes the root and boot filesystems, the installer reopens the
+encrypted backing filesystem for scratch cleanup and persistent configuration.
+`bootc install mount --sysroot ... --latest ...` exposes the read-only composefs
+deployment and its writable `/etc` and `/var`. The EFI updater reads its signed
+payload and certificate, stores its journal in that deployment's persistent
 `/var/lib/finite/efi-updates`, and enables maintained fallback files in
-`/etc/finite/bootloader.json`. Its offline mode requires the native-media kernel
-argument, a mounted native deployment and explicit ESP and persistent-state paths.
+`/etc/finite/bootloader.json`. The installer remounts the backing filesystem
+read-only after releasing the deployment. Offline mode requires the native-media
+kernel argument, a mounted native deployment and explicit ESP and state paths.
 The ordinary runtime guard still requires a strict native composefs boot.
 
 On first boot, complete the queued MokManager enrollment using the one-time

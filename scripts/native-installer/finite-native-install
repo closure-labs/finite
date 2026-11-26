@@ -153,6 +153,10 @@ def plan(disk, pins, *, fido2=False, recovery_key=True):
               '--source-imgref', pins['sourceImgref'], '--target-imgref', pins['targetImgref'], target)),
         Step('Release scratch space', ('umount', '/var/tmp')),
         Step('Release the scratch mount boundary', ('umount', scratch)),
+        # bootc finalizes the backing filesystems read-only. Briefly reopen
+        # the physical root for scratch cleanup and persistent /etc and /var.
+        Step('Reopen the encrypted filesystem for installer configuration',
+             ('mount', '-o', 'remount,rw', target)),
         Step('Remove scratch space', ('rm', '-rf', '--one-file-system', scratch)),
         Step('Check UKIs and entries are on XBOOTLDR, not the ESP',
              ('/usr/libexec/finite/finite-native-install', 'verify-placement', target)),
@@ -167,6 +171,8 @@ def plan(disk, pins, *, fido2=False, recovery_key=True):
         Step('Label the installed configuration and EFI recovery journal',
              ('chroot', deployment, 'restorecon', '-RF', '/etc/finite', '/var/lib/finite/efi-updates')),
         Step('Release the installed deployment', ('umount', '--recursive', deployment)),
+        Step('Flush and return the encrypted filesystem to read-only',
+             ('mount', '-o', 'remount,ro', target)),
         Step('Create the firmware boot entry',
              ('efibootmgr', '--create', '--disk', dev, '--part', '1', '--loader', SHIM_LOADER,
               '--label', 'Finite')),

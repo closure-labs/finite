@@ -150,9 +150,12 @@ class Plan(unittest.TestCase):
         self.assertEqual(steps[binds[0]].argv[3], scratch)
         self.assertEqual(steps[binds[1]].argv[2:], (scratch, '/var/tmp'))
         release = next(i for i, step in enumerate(steps) if step.argv == ('umount', scratch))
+        reopen = next(i for i, step in enumerate(steps)
+                      if step.argv == ('mount', '-o', 'remount,rw', str(installer.TARGET)))
         remove = next(i for i, step in enumerate(steps) if step.argv[0] == 'rm')
         self.assertLess(bootc, release)
-        self.assertLess(release, remove)
+        self.assertLess(release, reopen)
+        self.assertLess(reopen, remove)
 
     def test_optional_key_enrollment(self):
         plain = installer.plan(disk(), PINS, recovery_key=False)
@@ -175,9 +178,14 @@ class Plan(unittest.TestCase):
         self.assertEqual(updater[updater.index('--install-root') + 1], deployment)
         self.assertEqual(updater[updater.index('--state') + 1], deployment + '/var/lib/finite/efi-updates')
         commands = [step.argv for step in steps]
+        self.assertLess(commands.index(('mount', '-o', 'remount,rw', str(installer.TARGET))),
+                        commands.index(mount))
         self.assertLess(commands.index(mount), commands.index(updater))
-        self.assertLess(commands.index(updater), commands.index(('umount', '--recursive', deployment)))
-        self.assertLess(commands.index(('umount', '--recursive', deployment)),
+        finish = ('mount', '-o', 'remount,ro', str(installer.TARGET))
+        release = ('umount', '--recursive', deployment)
+        self.assertLess(commands.index(updater), commands.index(release))
+        self.assertLess(commands.index(release), commands.index(finish))
+        self.assertLess(commands.index(finish),
                         next(i for i, command in enumerate(commands) if command[0] == 'efibootmgr'))
 
 
