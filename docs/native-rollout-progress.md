@@ -104,7 +104,7 @@ reserve needs a different host. The upstream repository's disposable
 runs one VM, with two vCPUs and 3 GiB RAM. It boots the built ISO under
 Secure Boot OVMF, supplies the ordinary installer prompts over serial, and
 reboots the newly installed qcow2. Read the media and guest identities
-from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45725401794)
+from the workflow artifacts. [Active retry](https://github.com/closure-labs/finite/actions/runs/45735032665)
 
 The validation image uses the full native recipe plus a VM-only serial
 console and observation unit. The runner creates a disposable signing key
@@ -206,8 +206,25 @@ images built. The latter Docker image IDs were:
 
 Both then stopped before applying the seal because `docker create` requires a
 command when the image supplies no default. Change `ktlkzqpw` gives the
-copy-only container an explicit placeholder and cleans it up on failure. The
-active run uses `24f80502`. There is no successful ISO or fresh boot receipt yet.
+copy-only container an explicit placeholder and cleans it up on failure.
+
+Run [45725401794](https://github.com/closure-labs/finite/actions/runs/45725401794)
+at `24f80502` copied the certificate and independently imported and verified the
+full stable native root. Artifact `15078600898` retains the validation-only seal
+with archive SHA-256
+`d3e0b828067eb37b719a78808863e8c27eafdbed324b7f11c7f678350b8af7d6` and strict
+composefs bootable root
+`f8bdad78ed8ca78818bd19f4a409f7ea01a814650cbdc41a725dd00b2086f49450445198b390b414908802f7795d36fb8c526ea8a4707b8442dafae4b62c261a`.
+The runner started with 88 GiB free and skipped cleanup at the old threshold.
+During osbuild's embedded payload copy it had 26 MiB left and the write failed
+with `ENOSPC`. The dev archive then hit `ENOSPC` in the canonical bootc import.
+
+The active retry at `16d4599a` increases the runner cleanup threshold, drops
+both Docker build caches after OCI export, releases the sealed archive after
+matching Podman import, and removes the per-build osbuild cache at exit. It
+also removes the two assembly-only Podman images after ISO checksum verification
+and before allocating the QEMU guest disk. Free space is logged before sealing,
+osbuild and QEMU. There is no successful ISO or fresh boot receipt yet.
 
 A capped re-seal of a historical Fedora fixture with the proper explicit
 `rw` argument passed independent OCI import and UKI verification. Its
