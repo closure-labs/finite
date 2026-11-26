@@ -1,17 +1,20 @@
 {
-  "baselineRuntimeBuildBase": "registry.fedoraproject.org/fedora@sha256:3fcae46546ac42b44e7af262329b033ce1dc800a5d2583e5025cb43531dba55d",
-  "baseline": {
-    "version": "44.20261117.1",
-    "kernelRelease": "7.2.11-200.fc44.x86_64",
-    "loaderVersion": "259",
-    "digests": {
-      "finite-native": "sha256:cb2e0f54caffb681ca4405d34236591a378430102e1704c6b2c78e3ff969f8bf",
-      "finite-native-dev": "sha256:fa893830ca753dffbb3f5c2beb3ed6d2c4007740524e4169f755a0858bb6009d"
-    }
+  "baselineLoader": {
+    "url": "https://dl.fedoraproject.org/pub/fedora/linux/releases/45/Everything/x86_64/os/Packages/s/systemd-boot-unsigned-262-3.fc45.x86_64.rpm",
+    "rpmSha256": "65a0251c1cca9391fff3ec1dcd1511f44ee2bd522a8fad6dae2e2d221ff2f533",
+    "unsignedSha256": "ef734bb90be87a67708fcf9560174d84e287ce1bec3612fc4baf00ed6b222c4f",
+    "fedoraSigningFingerprint": "4F50A6114CD5C6976A7F1179655A4B02F577861E",
+    "loaderInfo": "systemd-boot 262-3.fc45"
   },
-  "update": {
-    "version": "45.20261124",
-    "kernelRelease": "7.2.11-300.fc45.x86_64",
-    "loaderVersion": "262"
+  "updateLoaderInfo": "systemd-boot 262.1-1.fc45",
+  "finite-native": {
+    "digest": "sha256:e4a015702f18bebd332fb52f03aa4965c05fd25faec6d2edfa591356bfe61b61",
+    "version": "latest-45.20261126.1",
+    "kernelRelease": "7.3.4-300.fc45.x86_64"
+  },
+  "finite-native-dev": {
+    "digest": "sha256:4590f1651c8ff8d7cd18d33ea72ff8d73bd2111c3f0bc76e5543882877c0b2b4",
+    "version": "latest-45.20261126.1",
+    "kernelRelease": "7.3.4-300.fc45.x86_64"
   }
 }

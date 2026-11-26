@@ -123,10 +123,12 @@ def boot_facts(guest, password, seal):
     guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
     guest.send(password)
     facts = guest.record(b'FINITE_NATIVE_FRESH_BOOT')
+    zfs_provided = facts.get('zfsProvided')
+    expected_modules = ['zfs', 'v4l2loopback'] if zfs_provided else ['v4l2loopback']
     if (facts['profile'] != seal['profile'] or facts['bootableRootDigest'] != seal['bootableRootDigest']
             or any(facts.get(key) is not True for key in (
                 'secureBoot', 'selinuxEnforcing', 'encryptedRoot', 'efiUpdaterSucceeded'))
-            or facts.get('signedModules') != ['zfs', 'v4l2loopback']
+            or type(zfs_provided) is not bool or facts.get('signedModules') != expected_modules
             or facts.get('espBytes') != 600 * 1024**2 or facts.get('xbootldrBytes') != 4 * 1024**3):
         raise ValueError('Observed guest acceptance differs from the exact native seal or required boot facts')
     return facts
@@ -165,6 +167,8 @@ def qualify_lifecycle(args, state, common, password, base, update):
             with Guest(common + ['-smbios', f'type=1,serial=finite-lifecycle-{phase}']
                        + (extra if phase == 'stage' else []), serial, 2400 if phase == 'stage' else 900) as guest:
                 facts = boot_facts(guest, password, expected)
+                if expected is update and facts['zfsProvided'] != (args.update_provides_zfs == 'true'):
+                    raise ValueError('Booted update ZFS availability differs from the authenticated upstream image')
                 loader = expected['validationLoader']['signedSha256']
                 if (facts['kernelRelease'] != expected['kernelRelease'] or facts['espLoaderSha256'] != loader
                         or facts['fallbackLoaderSha256'] != loader or not facts['loaderInfo'].startswith('systemd-boot ')
@@ -190,11 +194,9 @@ def qualify_lifecycle(args, state, common, password, base, update):
                 observed[phase] = facts
         if phase == 'stage':
             media.unlink()
-    baseline = observed['stage']['loaderInfo']
-    updated = observed['rollback']['loaderInfo']
-    if (not re.match(r'systemd-boot ' + args.baseline_loader + r'[.-]', baseline)
-            or not re.match(r'systemd-boot ' + args.updated_loader + r'[.-]', updated)
-            or observed['verified']['loaderInfo'] != baseline):
+    if (observed['stage']['loaderInfo'] != args.baseline_loader
+            or observed['rollback']['loaderInfo'] != args.updated_loader
+            or observed['verified']['loaderInfo'] != args.baseline_loader):
         raise ValueError('Running EFI loader versions did not follow the baseline, upgrade and rollback')
     return {
         'updateArchiveSha256': update['archiveSha256'],
@@ -225,8 +227,8 @@ def qualify(args):
         archive = args.update_archive.resolve(strict=True)
         if (archive.name != 'update.oci.tar' or {path.name for path in archive.parent.iterdir()} != {
                 'update.oci.tar', 'update.json'} or not args.update_module_certificate
-                or any(not re.fullmatch('[0-9]+', version or '') for version in (
-                    args.baseline_loader, args.updated_loader)) or args.baseline_loader == args.updated_loader):
+                or args.update_provides_zfs is None or not args.baseline_loader or not args.updated_loader
+                or args.baseline_loader == args.updated_loader):
             raise ValueError('Use a dedicated directory with a sealed update and specify both expected loader versions')
         update = json.loads(archive.with_name('update.json').read_text())
         verify_update(seal, update, archive)
@@ -298,6 +300,7 @@ def main():
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--update-archive', type=Path)
     parser.add_argument('--update-module-certificate', type=Path)
+    parser.add_argument('--update-provides-zfs', choices=('true', 'false'))
     parser.add_argument('--baseline-loader')
     parser.add_argument('--updated-loader')
     try:

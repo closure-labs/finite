@@ -101,15 +101,21 @@ def main():
             require(hashlib.file_digest(stream, 'sha256').hexdigest() == expected, 'Runtime bytes differ: ' + name)
     require(Path('/etc/pki/akmods/certs/akmods-ublue.der').read_bytes() in enrolled_mok_certificates(),
             'Module-signing certificate is absent from the enrolled MOKs')
-    # Module insertion under lockdown is the actual acceptance condition.
-    for module in ('zfs', 'v4l2loopback'):
+    # v4l2loopback is required. Follow the upstream image for ZFS, and
+    # still require signed loading under lockdown whenever it is provided.
+    zfs = subprocess.run(['modinfo', '-n', 'zfs'], text=True, capture_output=True, timeout=120)
+    zfs_provided = zfs.returncode == 0
+    require(zfs_provided or zfs.stderr.strip() == 'modinfo: ERROR: Module zfs not found.',
+            'Could not determine upstream ZFS availability: ' + zfs.stderr.strip())
+    modules = ['zfs', 'v4l2loopback'] if zfs_provided else ['v4l2loopback']
+    for module in modules:
         capture('modprobe', module)
         require(Path('/sys/module', module).is_dir() and capture('modinfo', '-F', 'signer', module),
                 'Signed module did not load: ' + module)
     facts = {
         'profile': Path('/usr/share/finite/build-profile').read_text().strip(),
         'bootableRootDigest': digest[0], 'secureBoot': True, 'selinuxEnforcing': True,
-        'encryptedRoot': True, 'efiUpdaterSucceeded': True, 'signedModules': ['zfs', 'v4l2loopback'],
+        'encryptedRoot': True, 'efiUpdaterSucceeded': True, 'zfsProvided': zfs_provided, 'signedModules': modules,
         'espBytes': 600 * 1024**2, 'xbootldrBytes': 4 * 1024**3,
     }
     serial = Path('/sys/class/dmi/id/product_serial')

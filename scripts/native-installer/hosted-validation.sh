@@ -49,68 +49,25 @@ python3 -c 'import yaml'
 printf 'Authenticating and validating the %s recipe\n' "$profile"
 python3 scripts/ci/bluefin-upstream.py verify --include-native
 nice -n 19 bluebuild validate "recipes/$profile.yml"
-fixture=sources/native-lifecycle-fixture.json
-install_lifecycle_runtime() {
-  local generation=$1
-  shift
-  local source="$RUNNER_TEMP/native-lifecycle-runtimes/$generation"
-  [[ ! -e files/bootc-runtime && -d $source && ! -L $source ]]
+printf 'Staging the locked runtime and payload for %s\n' "$profile"
+if [[ $lifecycle == true ]]; then
+  source="$RUNNER_TEMP/native-lifecycle-runtime"
+  [[ -d files/payload/home-manager-template && ! -e files/bootc-runtime && -d $source && ! -L $source ]]
   for name in bootc-runtime.rpm source-lock.json receipt.json; do
     [[ -f $source/$name && ! -L $source/$name ]]
   done
-  # The stage helper rechecks the source, packaging-input and RPM hashes.
-  nice -n 19 python3 scripts/bluebuild/stage-bootc-runtime.py --output "$source" "$@"
+  # Recheck the source, packaging-input and RPM hashes before reusing it.
+  nice -n 19 python3 scripts/bluebuild/stage-bootc-runtime.py --output "$source"
   cp -a -- "$source" files/bootc-runtime
-}
-if [[ $lifecycle == true ]]; then
-  cp -- "recipes/$profile.yml" "$work/recipe.before"
-  python3 - "$profile" "$evidence" "$fixture" <<'PY'
-import json
-from pathlib import Path
-import re
-import runpy
-import sys
-
-profile, evidence, fixture_path = sys.argv[1:]
-upstream = runpy.run_path('scripts/ci/bluefin-upstream.py')
-recipe = upstream['recipes'](include_native=True)[profile]
-fixture = json.loads(Path(fixture_path).read_text())
-baseline = upstream['digest'](fixture['baseline']['digests'][profile])
-generations = {'baseline': baseline, 'update': recipe['digest']}
-receipts = {}
-for generation, digest in generations.items():
-    expected = fixture[generation]
-    info = upstream['inspect'](recipe['base'] + '@' + digest)
-    labels = info['Labels']
-    packages = json.loads(labels['dev.hhd.rechunk.info'])['packages']
-    if (info['Digest'] != digest or info['Architecture'] != 'amd64' or info['Os'] != 'linux'
-            or labels['org.opencontainers.image.version'] != expected['version']
-            or labels['ostree.linux'] != expected['kernelRelease']
-            or not {'kmod-zfs', 'kmod-v4l2loopback'} <= set(packages)):
-        raise ValueError('Unexpected kernel or module packages in lifecycle ' + generation)
-    receipts[generation] = {**upstream['authenticate'](recipe['base'], digest),
-                            'version': expected['version'], 'kernelRelease': expected['kernelRelease'],
-                            'modules': {name: packages[name] for name in ('kmod-zfs', 'kmod-v4l2loopback')}}
-(Path(evidence) / 'upgrade-upstream.json').write_text(json.dumps({'profile': profile, **receipts}, indent=2) + '\n')
-path = Path('recipes', profile + '.yml')
-revised, count = re.subn(r'^image-version: stable@sha256:[0-9a-f]{64}$',
-                         'image-version: stable@' + baseline, path.read_text(), flags=re.M)
-if count != 1:
-    raise ValueError('Expected exactly one pinned stable recipe input')
-path.write_text(revised)
-PY
-  nice -n 19 bluebuild validate "recipes/$profile.yml"
-  [[ -d files/payload/home-manager-template ]]
   cp -- .bluebuild/lifecycle-payload.json "$evidence/shared-payload.json"
-  install_lifecycle_runtime 44 --validation-fedora44
 else
-  printf 'Staging the locked runtime and payload for %s\n' "$profile"
   nice -n 19 bash scripts/bluebuild/stage.sh "$profile"
 fi
 cp files/bootc-runtime/receipt.json "$evidence/runtime.json"
 tools=''
+fixture=sources/native-lifecycle-fixture.json
 context="$work/validation-context"
-mkdir "$context"
+mkdir -p "$context/loader"
 cp scripts/native-installer/{Validation.Containerfile,validation-guest.py,validation-guest.service,serial_records.py} "$context/"
 # Only the host signer uses the disposable key. Both generations share one
 # boot certificate so the upgrade does not depend on a new trust enrollment.
@@ -118,22 +75,19 @@ openssl req -new -newkey rsa:3072 -nodes -x509 -sha256 -days 7 -subj "/CN=Finite
   -keyout "$work/vm.key" -out "$work/vm.pem" 2>"$work/keygen.log"
 
 build_sealed_archive() {
-  local archive=$1 seal=$2 certificate=$3 expected_kernel=${4:-}
+  local archive=$1 seal=$2 certificate=$3
   local -a candidates
   printf 'Building the %s image and serial observation layer for %s\n' "$profile" "$(basename "$archive")"
   nice -n 19 bash scripts/bluebuild/build.sh "$profile" false
   mapfile -t candidates < <(docker image ls --filter "label=io.finite.profile=$profile" --format '{{.ID}}' | sort -u)
   [[ ${#candidates[@]} == 1 ]]
   docker tag "${candidates[0]}" "localhost/finite-validation-root:$profile"
-  if [[ -n $expected_kernel ]]; then
-    docker run --rm --network none --entrypoint /bin/bash "localhost/finite-validation-root:$profile" \
-      -euo pipefail -c '
-        for module in zfs v4l2loopback; do
-          signer=$(modinfo -k "$1" -F signer "$module")
-          test -n "$signer"
-          printf "%s %s: %s\n" "$1" "$module" "$signer"
-        done
-      ' _ "$expected_kernel"
+  if [[ -f $work/older-loader.rpm ]]; then
+    local loader="$context/loader/systemd-bootx64.efi"
+    docker run --rm -i --network none --entrypoint /bin/bash "localhost/finite-validation-root:$profile" \
+      -euo pipefail -c 'rpm2cpio - | cpio --quiet -i --to-stdout ./usr/lib/systemd/boot/efi/systemd-bootx64.efi' \
+      < "$work/older-loader.rpm" > "$loader"
+    printf '%s  %s\n' "$(jq -er .baselineLoader.unsignedSha256 "$fixture")" "$loader" | sha256sum --check
   fi
   docker build --pull=false --file "$context/Validation.Containerfile" \
     --build-arg "NATIVE_ROOT=localhost/finite-validation-root:$profile" \
@@ -166,17 +120,21 @@ build_sealed_archive() {
     --tools "$tools" --profile "$profile" --revision "$GITHUB_SHA" --epoch "$(date +%s)" \
     --validation-only --validation-key "$work/vm.key" --validation-certificate "$work/vm.pem" \
     --validation-importer-sha256 "$importer_sha"
-  if [[ -n $expected_kernel ]]; then
-    jq -e --arg expected "$expected_kernel" '.kernelRelease == $expected' "$seal/sealed.json" >/dev/null
-  fi
   rm -- "$work/raw.oci.tar"
 }
 
-baseline_kernel=''
 if [[ $lifecycle == true ]]; then
-  baseline_kernel=$(jq -er .baseline.kernelRelease "$fixture")
+  # The locked RPM was verified against Fedora's published Fedora 45 key.
+  # Match both the complete package and its extracted EFI binary to those bytes.
+  loader_url=$(jq -er .baselineLoader.url "$fixture")
+  [[ $loader_url == https://dl.fedoraproject.org/pub/fedora/linux/releases/45/Everything/x86_64/os/Packages/s/* ]]
+  curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' --retry 3 --max-time 90 \
+    --output "$work/older-loader.rpm" "$loader_url"
+  printf '%s  %s\n' "$(jq -er .baselineLoader.rpmSha256 "$fixture")" "$work/older-loader.rpm" | sha256sum --check
+  jq -e .baselineLoader "$fixture" > "$evidence/baseline-loader.json"
 fi
-build_sealed_archive "$work/sealed.oci.tar" "$work/seal" "$work/module.pem" "$baseline_kernel"
+build_sealed_archive "$work/sealed.oci.tar" "$work/seal" "$work/module.pem"
+rm -f -- "$work/older-loader.rpm" "$context/loader/systemd-bootx64.efi"
 digest=$(tar -xOf "$work/sealed.oci.tar" index.json | jq -er '.manifests[0].digest')
 cp "$work/seal/sealed.json" "$work/vm.pem" "$evidence/"
 printf 'Building the %s installer ISO\n' "$profile"
@@ -192,17 +150,48 @@ df -h -- "$work" "$output"
 update_args=()
 if [[ $lifecycle == true ]]; then
   mkdir "$work/update"
+  cp -- "recipes/$profile.yml" "$work/recipe.before"
+  python3 - "$profile" "$evidence" <<'PY'
+import json
+from pathlib import Path
+import re
+import runpy
+import sys
+
+profile, evidence = sys.argv[1:]
+upstream = runpy.run_path('scripts/ci/bluefin-upstream.py')
+base = upstream['recipes'](include_native=True)[profile]
+fixture = json.loads(Path('sources/native-lifecycle-fixture.json').read_text())[profile]
+candidate = upstream['digest'](fixture['digest'])
+info = upstream['inspect'](base['base'] + '@' + candidate)
+packages = json.loads(info['Labels']['dev.hhd.rechunk.info'])['packages']
+if (candidate == base['digest'] or info['Digest'] != candidate or info['Architecture'] != 'amd64'
+        or info['Os'] != 'linux' or info['Labels']['org.opencontainers.image.version'] != fixture['version']
+        or info['Labels']['ostree.linux'] != fixture['kernelRelease'] or 'kmod-v4l2loopback' not in packages):
+    raise ValueError('Unexpected upstream lifecycle fixture identity')
+authentication = upstream['authenticate'](base['base'], candidate)
+(Path(evidence) / 'upgrade-upstream.json').write_text(json.dumps({
+    'profile': profile, 'base': base['base'] + '@' + base['digest'], 'update': authentication,
+    'updateProvidesZfs': 'kmod-zfs' in packages, **fixture,
+}, indent=2) + '\n')
+recipe = Path('recipes', profile + '.yml')
+revised, count = re.subn(r'^image-version: stable@sha256:[0-9a-f]{64}$',
+                         'image-version: latest@' + candidate, recipe.read_text(), flags=re.M)
+if count != 1:
+    raise ValueError('Expected exactly one pinned stable recipe input')
+recipe.write_text(revised)
+PY
+  nice -n 19 bluebuild validate "recipes/$profile.yml"
+  build_sealed_archive "$work/update/update.oci.tar" "$work/update-seal" "$work/update-module.pem"
   mv -- "$work/recipe.before" "recipes/$profile.yml"
-  mv -- files/bootc-runtime "$work/baseline-runtime"
-  install_lifecycle_runtime 45
-  cp files/bootc-runtime/receipt.json "$evidence/update-runtime.json"
-  build_sealed_archive "$work/update/update.oci.tar" "$work/update-seal" "$work/update-module.pem" \
-    "$(jq -er .update.kernelRelease "$fixture")"
+  jq -e --arg expected "$(jq -er --arg profile "$profile" '.[$profile].kernelRelease' "$fixture")" \
+    '.kernelRelease == $expected' "$work/update-seal/sealed.json" >/dev/null
   cp -- "$work/update-seal/sealed.json" "$work/update/update.json"
   cp -- "$work/update/update.json" "$evidence/update.json"
   update_args=(--update-archive "$work/update/update.oci.tar" --update-module-certificate "$work/update-module.pem"
-    --baseline-loader "$(jq -er .baseline.loaderVersion "$fixture")"
-    --updated-loader "$(jq -er .update.loaderVersion "$fixture")")
+    --update-provides-zfs "$(jq -r .updateProvidesZfs "$evidence/upgrade-upstream.json")"
+    --baseline-loader "$(jq -er .baselineLoader.loaderInfo "$fixture")"
+    --updated-loader "$(jq -er .updateLoaderInfo "$fixture")")
 fi
 rm -- "$work/vm.key"
 printf 'Booting the %s installer in the capped VM\n' "$profile"

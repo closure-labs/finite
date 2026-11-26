@@ -56,7 +56,7 @@ class Resources(unittest.TestCase):
         workflow = yaml.safe_load((ROOT / '.github/workflows/native-lifecycle-validation.yml').read_text())
         jobs = workflow['jobs']
         lifecycle = jobs['lifecycle']
-        self.assertEqual(lifecycle['needs'], ['payload', 'runtimes'])
+        self.assertEqual(lifecycle['needs'], ['payload', 'runtime'])
         self.assertEqual(lifecycle['strategy']['max-parallel'], 2)
         self.assertEqual(lifecycle['strategy']['matrix']['profile'], ['finite-native', 'finite-native-dev'])
         for name in ('payload', 'lifecycle'):
@@ -64,8 +64,9 @@ class Resources(unittest.TestCase):
             setup = next(step for step in steps if step.get('uses') == '$/.github/actions/setup-nix')
             self.assertEqual(setup['with']['resource-mode'], 'native-qualification')
             self.assertTrue(any('watch-memory.py' in step.get('run', '') for step in steps))
-        runtime_steps = jobs['runtimes']['steps']
-        self.assertTrue(any(step.get('run', '').count('watch-memory.py') == 2 for step in runtime_steps))
+        runtime_steps = jobs['runtime']['steps']
+        self.assertTrue(any('watch-memory.py python3 scripts/bluebuild/stage-bootc-runtime.py' in step.get('run', '')
+                            for step in runtime_steps))
 
     def test_verify_rejects_ignored_settings_and_wrong_client(self):
         value = resources.budget(4, 16 * resources.GIB)

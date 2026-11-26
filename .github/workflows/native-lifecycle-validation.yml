@@ -50,8 +50,8 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  runtimes:
-    name: Build the two locked bootc RPMs once
+  runtime:
+    name: Build the locked bootc RPM once
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-lifecycle'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -61,25 +61,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Build matching Fedora 44 and Fedora 45 runtimes
+      - name: Build the shared Fedora 45 runtime
         run: |
           python3 scripts/native-installer/watch-memory.py python3 scripts/bluebuild/stage-bootc-runtime.py \
-            --validation-fedora44 --output .bluebuild/lifecycle-runtimes/44
-          python3 scripts/native-installer/watch-memory.py python3 scripts/bluebuild/stage-bootc-runtime.py \
-            --output .bluebuild/lifecycle-runtimes/45
-      - name: Upload the RPMs with their source locks and build receipts
+            --output .bluebuild/lifecycle-runtime
+      - name: Upload the RPM with its source lock and build receipt
         id: upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: native-lifecycle-runtimes-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .bluebuild/lifecycle-runtimes/
+          name: native-lifecycle-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/lifecycle-runtime/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
 
   lifecycle:
     name: Qualify ${{ matrix.profile }} lifecycle
-    needs: [payload, runtimes]
+    needs: [payload, runtime]
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-lifecycle'
     runs-on: ubuntu-24.04
     timeout-minutes: 330
@@ -132,11 +130,11 @@ jobs:
             --artifact-id "$PAYLOAD_ID" --sha256 "$PAYLOAD_SHA" --revision "$PAYLOAD_REVISION" \
             --run "$PAYLOAD_RUN" --attempt "$PAYLOAD_ATTEMPT" > .bluebuild/lifecycle-payload.json
           rm -- .bluebuild/lifecycle-payload/payload.tar
-      - name: Download the same-run bootc runtimes
+      - name: Download the same-run bootc runtime
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          artifact-ids: ${{ needs.runtimes.outputs.artifact_id }}
-          path: ${{ runner.temp }}/native-lifecycle-runtimes
+          artifact-ids: ${{ needs.runtime.outputs.artifact_id }}
+          path: ${{ runner.temp }}/native-lifecycle-runtime
           merge-multiple: true
       - name: Build both generations and qualify the lifecycle
         env:

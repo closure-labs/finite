@@ -469,6 +469,20 @@ class Media(unittest.TestCase):
         self.assertIn(b'|END|', guest.log.getvalue())
         self.assertTrue(wire.startswith(guest.log.getvalue()))
 
+    def test_boot_receipt_requires_signed_modules_from_the_upstream_image(self):
+        qual = runpy.run_path(str(self.directory / 'qualify-iso.py'))
+        seal = {'profile': 'finite-native', 'bootableRootDigest': 'a' * 128}
+        common = dict(seal, secureBoot=True, selinuxEnforcing=True, encryptedRoot=True,
+                      efiUpdaterSucceeded=True, espBytes=600 * 1024**2, xbootldrBytes=4 * GIB)
+        for provided, modules in ((True, ['zfs', 'v4l2loopback']), (False, ['v4l2loopback'])):
+            with self.subTest(zfs=provided):
+                facts = dict(common, zfsProvided=provided, signedModules=modules)
+                guest = SimpleNamespace(expect=lambda _: None, send=lambda _: None, record=lambda _: facts)
+                self.assertEqual(qual['boot_facts'](guest, 'disposable-password', seal), facts)
+                facts['signedModules'] = []
+                with self.assertRaisesRegex(ValueError, 'required boot facts'):
+                    qual['boot_facts'](guest, 'disposable-password', seal)
+
     def test_workflow_is_manual_main_only_and_uploads_unqualified_media(self):
         import yaml
         workflow = yaml.safe_load((ROOT / '.github/workflows/native-iso.yml').read_text())
