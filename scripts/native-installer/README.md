@@ -38,7 +38,9 @@ keep the passphrase/recovery key. The installer never passes machine-specific
 After bootc finalizes the root and boot filesystems, the installer reopens the
 encrypted backing filesystem for scratch cleanup and persistent configuration.
 `bootc install mount --sysroot ... --latest ...` exposes the read-only composefs
-deployment and its writable `/etc` and `/var`. The EFI updater reads its signed
+deployment and its writable `/etc` and `/var`. The installer records the GPT
+partition UUIDs in the new `/etc/fstab` for `/efi` and read-only `/boot`. The
+initrd discovers the encrypted root through its GPT type. The EFI updater reads its signed
 payload and certificate, stores its journal in that deployment's persistent
 `/var/lib/finite/efi-updates`, and enables maintained fallback files in
 `/etc/finite/bootloader.json`. The installer remounts the backing filesystem

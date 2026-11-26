@@ -163,13 +163,14 @@ def plan(disk, pins, *, fido2=False, recovery_key=True):
         Step('Prepare the installed deployment mount', ('mkdir', '-p', deployment)),
         Step('Mount the installed deployment and its writable state',
              ('bootc', 'install', 'mount', '--sysroot', target, '--latest', deployment)),
-        Step('Enable maintained shim fallback files in the installed configuration',
+        Step('Configure persistent boot partition mounts and shim fallback',
              ('/usr/libexec/finite/finite-native-install', 'configure-target')),
         Step('Install shim, MokManager and the signed systemd-boot',
              ('/usr/bin/python3', '/usr/libexec/finite/update-efi', '--install-root', deployment,
               '--esp', target + '/efi', '--state', deployment + '/var/lib/finite/efi-updates')),
         Step('Label the installed configuration and EFI recovery journal',
-             ('chroot', deployment, 'restorecon', '-RF', '/etc/finite', '/var/lib/finite/efi-updates')),
+             ('chroot', deployment, 'restorecon', '-RF', '/etc/fstab', '/etc/finite',
+              '/var/lib/finite/efi-updates')),
         Step('Release the installed deployment', ('umount', '--recursive', deployment)),
         Step('Flush and return the encrypted filesystem to read-only',
              ('mount', '-o', 'remount,ro', target)),
@@ -242,11 +243,38 @@ def verify_payload(pins, inspect=None):
         raise InstallError('Embedded payload differs from the signed native image pinned in this media')
 
 
-def configure_target(deployment=DEPLOYMENT):
+def configure_target(deployment=DEPLOYMENT, target=TARGET):
     """Write only the new deployment's machine configuration, never live /etc."""
     deployment = Path(deployment)
     if not deployment.is_mount() or not (deployment / 'usr/lib/composefs/setup-root-conf.toml').is_file():
         raise InstallError('Mount the installed native deployment before configuring it')
+    # Discovery of the encrypted root happens in the initrd. Mount the two
+    # distinct boot partitions explicitly after switching to the deployment.
+    mounts = []
+    for name in ('efi', 'boot'):
+        fields = subprocess.check_output(
+            ['findmnt', '-n', '-o', 'PARTUUID,FSTYPE', '--mountpoint', str(Path(target) / name)],
+            text=True).split()
+        if (len(fields) != 2 or fields[1] != 'vfat'
+                or not re.fullmatch(r'[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}', fields[0], re.I)):
+            raise InstallError(f'Expected a mounted VFAT partition with a GPT UUID for /{name}')
+        mounts.append(fields[0].lower())
+    esp, xbootldr = mounts
+    if esp == xbootldr:
+        raise InstallError('The ESP and XBOOTLDR must be distinct partitions')
+    fstab = deployment / 'etc/fstab'
+    if fstab.is_symlink():
+        raise InstallError('Expected a regular fstab in the installed deployment')
+    lines = []
+    if fstab.exists():
+        for line in fstab.read_text().splitlines():
+            fields = line.split()
+            if len(fields) > 1 and not fields[0].startswith('#') and fields[1] in {'/efi', '/boot'}:
+                continue
+            lines.append(line)
+    lines.extend((f'PARTUUID={esp} /efi vfat umask=0077 0 0',
+                  f'PARTUUID={xbootldr} /boot vfat ro,umask=0077 0 0'))
+    fstab.write_text('\n'.join(lines) + '\n')
     directory = deployment / 'etc/finite'
     directory.mkdir(mode=0o755, parents=True, exist_ok=True)
     (directory / 'bootloader.json').write_text(json.dumps({'schema': 1, 'manageFallback': True}) + '\n')

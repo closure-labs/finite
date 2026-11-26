@@ -296,6 +296,35 @@ class Placement(unittest.TestCase):
                 installer.verify_placement(target)
 
 
+class TargetConfiguration(unittest.TestCase):
+    def test_boot_mounts_replace_stale_entries_and_keep_other_fstab_content(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            deployment = Path(temporary)
+            setup = deployment / 'usr/lib/composefs/setup-root-conf.toml'
+            setup.parent.mkdir(parents=True)
+            setup.touch()
+            fstab = deployment / 'etc/fstab'
+            fstab.parent.mkdir()
+            original = '# Existing entries\nUUID=other /var/log ext4 defaults 0 0\n'
+            fstab.write_text(original + 'UUID=old /boot vfat defaults 0 0\nUUID=old /efi vfat defaults 0 0\n')
+            esp = '11111111-1111-1111-1111-111111111111'
+            xbootldr = '22222222-2222-2222-2222-222222222222'
+            with patch.object(Path, 'is_mount', return_value=True), patch(
+                'subprocess.check_output', side_effect=[f'{esp} vfat\n', f'{xbootldr} vfat\n'] * 2
+            ) as read_mount:
+                installer.configure_target(deployment)
+                installer.configure_target(deployment)
+            self.assertEqual([c.args[0][-1] for c in read_mount.call_args_list],
+                             [str(installer.TARGET / name) for name in ('efi', 'boot')] * 2)
+            self.assertEqual(fstab.read_text(), original + f'PARTUUID={esp} /efi vfat umask=0077 0 0\n'
+                             f'PARTUUID={xbootldr} /boot vfat ro,umask=0077 0 0\n')
+            self.assertTrue(json.loads((deployment / 'etc/finite/bootloader.json').read_text())['manageFallback'])
+            with patch.object(Path, 'is_mount', return_value=True), patch(
+                'subprocess.check_output', side_effect=[f'{esp} vfat\n'] * 2
+            ), self.assertRaisesRegex(installer.InstallError, 'distinct partitions'):
+                installer.configure_target(deployment)
+
+
 class Enrollment(unittest.TestCase):
     def test_pre_enrolled_keys_skip_prompt_and_missing_key_is_queued(self):
         with patch.object(installer, 'print', create=True):
