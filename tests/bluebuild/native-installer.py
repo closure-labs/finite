@@ -2,10 +2,13 @@
 """The native installer's disk choice, layout and command contract, without touching disks."""
 from importlib.machinery import SourceFileLoader
 import importlib.util
+from io import BytesIO
 import json
 import dataclasses
 from pathlib import Path
 import tempfile
+import time
+from types import SimpleNamespace
 import unittest
 from subprocess import CompletedProcess
 from unittest.mock import patch
@@ -340,6 +343,24 @@ class Media(unittest.TestCase):
         self.assertIn('--volume "$payload_archive:/run/finite-payload.oci.tar:ro"', script)
         self.assertNotIn('--bootc-installer-payload-ref', script)
         self.assertNotIn('anaconda-iso', script)
+
+    def test_capped_guest_keeps_the_complete_failure_line_in_its_serial_log(self):
+        spec = importlib.util.spec_from_file_location('qualify_iso', self.directory / 'qualify-iso.py')
+        qual = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(qual)
+        guest = qual.Guest.__new__(qual.Guest)
+        guest.deadline = time.monotonic() + 10
+        guest.output = b''
+        guest.log = BytesIO()
+        guest.selector = SimpleNamespace(select=lambda timeout: True)
+        guest.process = SimpleNamespace(stdout=SimpleNamespace(fileno=lambda: 0))
+        chunks = [b'Installer output\r\nInstallation stopped: Embe',
+                  b'dded payload manifest digest differs from the pinned native image\r\n']
+        with patch.object(qual, 'available_mib', return_value=qual.RESERVE_MIB), \
+                patch.object(qual.os, 'read', side_effect=chunks), \
+                self.assertRaisesRegex(RuntimeError, 'Guest reported a failure'):
+            guest.expect(rb'Installation complete\.')
+        self.assertEqual(guest.log.getvalue(), b''.join(chunks))
 
     def test_workflow_is_manual_main_only_and_uploads_unqualified_media(self):
         import yaml

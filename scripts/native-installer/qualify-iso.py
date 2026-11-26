@@ -16,6 +16,7 @@ MEMORY_MIB = 3072
 RESERVE_MIB = 3072
 DISK_SERIAL = 'FINITEQUALIFICATION'
 MOK_GUID = '605dab50-e046-4300-abb6-3dd810dd8b23'
+GUEST_FAILURE = re.compile(rb'(?:Installation stopped:|Kernel panic)[^\r\n]*\r?\n')
 
 
 def available_mib():
@@ -63,7 +64,7 @@ class Guest:
             if match:
                 self.output = self.output[match.end():]
                 return match
-            if b'Installation stopped:' in self.output or b'Kernel panic' in self.output:
+            if GUEST_FAILURE.search(self.output):
                 raise RuntimeError('Guest reported a failure. See the serial log.')
             if available_mib() < RESERVE_MIB:
                 raise RuntimeError('Host fell below the 3 GiB available-memory reserve')
