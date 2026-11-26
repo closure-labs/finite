@@ -370,11 +370,24 @@ log recorded successful finalization before poweroff. The console
 appended a kernel message directly to the preceding boot receipt, so
 the host did not reopen the disk for the upgraded boot. Change
 `wzokysmv` adds numbered Base64 frames with explicit terminators for
-the boot, transition and shutdown receipts. Run `45889758659` tests
-both profiles with this protocol.
+the boot, transition and shutdown receipts. Run `45889758659` passed
+serial framing and booted the sealed stable-profile update with kernel
+`7.3.4-300.fc45.x86_64`, Secure Boot, enforcing SELinux and a successful
+EFI refresh. The guest stopped because the upstream image shipped no
+ZFS module for that kernel.
 [Stable failure evidence](https://github.com/closure-labs/finite/actions/runs/45863337122/artifacts/15143609769)
 [Second stable artifact](https://github.com/closure-labs/finite/actions/runs/45877540862/artifacts/15151330081)
-[Current run](https://github.com/closure-labs/finite/actions/runs/45889758659)
+[Updated boot artifact](https://github.com/closure-labs/finite/actions/runs/45889758659/artifacts/15157849042)
+
+The ZFS check follows the upstream module inventory. Both signed
+update bases ship v4l2loopback and omit ZFS. The guest requires signed
+v4l2loopback on every boot and verifies signed ZFS loading whenever
+the installed kernel provides it. Changes `yuryrtnm` and `sknktsuv`
+build the common Nix payload and locked bootc RPM once in parallel
+producer jobs. Then stable and development qualify on separate hosted
+runners, each with the original guest and memory caps. Run
+`45907617967` exercises the updated policy and workflow.
+[Parallel lifecycle run](https://github.com/closure-labs/finite/actions/runs/45907617967)
 
 The local `qualification/native-migration` bookmark prepares the
 workstation-layout rehearsal. Changes `pmmnzpkr`, `nwsysplz` and
