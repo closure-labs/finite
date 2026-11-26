@@ -28,6 +28,8 @@ payload="$repository:$tag"
 revision=${GITHUB_SHA:?}
 [[ $revision =~ ^[0-9a-f]{40}$ ]]
 [[ ! -e $output ]] || { echo 'Use a fresh ISO output directory.' >&2; exit 2; }
+cache=$(mktemp -d "${RUNNER_TEMP:?}/native-osbuild.XXXXXXXX")
+trap 'sudo rm -rf -- "$cache"' EXIT
 
 # Both paths require an immutable manifest before building a derived live root.
 # Only the dedicated validation run accepts an archive sealed with a VM key.
@@ -43,40 +45,38 @@ if [[ -n $validation_archive || -n $validation_receipt ]]; then
     .profile == $profile and .sourceRevision == $revision and .integrity.strictVerity == true and
     .integrity.archiveSha256 == $sha and .integrity.bootableRootDigest == .bootableRootDigest
   ' "$validation_receipt" >/dev/null
-  sudo skopeo copy --preserve-digests "oci-archive:$validation_archive" "containers-storage:$payload"
+  payload_archive=$validation_archive
   validation=true
 else
   [[ ${GITHUB_REF:-} == refs/heads/main && $# == 3 ]]
   cosign verify --new-bundle-format=false --key "$root/cosign.pub" "$repository@$digest" >/dev/null
-  sudo podman pull "$repository@$digest"
-  sudo podman tag "$repository@$digest" "$payload"
+  payload_archive="$cache/payload.oci.tar"
+  skopeo copy --preserve-digests "docker://$repository@$digest" "oci-archive:$payload_archive"
 fi
+sudo skopeo copy --preserve-digests "oci-archive:$payload_archive" "containers-storage:$payload"
 [[ $(sudo podman image inspect --format '{{.Digest}}' "$payload") == "$digest" ]]
 profile=$(sudo podman image inspect --format '{{index .Labels "io.finite.profile"}}' "$payload")
 architecture=$(sudo podman image inspect --format '{{index .Labels "io.finite.boot-architecture"}}' "$payload")
 [[ $profile == "$tag" && $architecture == native-composefs ]] || {
   echo 'Payload must be the matching native profile, authenticated by digest.' >&2; exit 2;
 }
-if [[ $validation == true ]]; then
-  rm -- "$validation_archive"
-fi
 sudo podman build --pull=never \
   --build-arg "PAYLOAD=$payload" --build-arg "PAYLOAD_REF=$payload" --build-arg "PAYLOAD_DIGEST=$digest" \
   --build-arg "VALIDATION=$validation" \
+  --volume "$payload_archive:/run/finite-payload.oci.tar:ro" \
   --label "io.finite.native-installer.payload=$repository@$digest" \
   --tag "$installer" "$here"
+rm -- "$payload_archive"
 sudo podman pull "$builder"
 
 mkdir -p "$output"
-cache=$(mktemp -d "${RUNNER_TEMP:?}/native-osbuild.XXXXXXXX")
-trap 'sudo rm -rf -- "$cache"' EXIT
 df -h -- "$cache" "$output"
 sudo podman run --rm --privileged --security-opt label=disable \
   -v /var/lib/containers/storage:/var/lib/containers/storage \
   -v "$output":/output \
   -v "$cache":/osbuild-cache \
   "$builder" build --output-dir /output --cache /osbuild-cache \
-  --bootc-ref "$installer" --bootc-installer-payload-ref "$payload" --bootc-default-fs ext4 \
+  --bootc-ref "$installer" --bootc-default-fs ext4 \
   generic-iso
 sudo chown -R "$(id -u):$(id -g)" "$output"
 

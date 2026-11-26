@@ -45,15 +45,21 @@ RUN systemctl enable finite-native-installer.service \
     && systemctl mask finite-efi-update.service bootloader-update.service rpm-ostreed.service \
         finite-firstboot-rpm-ostree.service
 
-# Pins checked by finite-native-install before any disk work. The live root
-# may drop the RPM database; bind the actual runtime bytes as well as its version.
+# Unpack the verified OCI layout into the ISO's live filesystem. Reading it as a
+# directory lets preflight inspect the original manifest without RAM-backed unpacking.
+# The live root may drop the RPM database, so pin the actual bootc runtime bytes.
 RUN set -eu; \
     test -n "$PAYLOAD_REF"; \
     echo "$PAYLOAD_DIGEST" | grep -Eq '^sha256:[0-9a-f]{64}$'; \
     version=$(bootc --version | sed -n 's/^bootc //p'); \
     test -n "$version"; \
-    mkdir -p /usr/lib/finite/installer; \
+    directory=/usr/lib/finite/installer; \
+    source="oci:$directory/payload"; \
+    install -d -m0755 "$directory/payload"; \
+    tar --no-same-owner --no-same-permissions -xf /run/finite-payload.oci.tar -C "$directory/payload"; \
+    manifest_sha=$(skopeo inspect --raw "$source" | sha256sum | cut -d' ' -f1); \
+    test "sha256:$manifest_sha" = "$PAYLOAD_DIGEST"; \
     runtime_sha=$(python3 -c 'import hashlib,json; from pathlib import Path; r=json.loads(Path("/usr/share/finite/bootc-runtime.json").read_text()); expected=r["files"]["/usr/bin/bootc"]; actual=hashlib.sha256(Path("/usr/bin/bootc").read_bytes()).hexdigest(); assert actual == expected, "live runtime differs from signed payload"; print(expected)'); \
-    printf '{"schema": 2, "bootcVersion": "%s", "bootcSha256": "%s", "payloadDigest": "%s", "sourceImgref": "containers-storage:%s", "targetImgref": "%s"}\n' \
-        "$version" "$runtime_sha" "$PAYLOAD_DIGEST" "$PAYLOAD_REF" "$PAYLOAD_REF" > /usr/lib/finite/installer/pins.json; \
+    printf '{"schema": 3, "bootcVersion": "%s", "bootcSha256": "%s", "payloadDigest": "%s", "sourceImgref": "%s", "targetImgref": "%s"}\n' \
+        "$version" "$runtime_sha" "$PAYLOAD_DIGEST" "$source" "$PAYLOAD_REF" > "$directory/pins.json"; \
     python3 -c 'import json; json.load(open("/usr/lib/finite/installer/pins.json"))'

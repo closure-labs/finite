@@ -10,9 +10,11 @@ Build media only on the ephemeral hosted runner, using an authenticated native
 payload in `ghcr.io/closure-labs/finite` and its distinct `finite-native` or
 `finite-native-dev` tag. The build verifies the exact digest with `cosign.pub`,
 checks its native profile, restores the preserved kernel from `/kernel` for live
-boot, and records both the payload digest and bootc binary hash in schema-2 pins.
-The target payload is embedded separately; changing the live root does not change
-its bytes. The uploaded ISO is explicitly unqualified.
+boot, and records the payload digest and bootc binary hash in schema-3 pins.
+The target payload remains a separate OCI layout in the live filesystem. Its
+manifest and compressed layer bytes survive ISO assembly in their original
+form. The installer reads this layout offline and keeps the native update tag
+as its installed target reference. The uploaded ISO is explicitly unqualified.
 
 Boot the media in UEFI mode. From its rescue console, the read-only command is:
 

@@ -18,8 +18,8 @@ installer = importlib.util.module_from_spec(spec)
 loader.exec_module(installer)
 
 GIB = 1024**3
-PINS = {'schema': 2, 'bootcSha256': 'b' * 64, 'bootcVersion': '1.17.5', 'payloadDigest': 'sha256:' + 'a' * 64,
-        'sourceImgref': 'containers-storage:ghcr.io/closure-labs/finite:finite-native',
+PINS = {'schema': 3, 'bootcSha256': 'b' * 64, 'bootcVersion': '1.17.5', 'payloadDigest': 'sha256:' + 'a' * 64,
+        'sourceImgref': 'oci:/usr/lib/finite/installer/payload',
         'targetImgref': 'ghcr.io/closure-labs/finite:finite-native'}
 
 
@@ -203,7 +203,7 @@ class Execute(unittest.TestCase):
 
 
 class Environment(unittest.TestCase):
-    def test_local_payload_tag_cannot_substitute_other_image_bytes_or_profiles(self):
+    def test_embedded_layout_cannot_substitute_another_manifest_or_profile(self):
         good = {'Digest': PINS['payloadDigest'], 'Architecture': 'amd64', 'Os': 'linux',
                 'Labels': {'io.finite.profile': 'finite-native',
                            'io.finite.boot-architecture': 'native-composefs'}}
@@ -222,6 +222,8 @@ class Environment(unittest.TestCase):
             for change in ({'targetImgref': 'ghcr.io/closure-labs/finite:latest'},
                            {'targetImgref': 'ghcr.io/closure-labs/finite-native:latest'},
                            {'sourceImgref': 'docker://ghcr.io/closure-labs/finite:finite-native'},
+                           {'sourceImgref': 'oci:/var/tmp/other-payload'},
+                           {'sourceImgref': 'containers-storage:ghcr.io/closure-labs/finite:finite-native'},
                            {'bootcSha256': ''}, {'schema': True}):
                 with self.subTest(change=change), self.assertRaises(installer.InstallError):
                     installer.check_environment({**PINS, **change}, **args)
@@ -320,7 +322,8 @@ class Media(unittest.TestCase):
         self.assertIn('COPY iso.yaml /usr/lib/image-builder/bootc/iso.yaml', content)
         self.assertIn('/usr/libexec/finite/finite-native-install', content)
         self.assertIn('systemctl enable finite-native-installer.service', content)
-        self.assertIn('"sourceImgref": "containers-storage:%s"', content)
+        self.assertIn('source="oci:$directory/payload"', content)
+        self.assertIn('skopeo inspect --raw "$source" | sha256sum', content)
         # The plan calls the installed copy for placement checks.
         steps = installer.plan(disk(), PINS)
         self.assertTrue(any(step.argv[0] == '/usr/libexec/finite/finite-native-install' for step in steps))
@@ -334,7 +337,8 @@ class Media(unittest.TestCase):
         script = (self.directory / 'build-iso.sh').read_text()
         self.assertIn('.imageBuilder.digest', script)
         self.assertIn('cosign verify', script)
-        self.assertIn('--bootc-installer-payload-ref', script)
+        self.assertIn('--volume "$payload_archive:/run/finite-payload.oci.tar:ro"', script)
+        self.assertNotIn('--bootc-installer-payload-ref', script)
         self.assertNotIn('anaconda-iso', script)
 
     def test_workflow_is_manual_main_only_and_uploads_unqualified_media(self):

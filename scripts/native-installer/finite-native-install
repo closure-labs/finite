@@ -34,6 +34,7 @@ ROOT_MAPPING = 'root'
 TARGET = Path('/run/finite-install/target')
 DEPLOYMENT = Path('/run/finite-install/deployment')
 PINS = Path('/usr/lib/finite/installer/pins.json')
+OFFLINE_SOURCE = 'oci:/usr/lib/finite/installer/payload'
 BOOT_CERT = Path('/usr/share/finite/secure-boot/finite-boot.pem')
 MODULE_CERT = Path('/etc/pki/akmods/certs/akmods-ublue.der')
 SHIM_LOADER = r'\EFI\finite\shimx64.efi'
@@ -196,7 +197,7 @@ def check_environment(pins, *, efi_dir=Path('/sys/firmware/efi'), cmdline=None,
     cmdline = cmdline if cmdline is not None else Path('/proc/cmdline').read_text()
     if 'finite.native-installer=1' not in cmdline.split():
         raise InstallError('This command runs only from Finite native installer media')
-    if type(pins.get('schema')) is not int or pins['schema'] != 2 or not re.fullmatch(
+    if type(pins.get('schema')) is not int or pins['schema'] != 3 or not re.fullmatch(
             r'[0-9]+\.[0-9]+\.[0-9]+', str(pins.get('bootcVersion', ''))):
         raise InstallError('Invalid installer pins')
     for key in ('sourceImgref', 'targetImgref', 'payloadDigest'):
@@ -206,8 +207,8 @@ def check_environment(pins, *, efi_dir=Path('/sys/firmware/efi'), cmdline=None,
         raise InstallError('Installer payload digest is not immutable')
     if not re.fullmatch(r'ghcr\.io/closure-labs/finite:finite-native(?:-dev)?', pins['targetImgref']):
         raise InstallError('Installer target must be a separate native tag in the Finite repository')
-    if pins['sourceImgref'] != 'containers-storage:' + pins['targetImgref']:
-        raise InstallError('Installer source must be the embedded native payload')
+    if pins['sourceImgref'] != OFFLINE_SOURCE:
+        raise InstallError('Installer source must be the embedded native OCI layout')
     if not re.fullmatch('[0-9a-f]{64}', str(pins.get('bootcSha256', ''))):
         raise InstallError('Installer pins lack the bootc binary hash')
     if bootc_version is None:
@@ -222,12 +223,14 @@ def check_environment(pins, *, efi_dir=Path('/sys/firmware/efi'), cmdline=None,
 
 
 def verify_payload(pins, inspect=None):
-    """Authenticate local storage again before disk work; never trust its tag."""
+    """Authenticate the original embedded manifest before disk work."""
     if inspect is None:
         inspect = json.loads(subprocess.check_output(
             ['skopeo', 'inspect', '--no-tags', pins['sourceImgref']], text=True, timeout=120))
     profile = pins['targetImgref'].split(':')[-1]
-    if (inspect.get('Digest') != pins['payloadDigest'] or inspect.get('Architecture') != 'amd64'
+    if inspect.get('Digest') != pins['payloadDigest']:
+        raise InstallError('Embedded payload manifest digest differs from the pinned native image')
+    if (inspect.get('Architecture') != 'amd64'
             or inspect.get('Os') != 'linux' or inspect.get('Labels', {}).get('io.finite.profile') != profile
             or inspect.get('Labels', {}).get('io.finite.boot-architecture') != 'native-composefs'):
         raise InstallError('Embedded payload differs from the signed native image pinned in this media')
