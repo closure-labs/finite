@@ -443,13 +443,16 @@ local regular-file checks verified GPT and keyslot arithmetic. Run
 rescue ISO booted, created the encrypted layout and installed the
 Finite OSTree image and Fedora shim/GRUB. The pre-reboot BLS check
 stopped the run before any shrink. Finite's default `root-mount-spec`
-skips bootc's subvolume detection, so the generated entry lacked
-explicit old-root selection. Change `olkqxqly` passes the actual
-filesystem UUID and `rootflags=subvol=/root` to the fixture install
-and checks the generated BLS entry. Run `45938632142` tests the fix
-and the remaining migration phases.
+skips bootc's subvolume detection. Change `olkqxqly` passes the
+actual filesystem UUID and `rootflags=subvol=/root` to the fixture
+install. Run `45938632142` completed provisioning again, and the
+offline BLS search still found no matching entries. Change `ounttrsn`
+retains the boot inventory and requires the guest to boot through
+Fedora shim/GRUB with the recorded UUID and `/root` before opening
+any migration fork. Run `45947216850` exercises that gate.
 [First rehearsal artifact](https://github.com/closure-labs/finite/actions/runs/45930095266/artifacts/15171412216)
-[Workstation-layout rehearsal retry](https://github.com/closure-labs/finite/actions/runs/45938632142)
+[Second rehearsal artifact](https://github.com/closure-labs/finite/actions/runs/45938632142/artifacts/15175112266)
+[Measured GRUB boot rehearsal](https://github.com/closure-labs/finite/actions/runs/45947216850)
 
 ## Next execution sequence
 
