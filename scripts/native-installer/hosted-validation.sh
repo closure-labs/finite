@@ -67,7 +67,18 @@ else
   nice -n 19 bash scripts/bluebuild/stage.sh "$profile"
 fi
 cp files/bootc-runtime/receipt.json "$evidence/runtime.json"
-tools=''
+tools=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-boot-tools --no-link --print-out-paths)
+importer=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-bootc --no-link --print-out-paths)
+export PATH="$importer/bin:$PATH"
+verifier=sources/native-composefs-verifier.json
+importer_sha=$(sha256sum "$importer/bin/bootc" | cut -d' ' -f1)
+if [[ $lifecycle == true && $importer_sha != "$(jq -er .bootcSha256 "$verifier")" ]]; then
+  printf 'Lifecycle importer disagrees with the reviewed digest: sha256:%s\n' "$importer_sha" >&2
+  exit 2
+fi
+importer_version=$("$importer/bin/bootc" --version)
+printf 'Runner-built importer: %s, sha256:%s (%s)\n' "$importer_version" "$importer_sha" "$importer"
+[[ $importer_version == "$(jq -er .bootcVersion "$verifier")" ]]
 fixture=sources/native-lifecycle-fixture.json
 context="$work/validation-context"
 mkdir -p "$context/loader"
@@ -109,15 +120,6 @@ build_sealed_archive() {
   docker buildx prune --builder bluebuild --all --force
   docker builder prune --all --force
   df -h -- "$work"
-  if [[ -z $tools ]]; then
-    tools=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-boot-tools --no-link --print-out-paths)
-    importer=$(nice -n 19 nix build "${nix_args[@]}" --file lib/ci-tools.nix native-bootc --no-link --print-out-paths)
-    export PATH="$importer/bin:$PATH"
-    importer_sha=$(sha256sum "$importer/bin/bootc" | cut -d' ' -f1)
-    importer_version=$("$importer/bin/bootc" --version)
-    printf 'Runner-built importer: %s, sha256:%s (%s)\n' "$importer_version" "$importer_sha" "$importer"
-    [[ $importer_version == "$(jq -er .bootcVersion sources/native-composefs-verifier.json)" ]]
-  fi
   nice -n 19 python3 scripts/bluebuild/seal-native.py \
     --source "$work/raw.oci.tar" --output "$archive" --work "$seal" \
     --tools "$tools" --profile "$profile" --revision "$GITHUB_SHA" --epoch "$(date +%s)" \

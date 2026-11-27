@@ -1,12 +1,7 @@
 {
   "schema": 1,
   "bootcVersion": "bootc 1.17.1",
-  "bootcSha256": "e6d9f1fb3c147a39642cd45bb2c1a06c2d1bf90e4575b77aacac1dd7c9700f3d",
-  "additionalBootcSha256": [
-    "f26b09f987697c1755a3d65d6b45e31534e59cdd6ffee6c664a35b66acc20f0a",
-    "9e8d8d74be1237fcec3fdd10716526aae4660293c7f67ac23560077fa56f72f6",
-    "868026216846e820ec26ac1ae31265b397cbbd91f1acd110300b7403f3491598"
-  ],
+  "bootcSha256": "bc4cf9f1f133eb5a583f1d6591e0506bd2a20a87fc7b2dbf24fd8ba06da05c4c",
   "nixSourcePin": "sources/native-bootc.json",
   "architecture": "x86_64",
   "interface": "bootc internals cfs",
