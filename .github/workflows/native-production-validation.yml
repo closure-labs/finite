@@ -14,7 +14,9 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: finite-production-native-${{ github.ref }}-${{ inputs.channel }}
+  # Disposable console retries can prepare their own inputs while a prior
+  # revision waits for its guest deadline. Production serializes per channel.
+  group: finite-production-native-${{ github.ref }}-${{ github.ref == 'refs/heads/qualification/native-production-console' && github.sha || inputs.channel }}
   cancel-in-progress: false
 env:
   FINITE_CI_VARS: ${{ toJSON(vars) }}
