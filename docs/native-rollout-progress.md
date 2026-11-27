@@ -483,6 +483,24 @@ and rechecks the firmware device path during each fork. Run
 [Legacy boot and recovery console](https://github.com/closure-labs/finite/actions/runs/45962209031/artifacts/15188365605)
 [GPT rescue rehearsal](https://github.com/closure-labs/finite/actions/runs/45979289021)
 
+The GPT rescue entry worked in run `45979289021`. The legacy boot
+armed BootNext `0005` for the ISO's EFI partition and the first
+recovery fork recorded that exact partition UUID with the original
+BootOrder. The fork shrank Btrfs to 504953307136 bytes and the LUKS
+mapping to 986368000 sectors, then stopped before the GPT write.
+The recovery boot reached Fedora shim, GRUB and the original LUKS
+prompt. A kernel message split `passphrase` on the serial console
+and the host waited 15 minutes without sending the key. Neither an
+unlock result nor a running-root receipt was produced.
+
+Change `kyxlzozn` filters complete kernel messages while matching
+LUKS prompts, retains the raw UART and still requires the dedicated
+VirtIO boot receipt. Replaying the exact failed console recovers the
+prompt for the original UUID. Run `45992389140` checks the rollback
+boot and all later recovery forks.
+[Shrink and rollback boot evidence](https://github.com/closure-labs/finite/actions/runs/45979289021/artifacts/15193768815)
+[Prompt handling retry](https://github.com/closure-labs/finite/actions/runs/45992389140)
+
 ## Next execution sequence
 
 1. Extend full-profile qualification to cover real kernel and loader upgrades,
