@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [a, b]
+        runner: ${{ fromJSON(github.ref == 'refs/heads/qualification/native-importer-repro' && '["a","b","c","d"]' || '["a","b"]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

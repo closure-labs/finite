@@ -24,6 +24,16 @@ in
     enableParallelBuilding = false;
     CARGO_INCREMENTAL = "0";
     CARGO_PROFILE_RELEASE_CODEGEN_UNITS = "1";
+    # zlink-macros 0.7.0 emits the Varlink stream enum by iterating a seeded
+    # HashMap. Sort the items before generating Rust tokens. The separately
+    # built Fedora runtime and its OCI import path do not use this patch.
+    postPatch = ''
+      zlink_codegen=("$cargoDepsCopy"/source-registry-*/zlink-macros-0.7.0/src/service/codegen.rs)
+      test "''${#zlink_codegen[@]}" -eq 1
+      substituteInPlace "''${zlink_codegen[0]}" --replace-fail \
+        '    for (type_str, variant_name) in &type_map {' \
+        $'    let mut type_variant_pairs: Vec<_> = type_map.iter().collect();\n    type_variant_pairs.sort_unstable_by_key(|(type_str, _)| *type_str);\n    for (type_str, variant_name) in type_variant_pairs {'
+    '';
     # Full upstream tests exercise mounts/installers. Validate this tool against
     # the Fedora importer and final signed OCI fixtures in the sealing checks.
     doCheck = false;
