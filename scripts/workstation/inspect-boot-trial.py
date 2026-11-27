@@ -94,7 +94,6 @@ def main():
     if not any(re.match(r'^[-dlcbps][rwxStTs-]{9}\s', line) for line in listing.splitlines()):
         raise SystemExit('No file inventory parsed from lsinitrd')
     candidates = sensitive_paths(listing)
-    group_passwords = None
     if 'etc/gshadow' in candidates:
         # Read into memory only; never send the contents to the terminal or log.
         group_passwords = gshadow_summary(PREPARE.run(
@@ -126,7 +125,6 @@ done
         'signatures_and_embedded_inputs_verified': True,
         'esp_backup_bytes': backup.stat().st_size,
         'initramfs_paths_requiring_review': candidates,
-        'gshadow_summary': group_passwords,
         'initramfs_modules': PREPARE.run('lsinitrd', '-m', str(inputs / 'initrd')),
         'note': 'Filename screening does not prove absence of secrets. '
                 'No EFI files, firmware entries or trust settings changed.',

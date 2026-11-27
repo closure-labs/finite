@@ -10,7 +10,6 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import subprocess
-import tempfile
 import tomllib
 
 import native_oci as oci
@@ -176,19 +175,20 @@ def seal(args, secret):
     if len(shim_candidates) != 1 and not args.validation_only:
         raise ValueError('Production root must contain one packaged Fedora shim generation')
     signed_loader, signed_uki = work / 'systemd-bootx64.efi.signed', work / 'kernel.efi'
-    # Keys never enter an image, OCI layer, builder container or retained work
-    # directory. Only controlled host binaries receive the private temporary file.
-    with tempfile.TemporaryDirectory(prefix='finite-boot-private-', dir=os.environ.get('RUNNER_TEMP', '/tmp')) as directory:
-        key = Path(directory) / 'signing.key'
-        key.write_bytes(key_data)
-        key.chmod(0o600)
+    # The private key stays in an anonymous memory-backed Linux descriptor.
+    # Only the faketime/sbsign process receives access to that descriptor.
+    with os.fdopen(os.memfd_create('finite-boot-signing-key', os.MFD_CLOEXEC), 'wb') as key:
+        os.fchmod(key.fileno(), 0o600)
+        key.write(key_data)
+        key.flush()
         signing_env = dict(os.environ, TZ='UTC', FAKETIME_DONT_FAKE_MONOTONIC='1')
         signing_env.pop('FAKE_RANDOM', None)
         stamp = datetime.datetime.fromtimestamp(args.epoch, datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
         def sign(unsigned, signed):
-            run(['faketime', '-f', stamp, 'sbsign', '--key', key, '--cert', certificate,
-                 '--output', signed, unsigned], env=signing_env)
+            run(['faketime', '-f', stamp, 'sbsign', '--key', f'/proc/self/fd/{key.fileno()}',
+                 '--cert', certificate, '--output', signed, unsigned],
+                env=signing_env, pass_fds=(key.fileno(),))
             run(['sbverify', '--cert', certificate, signed])
 
         sign(loader, signed_loader)

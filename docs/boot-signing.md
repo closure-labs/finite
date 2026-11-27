@@ -76,9 +76,10 @@ independent of the workflow's own checks.
 
 The host toolchain and source archive are prepared before credentials are
 resolved. `seal-native.py` strips the key from its environment before any child
-process and provides a mode-0600 temporary key only to host signing tools. It
-never runs an image with signing credentials. The private file is removed on
-exit and signing work stays outside retained artifacts. Pinned faketime fixes
+process and provides an anonymous, memory-backed key descriptor only to
+`faketime` and `sbsign`. The descriptor closes when sealing exits. Image
+builds run without signing credentials, and signing work stays outside
+retained artifacts. Pinned faketime fixes
 the Authenticode timestamp; it does not replace cryptographic randomness.
 
 After independent final OCI import and signature verification, the keyless
