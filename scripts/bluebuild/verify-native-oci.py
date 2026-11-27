@@ -51,7 +51,7 @@ def check_importer(bootc, lock, validation_sha=None):
                 and os.environ.get('GITHUB_REPOSITORY') == 'closure-labs/finite'
                 and os.environ.get('GITHUB_REF') in {
                     'refs/heads/qualification/native-iso', 'refs/heads/qualification/native-lifecycle',
-                    'refs/heads/qualification/native-migration',
+                    'refs/heads/qualification/native-migration', 'refs/heads/qualification/native-production-console',
                 }
                 and bootc.is_relative_to('/nix/store')
                 and re.fullmatch('[0-9a-f]{64}', validation_sha)):

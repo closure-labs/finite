@@ -3,15 +3,18 @@
 set -euo pipefail
 [[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite ]]
 migration=false
+console_probe=false
 case ${GITHUB_REF:-} in
   refs/heads/qualification/native-iso) lifecycle=false ;;
   refs/heads/qualification/native-lifecycle) lifecycle=true ;;
   refs/heads/qualification/native-migration) lifecycle=false; migration=true ;;
+  refs/heads/qualification/native-production-console) lifecycle=false; console_probe=true ;;
   *) exit 2 ;;
 esac
 profile=${1:?native profile required}
 [[ $profile == finite-native || $profile == finite-native-dev ]]
 [[ $migration == false || $profile == finite-native ]]
+[[ $console_probe == false || $profile == finite-native ]]
 [[ ${GITHUB_SHA:?} == "$(git rev-parse HEAD)" ]]
 umask 077
 output="$PWD/.bluebuild/native-iso/$profile"
@@ -53,7 +56,7 @@ printf 'Authenticating and validating the %s recipe\n' "$profile"
 python3 scripts/ci/bluefin-upstream.py verify --include-native
 nice -n 19 bluebuild validate "recipes/$profile.yml"
 printf 'Staging the locked runtime and payload for %s\n' "$profile"
-if [[ $lifecycle == true || $migration == true ]]; then
+if [[ $lifecycle == true || $migration == true || $console_probe == true ]]; then
   source="$RUNNER_TEMP/native-qualification-runtime"
   [[ -d files/payload/home-manager-template && ! -e files/bootc-runtime && -d $source && ! -L $source ]]
   for name in bootc-runtime.rpm source-lock.json receipt.json; do
@@ -92,9 +95,14 @@ build_sealed_archive() {
       < "$work/older-loader.rpm" > "$loader"
     printf '%s  %s\n' "$(jq -er .baselineLoader.unsignedSha256 "$fixture")" "$loader" | sha256sum --check
   fi
-  docker build --pull=false --file "$context/Validation.Containerfile" \
-    --build-arg "NATIVE_ROOT=localhost/finite-validation-root:$profile" \
-    --tag "localhost/finite-validation:$profile" "$context"
+  if [[ $console_probe == true ]]; then
+    # Keep the production UKI command line and the uninstrumented system.
+    docker tag "localhost/finite-validation-root:$profile" "localhost/finite-validation:$profile"
+  else
+    docker build --pull=false --file "$context/Validation.Containerfile" \
+      --build-arg "NATIVE_ROOT=localhost/finite-validation-root:$profile" \
+      --tag "localhost/finite-validation:$profile" "$context"
+  fi
   # This container is only a filesystem source for docker cp. The bootable
   # image may omit CMD, and the placeholder command is never started.
   container=$(docker create "localhost/finite-validation:$profile" /unused)
@@ -197,6 +205,19 @@ PY
     --updated-loader "$(jq -er .updateLoaderInfo "$fixture")")
 fi
 rm -- "$work/vm.key"
+if [[ $console_probe == true ]]; then
+  ocr=$(nix build "${nix_args[@]}" --file lib/ci-tools.nix native-console-ocr --no-link --print-out-paths)
+  export PATH="$ocr/bin:$PATH"
+  cp -- "$output/installation.json" "$output/SHA256SUMS" "$evidence/"
+  jq --arg image "ghcr.io/closure-labs/finite@$digest" '
+    {profile, sourceRevision, validationOnly, bootableRootDigest, image: $image,
+     bootCertificateDerSha256: .certificateDerSha256, ukis: .integrity.ukis}
+  ' "$work/seal/sealed.json" > "$evidence/console-probe-input.json"
+  nice -n 19 python3 scripts/native-installer/qualify-production.py --console-probe \
+    --iso "$output/finite-native-installer-$profile.iso" --production-input "$evidence/console-probe-input.json" \
+    --certificate "$work/vm.pem" --module-certificate "$work/module.pem" --state "$work/guest" --evidence "$evidence"
+  exit
+fi
 if [[ $migration == true ]]; then
   printf 'Building the Finite OSTree installation fixture\n'
   nice -n 19 bluebuild validate recipes/finite.yml

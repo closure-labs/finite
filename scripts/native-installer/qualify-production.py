@@ -48,7 +48,6 @@ def grub_rescue(guest):
 
 
 def install(guest, password):
-    grub_rescue(guest)
     guest.send('/usr/libexec/finite/finite-native-install install')
     guest.expect(rb'Finite native installer[^\r\n]*Secure Boot enabled', filter_kernel_messages=True)
     guest.expect(rb'Type the disk ID "virtio-FINITEQUALIFICATION" to continue:')
@@ -113,17 +112,20 @@ def unlock(guest, monitor, screenshot, recovery):
 
 
 def qualify(args):
+    branch = 'qualification/native-production-console' if args.console_probe else 'main'
     require(os.environ.get('GITHUB_ACTIONS') == 'true'
+            and os.environ.get('GITHUB_REF') == f'refs/heads/{branch}'
             and os.environ.get('GITHUB_WORKFLOW_REF') == (
-                'closure-labs/finite/.github/workflows/native-production-validation.yml@refs/heads/main'),
-            'Production VM qualification requires the reviewed hosted workflow')
+                f'closure-labs/finite/.github/workflows/native-production-validation.yml@refs/heads/{branch}'),
+            'Exact ISO qualification requires its dedicated hosted workflow')
     proof = json.loads(args.production_input.read_bytes())
     iso = args.iso.resolve(strict=True)
     metadata = iso.parent / 'installation.json'
     record = json.loads(metadata.read_bytes())
     certificate = subprocess.check_output(['openssl', 'x509', '-in', args.certificate, '-outform', 'DER'], timeout=30)
     require(proof['sourceRevision'] == record['finiteRevision'] == os.environ['GITHUB_SHA']
-            and record['validationOnly'] is False and not record.get('migrationRehearsal', False)
+            and proof['validationOnly'] is args.console_probe and record['validationOnly'] is args.console_probe
+            and record.get('consoleProbe', False) is args.console_probe and not record.get('migrationRehearsal', False)
             and record['payload'] == proof['image']
             and record['payloadTag'] == 'ghcr.io/closure-labs/finite:' + proof['profile']
             and hashlib.sha256(certificate).hexdigest() == proof['bootCertificateDerSha256'],
@@ -157,6 +159,12 @@ def qualify(args):
     # the private VM scratch area, outside both retained Actions artifacts.
     with (state / 'live-serial.log').open('xb') as log:
         with ISO['Guest'](setup, log, 2400) as guest:
+            try:
+                grub_rescue(guest)
+            finally:
+                # This copy precedes the installer and its printed key.
+                shutil.copyfile(log.name, args.evidence / 'live-preinstall-serial.log')
+            print('The ISO shim and GRUB reached the live installer console', flush=True)
             recovery = install(guest, password)
     print('Booting the installed production UKI with its generated recovery key', flush=True)
     monitor = state / 'qmp.sock'
@@ -169,12 +177,14 @@ def qualify(args):
     ISO['validate_boot_facts'](facts, proof)
     require(facts['installedUkiSha256'] in {uki['sha256'] for uki in proof['ukis']},
             'Running UKI bytes differ from the independently verified production UKIs')
-    report = {'schema': 1, 'scope': 'production candidate and fresh encrypted installation',
-              'validationOnly': False, 'image': proof['image'], 'sourceRevision': proof['sourceRevision'],
+    scope = 'disposable console rehearsal' if args.console_probe else 'production candidate and fresh encrypted installation'
+    report = {'schema': 1, 'scope': scope, 'validationOnly': args.console_probe,
+              'image': proof['image'], 'sourceRevision': proof['sourceRevision'],
               'isoSha256': iso_hash, 'freshAccepted': True, 'recoveryKeyUnlock': True,
               'bootCertificateDerSha256': proof['bootCertificateDerSha256'], 'vcpu': 2,
               'memoryMiB': ISO['MEMORY_MIB'], 'hostReserveMiB': ISO['RESERVE_MIB'], **facts}
-    (args.evidence / 'production-acceptance.json').write_text(json.dumps(report, indent=2) + '\n')
+    name = 'console-probe-acceptance.json' if args.console_probe else 'production-acceptance.json'
+    (args.evidence / name).write_text(json.dumps(report, indent=2) + '\n')
     print(json.dumps(report, indent=2))
 
 
@@ -182,6 +192,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('iso', 'production-input', 'certificate', 'module-certificate', 'state', 'evidence'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--console-probe', action='store_true')
     try:
         qualify(parser.parse_args())
     except (KeyError, OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:

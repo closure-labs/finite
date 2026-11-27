@@ -25,6 +25,7 @@ jobs:
       github.repository == 'closure-labs/finite' &&
       (github.ref == 'refs/heads/qualification/native-lifecycle' ||
       github.ref == 'refs/heads/qualification/native-migration' ||
+      github.ref == 'refs/heads/qualification/native-production-console' ||
       github.workflow_ref == 'closure-labs/finite/.github/workflows/native-production-validation.yml@refs/heads/main')
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -67,7 +68,8 @@ jobs:
     if: >-
       github.repository == 'closure-labs/finite' &&
       (github.ref == 'refs/heads/qualification/native-lifecycle' ||
-      github.ref == 'refs/heads/qualification/native-migration')
+      github.ref == 'refs/heads/qualification/native-migration' ||
+      github.ref == 'refs/heads/qualification/native-production-console')
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     outputs:

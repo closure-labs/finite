@@ -36,6 +36,7 @@ trap 'sudo rm -rf -- "$cache"' EXIT
 # Only the dedicated validation run accepts an archive sealed with a VM key.
 validation=false
 migration=false
+console_probe=false
 migration_inputs=()
 if [[ $validation_archive == --production-candidate ]]; then
   [[ ${GITHUB_REF:-} == refs/heads/main && $# == 5 ]]
@@ -52,7 +53,8 @@ if [[ $validation_archive == --production-candidate ]]; then
 elif [[ -n $validation_archive || -n $validation_receipt ]]; then
   [[ (${GITHUB_REF:-} == refs/heads/qualification/native-iso ||
        ${GITHUB_REF:-} == refs/heads/qualification/native-lifecycle ||
-       ${GITHUB_REF:-} == refs/heads/qualification/native-migration) && $# == 5 ]]
+       ${GITHUB_REF:-} == refs/heads/qualification/native-migration ||
+       ${GITHUB_REF:-} == refs/heads/qualification/native-production-console) && $# == 5 ]]
   # The hosted validator transfers ownership of its fresh temporary archive.
   [[ $validation_archive == "${RUNNER_TEMP:?}"/native-iso.????????/sealed.oci.tar ]]
   [[ -f $validation_archive && $(realpath -- "$validation_archive") == "$validation_archive" ]]
@@ -64,6 +66,10 @@ elif [[ -n $validation_archive || -n $validation_receipt ]]; then
   ' "$validation_receipt" >/dev/null
   payload_archive=$validation_archive
   validation=true
+  if [[ $GITHUB_REF == refs/heads/qualification/native-production-console ]]; then
+    [[ $tag == finite-native ]]
+    console_probe=true
+  fi
   if [[ $GITHUB_REF == refs/heads/qualification/native-migration ]]; then
     [[ $tag == finite-native ]]
     migration=true
@@ -78,6 +84,8 @@ else
   payload_archive="$cache/payload.oci.tar"
   skopeo copy --preserve-digests "docker://$repository@$digest" "oci-archive:$payload_archive"
 fi
+validation_console=$validation
+if [[ $console_probe == true ]]; then validation_console=false; fi
 sudo skopeo copy --preserve-digests "oci-archive:$payload_archive" "containers-storage:$payload"
 [[ $(sudo podman image inspect --format '{{.Digest}}' "$payload") == "$digest" ]]
 profile=$(sudo podman image inspect --format '{{index .Labels "io.finite.profile"}}' "$payload")
@@ -87,7 +95,7 @@ architecture=$(sudo podman image inspect --format '{{index .Labels "io.finite.bo
 }
 sudo podman build --pull=never \
   --build-arg "PAYLOAD=$payload" --build-arg "PAYLOAD_REF=$payload" --build-arg "PAYLOAD_DIGEST=$digest" \
-  --build-arg "VALIDATION=$validation" --build-arg "MIGRATION=$migration" \
+  --build-arg "VALIDATION=$validation_console" --build-arg "MIGRATION=$migration" \
   --volume "$payload_archive:/run/finite-payload.oci.tar:ro" \
   "${migration_inputs[@]}" \
   --label "io.finite.native-installer.payload=$repository@$digest" \
@@ -112,9 +120,11 @@ final="$output/finite-native-installer-$tag.iso"
 [[ ${isos[0]} == "$final" ]] || mv "${isos[0]}" "$final"
 installer_id=$(sudo podman image inspect --format '{{.Id}}' "$installer")
 jq -n --arg payload "$repository@$digest" --arg tag "$payload" --arg installer "$installer_id" \
-  --arg builder "$builder" --arg revision "$revision" --argjson validation "$validation" --argjson migration "$migration" \
+  --arg builder "$builder" --arg revision "$revision" --argjson validation "$validation" \
+  --argjson migration "$migration" --argjson console "$console_probe" \
   '{schema: 1, payload: $payload, payloadTag: $tag, installerImageId: $installer,
     imageBuilder: $builder, finiteRevision: $revision, validationOnly: $validation}
-    | if $migration then .migrationRehearsal = true else . end' >"$output/installation.json"
+    | if $migration then .migrationRehearsal = true else . end
+    | if $console then .consoleProbe = true else . end' >"$output/installation.json"
 (cd "$output" && sha256sum -- "$(basename "$final")" installation.json >SHA256SUMS)
 echo "Native installer ISO: $final"
