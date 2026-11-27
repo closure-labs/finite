@@ -38,6 +38,8 @@ def qualify(args):
             and f'{iso_hash}  {iso.name}' in checksum
             and f'{iso_harness["file_sha256"](iso.parent / "installation.json")}  installation.json' in checksum,
             'Rescue ISO identity differs')
+    _, rescue_partuuid = layout.rescue_esp(json.loads(subprocess.check_output(
+        ['sfdisk', '--json', iso], timeout=30)))
     inputs = args.legacy_archive.resolve(strict=True).parent
     require(args.legacy_archive.name == 'legacy.oci.tar'
             and {path.name for path in inputs.iterdir()} == {'legacy.oci.tar', 'legacy.sha256'},
@@ -75,13 +77,17 @@ def qualify(args):
         print('Rehearsal rescue phase ' + phase, flush=True)
         with (args.evidence / f'{phase}-serial.log').open('xb') as log:
             with Guest(command, log, 2400) as guest:
-                firmware_boot = guest.record('FINITE_MIGRATION')
+                firmware_boot = guest.record('FINITE_MIGRATION', timeout=300)
                 require(firmware_boot['phase'] == 'rescue-boot', 'Missing rescue boot identity')
                 observations['rescue-boot'] = firmware_boot
                 if baseline is not None:
+                    device = firmware_boot['bootDevice'].lower()
                     require(firmware_boot['bootCurrent'] == baseline['nextRescue']
-                            and firmware_boot['bootOrder'] == baseline['bootOrder'],
+                            and firmware_boot['bootOrder'] == baseline['bootOrder']
+                            and f',gpt,{rescue_partuuid},' in device
+                            and r'\efi\boot\bootx64.efi' in device,
                             'Unexpected firmware selection of the rescue ISO')
+                print(f'{phase}: verified rescue firmware entry {firmware_boot["bootCurrent"]}', flush=True)
                 guest.expect(rb'LUKS passphrase:')
                 guest.send(password)
                 if phase == 'legacy':
@@ -116,8 +122,8 @@ def qualify(args):
     created = rescue(original, variables, 'legacy', ['legacy-created'])
     media.unlink()
     before = boot(original, variables, 'old-initialize', 'legacy-before')
-    require(before['nextRescue'] == created['rescue-boot']['bootCurrent'],
-            'Legacy boot selected an unexpected rescue entry for subsequent forks')
+    require(before['rescueEspPartuuid'] == rescue_partuuid and before['nextRescue'] not in before['bootOrder'].split(','),
+            'Legacy boot did not arm the exact rescue ISO ESP outside the default order')
     root_spec = created['legacy-created']['rootMountSpec']
     require(before['rootMountSpec'] == root_spec and before['rootSubvolume'] == '/root',
             'Original firmware path did not boot the exact legacy Btrfs root')

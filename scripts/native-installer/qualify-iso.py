@@ -127,10 +127,11 @@ class Guest:
         self.process.stdin.write(value.encode() + b'\r')
         self.process.stdin.flush()
 
-    def record(self, marker):
+    def record(self, marker, *, timeout=None):
         payload = bytearray()
         console_open = True
-        while time.monotonic() < self.deadline:
+        deadline = self.deadline if timeout is None else min(self.deadline, time.monotonic() + timeout)
+        while time.monotonic() < deadline:
             chunk = self.records.readline(MAX_RECORD_BYTES + 1 - len(payload))
             payload.extend(chunk)
             if len(payload) > MAX_RECORD_BYTES:

@@ -1,5 +1,6 @@
 """GPT and device-size checks for the file-backed workstation rehearsal."""
 from pathlib import Path
+from uuid import UUID
 
 SECTOR_BYTES = 512
 DISK_SECTORS = 1_000_215_216
@@ -28,6 +29,14 @@ def partition(disk, number):
     # The caller resolves only the dedicated VirtIO device, whose kernel name
     # ends in a letter. This avoids using any host disk identifier.
     return f'{disk}{number}'
+
+
+def rescue_esp(dump):
+    table = dump['partitiontable']
+    if table['label'] != 'gpt':
+        raise ValueError('Rescue medium requires a GPT')
+    entry, = (item for item in table['partitions'] if item['type'].lower() == ESP)
+    return entry['node'], str(UUID(entry['uuid']))
 
 
 def original_table(disk):

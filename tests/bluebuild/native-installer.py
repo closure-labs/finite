@@ -422,6 +422,35 @@ class Media(unittest.TestCase):
         self.assertIn("(TARGET / 'ostree/repo/config').is_file()", guest)
         self.assertIn("'--composefs-backend', '--bootloader', 'systemd'", guest)
 
+    def test_migration_rescue_arms_the_iso_gpt_entry_without_reordering(self):
+        module = runpy.run_path(str(self.directory / 'observe-migration.py'))
+        arm_rescue = module['arm_rescue']
+        disk = Path('/dev/vdb')
+        uuid = '764a2f75-84eb-4586-a4e3-ad5375069711'
+        esp_type = 'c12a7328-f81f-11d2-ba4b-00a0c93ec93b'
+        dump = {'partitiontable': {'label': 'gpt', 'partitions': [
+            {'node': '/dev/vdb2', 'type': esp_type.upper(), 'uuid': uuid.upper()}]}}
+        order = '0003,0000,0001,0002,0004'
+        initial = f'BootOrder: {order}\nBoot0002* UEFI Misc Device PciRoot(0x0)/Pci(0x2,0x0)'
+        loader = r'\EFI\BOOT\BOOTX64.EFI'
+        new = f'Boot0005* Finite migration rescue HD(2,GPT,{uuid},0x100,0x200)/File({loader})'
+        for valid in (True, False):
+            with self.subTest(valid=valid):
+                discovered = new if valid else new.replace(uuid, 'deadbeef')
+                command = Mock(side_effect=['1', json.dumps(dump), '2', '1', initial, '',
+                                            initial + '\n' + discovered, '',
+                                            f'BootNext: 0005\nBootOrder: {order}'])
+                media = SimpleNamespace(resolve=lambda **kwargs: disk)
+                with patch.dict(arm_rescue.__globals__, Path=lambda _: media, run=command):
+                    if valid:
+                        self.assertEqual(arm_rescue(order, '0003'), ('0005', uuid))
+                    else:
+                        with self.assertRaises(ValueError):
+                            arm_rescue(order, '0003')
+                command.assert_any_call('efibootmgr', '--create-only', '--disk', disk, '--part', '2',
+                                        '--label', 'Finite migration rescue', '--loader', loader)
+                self.assertEqual(('efibootmgr', '--bootnext', '0005') in [call.args for call in command.call_args_list], valid)
+
     def test_capped_guest_keeps_the_complete_failure_line_in_its_serial_log(self):
         spec = importlib.util.spec_from_file_location('qualify_iso', self.directory / 'qualify-iso.py')
         qual = importlib.util.module_from_spec(spec)

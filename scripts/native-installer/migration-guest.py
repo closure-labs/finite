@@ -105,6 +105,8 @@ def add_observation(root):
         Path('/usr/libexec/finite/systemd-boot-preflight.py').read_bytes())
     (etc / 'finite-migration/serial_records.py').write_bytes(
         OBSERVATION.with_name('serial_records.py').read_bytes())
+    (etc / 'finite-migration/migration_layout.py').write_bytes(
+        OBSERVATION.with_name('migration_layout.py').read_bytes())
     unit_path = etc / 'systemd/system/finite-migration-observe.service'
     unit_path.write_text(unit)
     wants = unit_path.parent / 'multi-user.target.wants'
@@ -112,7 +114,7 @@ def add_observation(root):
     (wants / unit_path.name).symlink_to('../' + unit_path.name)
 
 
-def account_and_home(root, fsuuid, *, rescue_entry=None):
+def account_and_home(root, fsuuid):
     process('groupadd', '--root', root, '--gid', str(GID), ACCOUNT)
     process('useradd', '--root', root, '--no-create-home', '--uid', str(UID),
             '--gid', str(GID), '--home-dir', '/var/home/' + ACCOUNT, ACCOUNT)
@@ -120,13 +122,11 @@ def account_and_home(root, fsuuid, *, rescue_entry=None):
     with fstab.open('a') as stream:
         stream.write(f'\nUUID={fsuuid} /var/home btrfs subvol=/home 0 0\n')
     add_observation(root)
-    if rescue_entry is not None:
-        (root / 'etc/finite-migration/rescue-boot-entry').write_text(rescue_entry + '\n')
     process('chroot', root, 'restorecon', '-RF', '/etc/finite-migration', '/etc/systemd/system',
             '/etc/fstab', '/etc/passwd', '/etc/group', '/etc/shadow', '/etc/gshadow')
 
 
-def legacy(disk, secret, alternate, rescue_entry):
+def legacy(disk, secret, alternate):
     require(not run('lsblk', '-nr', '-o', 'PARTTYPE', disk), 'Legacy creation requires a blank fixture')
     process('sfdisk', disk, stdin=layout.original_table(disk).encode())
     process('udevadm', 'settle')
@@ -178,7 +178,7 @@ def legacy(disk, secret, alternate, rescue_entry):
     require((TARGET / 'ostree/repo/config').is_file(), 'Legacy fixture install did not create an OSTree repository')
     DEPLOYMENT.mkdir()
     process('bootc', 'install', 'mount', '--sysroot', TARGET, '--latest', DEPLOYMENT)
-    account_and_home(DEPLOYMENT, fsuuid, rescue_entry=rescue_entry)
+    account_and_home(DEPLOYMENT, fsuuid)
     process('umount', '--recursive', DEPLOYMENT)
     boot_dir = TARGET / 'boot'
     loader = boot_dir / 'loader'
@@ -346,7 +346,9 @@ def main():
     firmware, order = boot_firmware()
     current = next(line.split(': ', 1)[1] for line in firmware if line.startswith('BootCurrent: '))
     require(re.fullmatch(r'[0-9A-Fa-f]{4}', current), 'Invalid rescue boot entry number')
-    mark('rescue-boot', bootCurrent=current, bootOrder=order)
+    entry = next((line for line in firmware if re.match(r'Boot' + current + r'\*?\s+', line)), '')
+    require(entry, 'The running rescue boot entry is missing')
+    mark('rescue-boot', bootCurrent=current, bootOrder=order, bootDevice=entry)
     # A real tty with echo disabled keeps even the disposable password out of
     # retained serial transcripts. cryptsetup reads it through stdin pipes.
     secret = getpass.getpass('LUKS passphrase: ').encode()
@@ -355,7 +357,7 @@ def main():
         WORK.mkdir()
         alternate = getpass.getpass('LUKS alternate passphrase: ').encode()
         require(alternate and alternate != secret, 'Expected a distinct alternate LUKS passphrase')
-        legacy(disk, secret, alternate, current)
+        legacy(disk, secret, alternate)
     elif resize(disk, secret, interrupt=phase == 'shrink-fault'):
         native(disk, phase)
     process('sync')

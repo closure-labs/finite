@@ -7,6 +7,7 @@ import runpy
 import subprocess
 import sys
 
+from migration_layout import rescue_esp
 from serial_records import emit_record
 
 
@@ -17,6 +18,36 @@ def run(*args):
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+def arm_rescue(order, current):
+    # OVMF can reuse its automatically numbered PCI boot entries. Create a
+    # short-form UEFI device path tied to the actual read-only ISO ESP.
+    disk = Path('/dev/disk/by-id/virtio-FINITEINSTALLMEDIA').resolve(strict=True)
+    require(re.fullmatch(r'/dev/vd[a-z]', str(disk)) and run('blockdev', '--getro', disk) == '1',
+            'Expected the read-only rescue VirtIO disk')
+    esp, partuuid = rescue_esp(json.loads(run('sfdisk', '--json', disk)))
+    part = run('lsblk', '--noheadings', '--nodeps', '--output', 'PARTN', esp)
+    require(part.isdecimal() and int(part) > 0 and run('blockdev', '--getro', esp) == '1',
+            'Expected the read-only rescue EFI partition')
+    label = 'Finite migration rescue'
+    loader = r'\EFI\BOOT\BOOTX64.EFI'
+    entries = run('efibootmgr', '-v').splitlines()
+    require(not any(label in row for row in entries) and order.split(',')[0] == current,
+            'Expected the original Fedora default and no previous rescue entry')
+    run('efibootmgr', '--create-only', '--disk', disk, '--part', part, '--label', label, '--loader', loader)
+    entries = run('efibootmgr', '-v').splitlines()
+    boot_id, = (match[1] for row in entries
+                if (match := re.match(r'Boot([0-9A-Fa-f]{4})\*?\s+' + label + r'\s+', row))
+                and f'HD({part},GPT,{partuuid},'.casefold() in row.casefold()
+                and loader.casefold() in row.casefold())
+    require(boot_id not in order.split(',') and f'BootOrder: {order}' in entries,
+            'Rescue entry creation changed the default BootOrder')
+    run('efibootmgr', '--bootnext', boot_id)
+    armed = run('efibootmgr').splitlines()
+    require(f'BootOrder: {order}' in armed and f'BootNext: {boot_id}' in armed,
+            'Could not arm the one-time rescue boot without changing BootOrder')
+    return boot_id, partuuid
 
 
 def main():
@@ -75,21 +106,12 @@ def main():
     require(not any(row.startswith('BootNext: ') for row in firmware), 'One-time boot entry not consumed')
     boot_type = run('findmnt', '-n', '-o', 'FSTYPE', '--mountpoint', '/boot')
     require(boot_type == ('vfat' if native else 'ext4'), 'Boot filesystem differs')
-    next_rescue = None
+    next_rescue = rescue_partuuid = None
     if identifier == 'finite-migration-old-initialize':
-        # Every later rescue boots from a copy of this EFI varstore. Using
-        # BootNext avoids another fw_cfg bootorder rewrite by OVMF.
-        next_rescue = Path('/etc/finite-migration/rescue-boot-entry').read_text().strip()
-        require(re.fullmatch(r'[0-9A-Fa-f]{4}', next_rescue) and next_rescue in order.split(',')
-                and order.split(',')[0] == current and next_rescue != current,
-                'Expected the rescue ISO behind the original default in BootOrder')
-        run('efibootmgr', '--bootnext', next_rescue)
-        armed = run('efibootmgr').splitlines()
-        require(f'BootOrder: {order}' in armed and f'BootNext: {next_rescue}' in armed,
-                'Could not arm the one-time rescue boot without changing BootOrder')
+        next_rescue, rescue_partuuid = arm_rescue(order, current)
     emit_record('FINITE_MIGRATION_BOOT', {
         'native': native, 'bootOrder': order, 'bootCurrent': current,
-        'nextRescue': next_rescue,
+        'nextRescue': next_rescue, 'rescueEspPartuuid': rescue_partuuid,
         'rootMountSpec': root_mount_spec, 'rootSubvolume': root_subvolume,
         'bootId': Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
         'preflight': preflight, 'secureBoot': True, 'selinuxEnforcing': True,
