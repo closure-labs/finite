@@ -53,8 +53,8 @@ printf 'Authenticating and validating the %s recipe\n' "$profile"
 python3 scripts/ci/bluefin-upstream.py verify --include-native
 nice -n 19 bluebuild validate "recipes/$profile.yml"
 printf 'Staging the locked runtime and payload for %s\n' "$profile"
-if [[ $lifecycle == true ]]; then
-  source="$RUNNER_TEMP/native-lifecycle-runtime"
+if [[ $lifecycle == true || $migration == true ]]; then
+  source="$RUNNER_TEMP/native-qualification-runtime"
   [[ -d files/payload/home-manager-template && ! -e files/bootc-runtime && -d $source && ! -L $source ]]
   for name in bootc-runtime.rpm source-lock.json receipt.json; do
     [[ -f $source/$name && ! -L $source/$name ]]
@@ -62,7 +62,7 @@ if [[ $lifecycle == true ]]; then
   # Recheck the source, packaging-input and RPM hashes before reusing it.
   nice -n 19 python3 scripts/bluebuild/stage-bootc-runtime.py --output "$source"
   cp -a -- "$source" files/bootc-runtime
-  cp -- .bluebuild/lifecycle-payload.json "$evidence/shared-payload.json"
+  cp -- .bluebuild/qualification-payload.json "$evidence/shared-payload.json"
 else
   nice -n 19 bash scripts/bluebuild/stage.sh "$profile"
 fi

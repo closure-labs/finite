@@ -1,0 +1,90 @@
+name: Build inputs for native qualification
+on:
+  workflow_call:
+    outputs:
+      payload_id:
+        value: ${{ jobs.payload.outputs.artifact_id }}
+      payload_sha:
+        value: ${{ jobs.payload.outputs.sha256 }}
+      payload_revision:
+        value: ${{ jobs.payload.outputs.revision }}
+      payload_run:
+        value: ${{ jobs.payload.outputs.run }}
+      payload_attempt:
+        value: ${{ jobs.payload.outputs.attempt }}
+      runtime_id:
+        value: ${{ jobs.runtime.outputs.artifact_id }}
+permissions:
+  contents: read
+env:
+  FINITE_CI_VARS: ${{ toJSON(vars) }}
+jobs:
+  payload:
+    name: Build shared native payload once
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      (github.ref == 'refs/heads/qualification/native-lifecycle' ||
+      github.ref == 'refs/heads/qualification/native-migration')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      sha256: ${{ steps.pack.outputs.sha256 }}
+      revision: ${{ steps.pack.outputs.revision }}
+      run: ${{ steps.pack.outputs.runId }}
+      attempt: ${{ steps.pack.outputs.runAttempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
+          resource-mode: native-qualification
+      - name: Materialize the locked payload
+        run: |
+          mkdir -p .bluebuild
+          python3 scripts/native-installer/watch-memory.py \
+            nix build --impure --accept-flake-config --no-update-lock-file --no-write-lock-file \
+            --max-jobs 1 --cores 2 --file lib/ci-payload.nix payload --no-link --print-out-paths > .bluebuild/payload-path
+      - name: Bind payload archive to this source and run
+        id: pack
+        run: |
+          python3 scripts/bluebuild/shared-payload.py create "$(cat .bluebuild/payload-path)" .bluebuild/payload.tar
+      - name: Upload the immutable shared payload
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-qualification-payload-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/payload.tar
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  runtime:
+    name: Build the locked bootc RPM once
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      (github.ref == 'refs/heads/qualification/native-lifecycle' ||
+      github.ref == 'refs/heads/qualification/native-migration')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the shared Fedora 45 runtime
+        run: |
+          python3 scripts/native-installer/watch-memory.py python3 scripts/bluebuild/stage-bootc-runtime.py \
+            --output .bluebuild/qualification-runtime
+      - name: Upload the RPM with its source lock and build receipt
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-qualification-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/qualification-runtime/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7

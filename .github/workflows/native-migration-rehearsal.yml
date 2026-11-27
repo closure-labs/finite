@@ -11,7 +11,13 @@ concurrency:
 env:
   FINITE_CI_VARS: ${{ toJSON(vars) }}
 jobs:
+  inputs:
+    name: Build native qualification inputs
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-migration'
+    uses: $/.github/workflows/native-qualification-inputs.yml
+
   rehearsal:
+    needs: inputs
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-migration'
     runs-on: ubuntu-24.04
     timeout-minutes: 330
@@ -41,6 +47,15 @@ jobs:
         run: |
           sudo setfacl -m "u:$(id -un):rw" /dev/kvm
           test -r /dev/kvm && test -w /dev/kvm
+      - name: Stage and verify inputs from this run
+        uses: $/.github/actions/stage-native-qualification
+        with:
+          payload-id: ${{ needs.inputs.outputs.payload_id }}
+          payload-sha: ${{ needs.inputs.outputs.payload_sha }}
+          payload-revision: ${{ needs.inputs.outputs.payload_revision }}
+          payload-run: ${{ needs.inputs.outputs.payload_run }}
+          payload-attempt: ${{ needs.inputs.outputs.payload_attempt }}
+          runtime-id: ${{ needs.inputs.outputs.runtime_id }}
       - name: Build and rehearse the workstation layout inside KVM
         run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh finite-native
       - name: Retain the migration rehearsal evidence

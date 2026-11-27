@@ -52,19 +52,27 @@ class Resources(unittest.TestCase):
         self.assertEqual(setup['with']['resource-mode'], 'native-qualification')
         self.assertTrue(any('watch-memory.py python3 scripts/ci/vm_tools.py' in step.get('run', '') for step in steps))
 
-    def test_native_lifecycle_parallelism_keeps_per_runner_limits(self):
-        workflow = yaml.safe_load((ROOT / '.github/workflows/native-lifecycle-validation.yml').read_text())
-        jobs = workflow['jobs']
-        lifecycle = jobs['lifecycle']
-        self.assertEqual(lifecycle['needs'], ['payload', 'runtime'])
+    def test_native_qualification_parallelism_keeps_per_runner_limits(self):
+        workflows = ROOT / '.github/workflows'
+        lifecycle_jobs = yaml.safe_load((workflows / 'native-lifecycle-validation.yml').read_text())['jobs']
+        migration_jobs = yaml.safe_load((workflows / 'native-migration-rehearsal.yml').read_text())['jobs']
+        producers = yaml.safe_load((workflows / 'native-qualification-inputs.yml').read_text())['jobs']
+        lifecycle = lifecycle_jobs['lifecycle']
         self.assertEqual(lifecycle['strategy']['max-parallel'], 2)
         self.assertEqual(lifecycle['strategy']['matrix']['profile'], ['finite-native', 'finite-native-dev'])
-        for name in ('payload', 'lifecycle'):
-            steps = jobs[name]['steps']
+        for jobs, consumer in ((lifecycle_jobs, 'lifecycle'), (migration_jobs, 'rehearsal')):
+            self.assertEqual(jobs['inputs']['uses'], '$/.github/workflows/native-qualification-inputs.yml')
+            self.assertEqual(jobs[consumer]['needs'], 'inputs')
+            self.assertTrue(any(step.get('uses') == '$/.github/actions/stage-native-qualification'
+                                for step in jobs[consumer]['steps']))
+        for job in (producers['payload'], lifecycle, migration_jobs['rehearsal']):
+            steps = job['steps']
             setup = next(step for step in steps if step.get('uses') == '$/.github/actions/setup-nix')
             self.assertEqual(setup['with']['resource-mode'], 'native-qualification')
             self.assertTrue(any('watch-memory.py' in step.get('run', '') for step in steps))
-        runtime_steps = jobs['runtime']['steps']
+        self.assertNotIn('needs', producers['payload'])
+        self.assertNotIn('needs', producers['runtime'])
+        runtime_steps = producers['runtime']['steps']
         self.assertTrue(any('watch-memory.py python3 scripts/bluebuild/stage-bootc-runtime.py' in step.get('run', '')
                             for step in runtime_steps))
 
