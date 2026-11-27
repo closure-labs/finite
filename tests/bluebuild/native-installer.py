@@ -471,6 +471,30 @@ class Media(unittest.TestCase):
                     guest.expect(rb'Installation complete\.')
                 self.assertEqual(guest.log.getvalue(), b''.join(chunks))
 
+    def test_unlock_prompt_survives_a_kernel_message_inside_passphrase(self):
+        qual = runpy.run_path(str(self.directory / 'qualify-iso.py'))
+        for kernel_message in (b'bochs-drm 0000:00:01.0: [drm] Registered 1 planes with drm panic',
+                               b'Kernel panic - not syncing: fatal exception'):
+            with self.subTest(kernel_message=kernel_message):
+                guest = qual['Guest'].__new__(qual['Guest'])
+                guest.deadline = time.monotonic() + 10
+                guest.output = b''
+                guest.log = BytesIO()
+                guest.selector = SimpleNamespace(select=lambda timeout: True)
+                guest.process = SimpleNamespace(stdout=SimpleNamespace(fileno=lambda: 0))
+                device = b'luks-813bb974-c701-42f4-8b96-2464bdcc120f'
+                chunks = [b'\x1b[0;1;39mPlease enter pas[    4.038',
+                          b'408] ' + kernel_message + b'\r\nsphrase for disk ' + device + b': (press TAB for no echo)']
+                with patch.dict(qual['Guest'].read_console.__globals__, available_mib=lambda: qual['RESERVE_MIB']), \
+                        patch.object(qual['os'], 'read', side_effect=chunks):
+                    if kernel_message.startswith(b'Kernel panic'):
+                        with self.assertRaisesRegex(RuntimeError, 'Guest reported a failure'):
+                            guest.expect_unlock()
+                    else:
+                        self.assertEqual(guest.expect_unlock().group(),
+                                         b'Please enter passphrase for disk ' + device + b':')
+                self.assertEqual(guest.log.getvalue(), b''.join(chunks))
+
     def test_hybrid_iso_uses_a_distinct_read_only_boot_device(self):
         spec = importlib.util.spec_from_file_location('qualify_iso', self.directory / 'qualify-iso.py')
         qual = importlib.util.module_from_spec(spec)
@@ -529,7 +553,7 @@ class Media(unittest.TestCase):
         for provided, modules in ((True, ['zfs', 'v4l2loopback']), (False, ['v4l2loopback'])):
             with self.subTest(zfs=provided):
                 facts = dict(common, zfsProvided=provided, signedModules=modules)
-                guest = SimpleNamespace(expect=lambda _: None, send=lambda _: None, record=lambda _: facts)
+                guest = SimpleNamespace(expect_unlock=lambda: None, send=lambda _: None, record=lambda _: facts)
                 self.assertEqual(qual['boot_facts'](guest, 'disposable-password', seal), facts)
                 facts['signedModules'] = []
                 with self.assertRaisesRegex(ValueError, 'required boot facts'):

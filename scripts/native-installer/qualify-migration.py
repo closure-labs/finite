@@ -88,10 +88,10 @@ def qualify(args):
                             and r'\efi\boot\bootx64.efi' in device,
                             'Unexpected firmware selection of the rescue ISO')
                 print(f'{phase}: verified rescue firmware entry {firmware_boot["bootCurrent"]}', flush=True)
-                guest.expect(rb'LUKS passphrase:')
+                guest.expect(rb'LUKS passphrase:', filter_kernel_messages=True)
                 guest.send(password)
                 if phase == 'legacy':
-                    guest.expect(rb'LUKS alternate passphrase:')
+                    guest.expect(rb'LUKS alternate passphrase:', filter_kernel_messages=True)
                     guest.send(alternate)
                 for event in [*events, 'shutdown']:
                     outcome = guest.record('FINITE_MIGRATION')
@@ -104,7 +104,7 @@ def qualify(args):
         print('Rehearsal disk boot ' + name, flush=True)
         with (args.evidence / f'{name}-serial.log').open('xb') as log:
             with Guest(guest_command(disk, vars_file, phase), log, 900) as guest:
-                guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
+                guest.expect_unlock()
                 guest.send(alternate if phase == 'new' else password)
                 result = guest.record('FINITE_MIGRATION_BOOT')
                 guest.shutdown()

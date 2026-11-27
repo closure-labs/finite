@@ -20,6 +20,7 @@ DISK_SERIAL = 'FINITEQUALIFICATION'
 MOK_GUID = '605dab50-e046-4300-abb6-3dd810dd8b23'
 GUEST_FAILURE = re.compile(rb'(?:Installation stopped:|Kernel panic|FINITE_NATIVE_FRESH_BOOT_FAILED|'
                            rb'FINITE_MIGRATION_FAILED)[^\r\n]*\r?\n')
+KERNEL_MESSAGE = re.compile(rb'\[ *\d+\.\d{6}\] [^\r\n]*\r?\n')
 
 
 def available_mib():
@@ -112,16 +113,27 @@ class Guest:
         if GUEST_FAILURE.search(self.output):
             raise RuntimeError('Guest reported a failure. See the serial log.')
 
-    def expect(self, expression):
+    def expect(self, expression, *, filter_kernel_messages=False):
         while time.monotonic() < self.deadline:
-            match = re.search(expression, self.output)
+            output = self.output
+            if filter_kernel_messages:
+                # printk can interrupt a prompt mid-word. Keep the saved raw
+                # UART transcript and check it for fatal lines before acting.
+                output = KERNEL_MESSAGE.sub(b'', output)
+            match = re.search(expression, output)
             if match:
-                self.output = self.output[match.end():]
+                if filter_kernel_messages:
+                    self.check_failure()
+                self.output = output[match.end():]
                 return match
             self.check_failure()
             if not self.read_console(timeout=1):
                 raise RuntimeError('QEMU exited while waiting for guest output: ' + repr(expression))
         raise RuntimeError('Timed out waiting for guest output: ' + repr(expression))
+
+    def expect_unlock(self):
+        return self.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:',
+                           filter_kernel_messages=True)
 
     def send(self, value):
         self.process.stdin.write(value.encode() + b'\r')
@@ -157,7 +169,7 @@ class Guest:
 
 
 def boot_facts(guest, password, seal):
-    guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
+    guest.expect_unlock()
     guest.send(password)
     facts = guest.record('FINITE_NATIVE_FRESH_BOOT')
     zfs_provided = facts.get('zfsProvided')
