@@ -62,11 +62,12 @@ def qualify(args):
     alternate = secrets.token_hex(16)
 
     def guest_command(disk, vars_file, phase):
-        return iso_harness['qemu_arguments'](firmware, vars_file, disk, 'FINITEMIGRATION') + [
-            '-smbios', f'type=1,serial=finite-migration-{phase}']
+        command = iso_harness['qemu_arguments'](firmware, vars_file, disk, 'FINITEMIGRATION')
+        command.extend(['-smbios', f'type=1,serial=finite-migration-{phase}'])
+        return command + iso_harness['install_media'](iso, prioritize=phase == 'legacy')
 
-    def rescue(disk, vars_file, phase, events):
-        command = guest_command(disk, vars_file, phase) + iso_harness['install_media'](iso)
+    def rescue(disk, vars_file, phase, events, *, baseline=None):
+        command = guest_command(disk, vars_file, phase)
         if phase == 'legacy':
             command.extend(['-drive', f'if=none,id=inputs,format=raw,file={media},readonly=on',
                             '-device', 'virtio-blk-pci,drive=inputs,serial=FINITEMIGRATIONDATA'])
@@ -74,6 +75,13 @@ def qualify(args):
         print('Rehearsal rescue phase ' + phase, flush=True)
         with (args.evidence / f'{phase}-serial.log').open('xb') as log:
             with Guest(command, log, 2400) as guest:
+                firmware_boot = guest.record(b'FINITE_MIGRATION')
+                require(firmware_boot['phase'] == 'rescue-boot', 'Missing rescue boot identity')
+                observations['rescue-boot'] = firmware_boot
+                if baseline is not None:
+                    require(firmware_boot['bootCurrent'] == baseline['nextRescue']
+                            and firmware_boot['bootOrder'] == baseline['bootOrder'],
+                            'Unexpected firmware selection of the rescue ISO')
                 guest.expect(rb'LUKS passphrase:')
                 guest.send(password)
                 if phase == 'legacy':
@@ -108,6 +116,8 @@ def qualify(args):
     created = rescue(original, variables, 'legacy', ['legacy-created'])
     media.unlink()
     before = boot(original, variables, 'old-initialize', 'legacy-before')
+    require(before['nextRescue'] == created['rescue-boot']['bootCurrent'],
+            'Legacy boot selected an unexpected rescue entry for subsequent forks')
     boots = {'legacyBefore': before}
     recovery = {}
     for phase, events in (
@@ -115,7 +125,7 @@ def qualify(args):
             ('efi-fault', ['before-gpt-change', 'partitioned', 'efi-recovered']),
             ('selector-fault', ['before-gpt-change', 'partitioned', 'native-armed'])):
         disk, vars_file = fork(phase)
-        recovery[phase] = rescue(disk, vars_file, phase, events)
+        recovery[phase] = rescue(disk, vars_file, phase, events, baseline=before)
         boots[phase] = boot(disk, vars_file, 'old', phase + '-old-boot')
         if phase == 'selector-fault':
             require(boots[phase]['bootCurrent'] != recovery[phase]['native-armed']['bootNext'],
@@ -123,12 +133,15 @@ def qualify(args):
         disk.unlink()
         vars_file.unlink()
     disk, vars_file = fork('native')
-    staged = rescue(disk, vars_file, 'native', ['before-gpt-change', 'partitioned', 'native-armed'])
+    staged = rescue(disk, vars_file, 'native', ['before-gpt-change', 'partitioned', 'native-armed'],
+                    baseline=before)
     boots['nativeBootNext'] = boot(disk, vars_file, 'new', 'native-bootnext')
     boots['legacyAfter'] = boot(disk, vars_file, 'old', 'legacy-after')
     for name, phase in boots.items():
         require(phase['bootOrder'] == before['bootOrder']
                 and phase['native'] == (name == 'nativeBootNext'), 'Unexpected BootOrder or boot path for ' + name)
+        if name != 'nativeBootNext':
+            require(phase['bootCurrent'] == before['bootCurrent'], 'Original Fedora entry changed for ' + name)
     native = boots['nativeBootNext']
     require(native['bootCurrent'] == staged['native-armed']['bootNext']
             and 'composefs.digest=v1-sha512-12:' + seal['bootableRootDigest'] in native['preflight']['cmdline'].split(),

@@ -32,11 +32,14 @@ def file_sha256(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def install_media(iso):
+def install_media(iso, *, prioritize=True):
     # The hybrid ISO includes a GPT ESP for disk/USB boot. OVMF's optical
     # path failed to read GRUB from the larger development ISO.
+    device = 'virtio-blk-pci,drive=media,serial=FINITEINSTALLMEDIA'
+    if prioritize:
+        device += ',bootindex=1'
     return ['-drive', f'if=none,id=media,format=raw,readonly=on,file={iso}',
-            '-device', 'virtio-blk-pci,drive=media,bootindex=1,serial=FINITEINSTALLMEDIA']
+            '-device', device]
 
 
 def qemu_arguments(firmware, vars_file, disk, disk_serial):

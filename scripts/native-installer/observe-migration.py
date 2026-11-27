@@ -70,8 +70,21 @@ def main():
     require(not any(row.startswith('BootNext: ') for row in firmware), 'One-time boot entry not consumed')
     boot_type = run('findmnt', '-n', '-o', 'FSTYPE', '--mountpoint', '/boot')
     require(boot_type == ('vfat' if native else 'ext4'), 'Boot filesystem differs')
+    next_rescue = None
+    if identifier == 'finite-migration-old-initialize':
+        # Every later rescue boots from a copy of this EFI varstore. Using
+        # BootNext avoids another fw_cfg bootorder rewrite by OVMF.
+        next_rescue = Path('/etc/finite-migration/rescue-boot-entry').read_text().strip()
+        require(re.fullmatch(r'[0-9A-Fa-f]{4}', next_rescue) and next_rescue in order.split(',')
+                and order.split(',')[0] == current and next_rescue != current,
+                'Expected the rescue ISO behind the original default in BootOrder')
+        run('efibootmgr', '--bootnext', next_rescue)
+        armed = run('efibootmgr').splitlines()
+        require(f'BootOrder: {order}' in armed and f'BootNext: {next_rescue}' in armed,
+                'Could not arm the one-time rescue boot without changing BootOrder')
     emit_record('FINITE_MIGRATION_BOOT', {
         'native': native, 'bootOrder': order, 'bootCurrent': current,
+        'nextRescue': next_rescue,
         'bootId': Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
         'preflight': preflight, 'secureBoot': True, 'selinuxEnforcing': True,
         'uid': 1234, 'gid': 2345, 'sharedHome': True, 'sharedNix': True,

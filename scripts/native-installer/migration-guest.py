@@ -112,7 +112,7 @@ def add_observation(root):
     (wants / unit_path.name).symlink_to('../' + unit_path.name)
 
 
-def account_and_home(root, fsuuid):
+def account_and_home(root, fsuuid, *, rescue_entry=None):
     process('groupadd', '--root', root, '--gid', str(GID), ACCOUNT)
     process('useradd', '--root', root, '--no-create-home', '--uid', str(UID),
             '--gid', str(GID), '--home-dir', '/var/home/' + ACCOUNT, ACCOUNT)
@@ -120,11 +120,13 @@ def account_and_home(root, fsuuid):
     with fstab.open('a') as stream:
         stream.write(f'\nUUID={fsuuid} /var/home btrfs subvol=/home 0 0\n')
     add_observation(root)
+    if rescue_entry is not None:
+        (root / 'etc/finite-migration/rescue-boot-entry').write_text(rescue_entry + '\n')
     process('chroot', root, 'restorecon', '-RF', '/etc/finite-migration', '/etc/systemd/system',
             '/etc/fstab', '/etc/passwd', '/etc/group', '/etc/shadow', '/etc/gshadow')
 
 
-def legacy(disk, secret, alternate):
+def legacy(disk, secret, alternate, rescue_entry):
     require(not run('lsblk', '-nr', '-o', 'PARTTYPE', disk), 'Legacy creation requires a blank fixture')
     process('sfdisk', disk, stdin=layout.original_table(disk).encode())
     process('udevadm', 'settle')
@@ -171,7 +173,8 @@ def legacy(disk, secret, alternate):
     process('umount', '/var/tmp')
     DEPLOYMENT.mkdir()
     process('bootc', 'install', 'mount', '--sysroot', TARGET, '--latest', DEPLOYMENT)
-    account_and_home(DEPLOYMENT, run('blkid', '-s', 'UUID', '-o', 'value', DEVICE))
+    account_and_home(DEPLOYMENT, run('blkid', '-s', 'UUID', '-o', 'value', DEVICE),
+                     rescue_entry=rescue_entry)
     process('umount', '--recursive', DEPLOYMENT)
     entries = [path.read_text() for path in (TARGET / 'boot/loader/entries').glob('*.conf')]
     require(any('rootflags=subvol=/root' in entry.split() and 'ostree=' in entry for entry in entries),
@@ -326,6 +329,10 @@ def main():
     require(phase in {'legacy', 'shrink-fault', 'efi-fault', 'selector-fault', 'native'},
             'Unexpected rescue rehearsal phase')
     disk = disk_for(phase)
+    firmware, order = boot_firmware()
+    current = next(line.split(': ', 1)[1] for line in firmware if line.startswith('BootCurrent: '))
+    require(re.fullmatch(r'[0-9A-Fa-f]{4}', current), 'Invalid rescue boot entry number')
+    mark('rescue-boot', bootCurrent=current, bootOrder=order)
     # A real tty with echo disabled keeps even the disposable password out of
     # retained serial transcripts. cryptsetup reads it through stdin pipes.
     secret = getpass.getpass('LUKS passphrase: ').encode()
@@ -334,7 +341,7 @@ def main():
         WORK.mkdir()
         alternate = getpass.getpass('LUKS alternate passphrase: ').encode()
         require(alternate and alternate != secret, 'Expected a distinct alternate LUKS passphrase')
-        legacy(disk, secret, alternate)
+        legacy(disk, secret, alternate, current)
     elif resize(disk, secret, interrupt=phase == 'shrink-fault'):
         native(disk, phase)
     process('sync')

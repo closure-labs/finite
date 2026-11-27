@@ -434,11 +434,14 @@ class Media(unittest.TestCase):
         spec = importlib.util.spec_from_file_location('qualify_iso', self.directory / 'qualify-iso.py')
         qual = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(qual)
-        args = qual.install_media(Path('/tmp/finite-native-dev.iso'))
+        iso = Path('/tmp/finite-native-dev.iso')
+        args = qual.install_media(iso)
         self.assertEqual(args, [
             '-drive', 'if=none,id=media,format=raw,readonly=on,file=/tmp/finite-native-dev.iso',
-            '-device', 'virtio-blk-pci,drive=media,bootindex=1,serial=FINITEINSTALLMEDIA',
+            '-device', 'virtio-blk-pci,drive=media,serial=FINITEINSTALLMEDIA,bootindex=1',
         ])
+        self.assertEqual(qual.install_media(iso, prioritize=False),
+                         [*args[:-1], args[-1].removesuffix(',bootindex=1')])
         self.assertNotEqual('FINITEINSTALLMEDIA', qual.DISK_SERIAL)
 
     def test_evidence_is_independent_of_interleaved_console_and_partial_file_reads(self):
