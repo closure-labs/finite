@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Install and boot an exact disposable native ISO with one capped KVM guest."""
 import argparse
-import base64
 import hashlib
 import json
 import os
@@ -12,6 +11,8 @@ import selectors
 import subprocess
 import sys
 import time
+
+from serial_records import EVIDENCE_NAME, MAX_RECORD_BYTES
 
 MEMORY_MIB = 3072
 RESERVE_MIB = 3072
@@ -44,8 +45,15 @@ class Guest:
         self.deadline = time.monotonic() + timeout
         self.output = b''
         self.log = log
-        self.process = subprocess.Popen(['nice', '-n', '19', 'qemu-system-x86_64', *arguments],
+        record_path = Path(log.name).with_suffix('.records.jsonl')
+        with record_path.open('xb'):
+            pass
+        channel = ['-chardev', f'file,id=finite-evidence,path={record_path}',
+                   '-device', 'virtio-serial-pci,id=finite-evidence-bus',
+                   '-device', f'virtserialport,bus=finite-evidence-bus.0,chardev=finite-evidence,name={EVIDENCE_NAME}']
+        self.process = subprocess.Popen(['nice', '-n', '19', 'qemu-system-x86_64', *arguments, *channel],
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.records = record_path.open('rb')
         self.selector = selectors.DefaultSelector()
         self.selector.register(self.process.stdout, selectors.EVENT_READ)
 
@@ -63,8 +71,25 @@ class Guest:
                     self.process.wait(timeout=15)
         finally:
             self.selector.close()
+            self.records.close()
             self.process.stdin.close()
             self.process.stdout.close()
+
+    def read_console(self, timeout):
+        if available_mib() < RESERVE_MIB:
+            raise RuntimeError('Host fell below the 3 GiB available-memory reserve')
+        if self.selector.select(timeout=timeout):
+            data = os.read(self.process.stdout.fileno(), 65536)
+            if not data:
+                return False
+            self.log.write(data)
+            self.log.flush()
+            self.output = (self.output + data)[-262144:]
+        return True
+
+    def check_failure(self):
+        if GUEST_FAILURE.search(self.output):
+            raise RuntimeError('Guest reported a failure. See the serial log.')
 
     def expect(self, expression):
         while time.monotonic() < self.deadline:
@@ -72,17 +97,9 @@ class Guest:
             if match:
                 self.output = self.output[match.end():]
                 return match
-            if GUEST_FAILURE.search(self.output):
-                raise RuntimeError('Guest reported a failure. See the serial log.')
-            if available_mib() < RESERVE_MIB:
-                raise RuntimeError('Host fell below the 3 GiB available-memory reserve')
-            if self.selector.select(timeout=1):
-                data = os.read(self.process.stdout.fileno(), 65536)
-                if not data:
-                    raise RuntimeError('QEMU exited while waiting for guest output: ' + repr(expression))
-                self.log.write(data)
-                self.log.flush()
-                self.output = (self.output + data)[-262144:]
+            self.check_failure()
+            if not self.read_console(timeout=1):
+                raise RuntimeError('QEMU exited while waiting for guest output: ' + repr(expression))
         raise RuntimeError('Timed out waiting for guest output: ' + repr(expression))
 
     def send(self, value):
@@ -90,39 +107,37 @@ class Guest:
         self.process.stdin.flush()
 
     def record(self, marker):
-        prefix = re.escape(marker) + b' '
-        # Kernel and journal messages can share the same console line.
-        # The end marker is outside the Base64 alphabet.
-        frame = rb' ([A-Za-z0-9+/=]{1,256})\|END\|'
-        first = self.expect(prefix + rb'1/([1-9][0-9]{0,2})' + frame)
-        total = int(first[1])
-        if total > 256:
-            raise ValueError('Serial evidence exceeds the record size limit')
-        parts = [first[2]]
-        for index in range(2, total + 1):
-            ordinal = f'{index}/{total}'.encode()
-            parts.append(self.expect(prefix + ordinal + frame)[1])
-        return json.loads(base64.b64decode(b''.join(parts), validate=True))
+        payload = bytearray()
+        console_open = True
+        while time.monotonic() < self.deadline:
+            chunk = self.records.readline(MAX_RECORD_BYTES + 1 - len(payload))
+            payload.extend(chunk)
+            if len(payload) > MAX_RECORD_BYTES:
+                raise ValueError('VM evidence record exceeds 64 KiB')
+            if chunk.endswith(b'\n'):
+                receipt = json.loads(payload)
+                if receipt['marker'] != marker or not isinstance(receipt['value'], dict):
+                    raise ValueError('Unexpected VM evidence record while waiting for ' + marker)
+                return receipt['value']
+            self.check_failure()
+            if not console_open:
+                raise RuntimeError('QEMU exited while waiting for VM evidence: ' + marker)
+            console_open = self.read_console(timeout=0.25)
+        raise RuntimeError('Timed out waiting for VM evidence: ' + marker)
 
     def shutdown(self):
         while time.monotonic() < self.deadline:
-            if available_mib() < RESERVE_MIB:
-                raise RuntimeError('Host fell below the 3 GiB available-memory reserve')
-            if self.selector.select(timeout=1):
-                data = os.read(self.process.stdout.fileno(), 65536)
-                if not data:
-                    if self.process.wait(timeout=10) != 0:
-                        raise RuntimeError('QEMU exited unsuccessfully after shutdown')
-                    return
-                self.log.write(data)
-                self.log.flush()
+            if not self.read_console(timeout=1):
+                if self.process.wait(timeout=10) != 0:
+                    raise RuntimeError('QEMU exited unsuccessfully after shutdown')
+                return
         raise RuntimeError('Timed out waiting for clean guest shutdown')
 
 
 def boot_facts(guest, password, seal):
     guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
     guest.send(password)
-    facts = guest.record(b'FINITE_NATIVE_FRESH_BOOT')
+    facts = guest.record('FINITE_NATIVE_FRESH_BOOT')
     zfs_provided = facts.get('zfsProvided')
     expected_modules = ['zfs', 'v4l2loopback'] if zfs_provided else ['v4l2loopback']
     if (facts['profile'] != seal['profile'] or facts['bootableRootDigest'] != seal['bootableRootDigest']
@@ -178,7 +193,7 @@ def qualify_lifecycle(args, state, common, password, base, update):
                 if phase != 'stage' and (len(facts['persistence']) != 2 or not all(facts['persistence'].values())):
                     raise ValueError(f'{phase}: /etc or /var persistence differs')
                 if phase in {'stage', 'rollback'}:
-                    transition = guest.record(b'FINITE_NATIVE_TRANSITION')
+                    transition = guest.record('FINITE_NATIVE_TRANSITION')
                     status = transition['status']
                     if transition['phase'] != phase:
                         raise ValueError(f'{phase}: unexpected bootc transition state')
@@ -188,7 +203,7 @@ def qualify_lifecycle(args, state, common, password, base, update):
                         if composefs.get('verity') != update['bootableRootDigest']:
                             raise ValueError('Staged deployment root differs from the verified update')
                     (args.evidence / f'{phase}-status.json').write_text(json.dumps(transition, indent=2) + '\n')
-                if guest.record(b'FINITE_NATIVE_SHUTDOWN')['phase'] != phase:
+                if guest.record('FINITE_NATIVE_SHUTDOWN')['phase'] != phase:
                     raise ValueError(f'{phase}: unexpected shutdown receipt')
                 guest.shutdown()
                 observed[phase] = facts

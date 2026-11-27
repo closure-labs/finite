@@ -2,8 +2,7 @@
 """The native installer's disk choice, layout and command contract, without touching disks."""
 from importlib.machinery import SourceFileLoader
 import importlib.util
-from contextlib import redirect_stdout
-from io import BytesIO, StringIO
+from io import BytesIO
 import json
 import dataclasses
 from pathlib import Path
@@ -14,7 +13,7 @@ import time
 from types import SimpleNamespace
 import unittest
 from subprocess import CalledProcessError, CompletedProcess
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / 'scripts/native-installer/finite-native-install'
@@ -23,6 +22,8 @@ spec = importlib.util.spec_from_loader(loader.name, loader)
 installer = importlib.util.module_from_spec(spec)
 with patch.object(sys, 'path', [str(ROOT / 'files/system/usr/libexec/finite'), *sys.path]):
     loader.exec_module(installer)
+sys.path.insert(0, str(ROOT / 'scripts/native-installer'))
+import serial_records
 
 GIB = 1024**3
 PINS = {'schema': 3, 'bootcSha256': 'b' * 64, 'bootcVersion': '1.17.5', 'payloadDigest': 'sha256:' + 'a' * 64,
@@ -440,34 +441,41 @@ class Media(unittest.TestCase):
         ])
         self.assertNotEqual('FINITEINSTALLMEDIA', qual.DISK_SERIAL)
 
-    def test_serial_records_handle_fragmented_reads_and_missing_console_newlines(self):
+    def test_evidence_is_independent_of_interleaved_console_and_partial_file_reads(self):
         qual = runpy.run_path(str(self.directory / 'qualify-iso.py'))
-        emit = runpy.run_path(str(self.directory / 'serial_records.py'))['emit_record']
         guest = qual['Guest'].__new__(qual['Guest'])
         guest.deadline = time.monotonic() + 10
         guest.output = b''
         guest.log = BytesIO()
         guest.selector = SimpleNamespace(select=lambda timeout: True)
         guest.process = SimpleNamespace(stdout=SimpleNamespace(fileno=lambda: 0))
-        first = {'nested': {'root': 'old'}, 'ready': True}
-        payload = {'phase': 'stage', 'status': {'deployed': 'a' * 1024, 'staged': 'b' * 1024}}
-        stream = StringIO()
-        with redirect_stdout(stream):
-            emit('BOOT', first)
-            emit('TRANSITION', payload)
-        lines = stream.getvalue().splitlines()
-        self.assertGreater(len(lines), 2)
-        self.assertTrue(all(len(line) < 300 for line in lines))
-        wire = ''.join('journal prefix ' + line + '[26.778346] EXT4-fs: mounted filesystem\r\n'
-                       for line in lines).encode()
-        split = wire.index(b'|END|')
-        fragmented = [wire[:split]] + [wire[offset:offset + 41] for offset in range(split, len(wire), 41)]
-        with patch.dict(qual['Guest'].expect.__globals__, available_mib=lambda: qual['RESERVE_MIB']), \
-                patch.object(qual['os'], 'read', side_effect=fragmented):
-            self.assertEqual(guest.record(b'BOOT'), first)
-            self.assertEqual(guest.record(b'TRANSITION'), payload)
-        self.assertIn(b'|END|', guest.log.getvalue())
-        self.assertTrue(wire.startswith(guest.log.getvalue()))
+        payload = {'phase': 'stage', 'status': {'deployed': 'a' * 1024, 'staged': 'µ' * 1024}}
+        with tempfile.TemporaryDirectory() as temporary:
+            port = Path(temporary) / 'port'
+            port.touch()
+            with patch.object(serial_records, 'EVIDENCE_PORT', port):
+                serial_records.emit_record('TRANSITION', payload)
+            wire = port.read_bytes()
+        console = b'FINITE_NATIVE_FRESH_BOOT 3/5 ZWxSZWxlYXNl[27.930631] EXT4-fs: mounted filesystem\r\n'
+        guest.records = SimpleNamespace(readline=Mock(side_effect=[wire[:23], b'', wire[23:]]))
+        with patch.dict(qual['Guest'].read_console.__globals__, available_mib=lambda: qual['RESERVE_MIB']), \
+                patch.object(qual['os'], 'read', side_effect=[console, b'WQ2Y2YzYm|END|\r\n']):
+            self.assertEqual(guest.record('TRANSITION'), payload)
+        self.assertEqual(guest.log.getvalue(), console + b'WQ2Y2YzYm|END|\r\n')
+
+    def test_evidence_requires_the_expected_marker_and_a_bounded_complete_line(self):
+        qual = runpy.run_path(str(self.directory / 'qualify-iso.py'))
+        guest = qual['Guest'].__new__(qual['Guest'])
+        guest.deadline = time.monotonic() + 10
+        guest.output = b''
+        guest.read_console = lambda timeout: False
+        for data, error, message in (
+                (b'{"marker":"other","value":{}}\n', ValueError, 'Unexpected VM evidence'),
+                (b'a' * (serial_records.MAX_RECORD_BYTES + 1), ValueError, '64 KiB'),
+                (b'{"marker":"expected","value":{}}', RuntimeError, 'QEMU exited')):
+            with self.subTest(message=message), self.assertRaisesRegex(error, message):
+                guest.records = BytesIO(data)
+                guest.record('expected')
 
     def test_boot_receipt_requires_signed_modules_from_the_upstream_image(self):
         qual = runpy.run_path(str(self.directory / 'qualify-iso.py'))

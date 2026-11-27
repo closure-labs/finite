@@ -1,13 +1,17 @@
-"""Write structured VM evidence in bounded serial lines."""
-import base64
+"""Write bounded receipts to the disposable VM's dedicated VirtIO port."""
 import json
+import os
+from pathlib import Path
+
+EVIDENCE_NAME = 'org.finite.qualification'
+EVIDENCE_PORT = Path('/dev/virtio-ports') / EVIDENCE_NAME
+MAX_RECORD_BYTES = 65536
 
 
 def emit_record(marker, value):
-    encoded = json.dumps(value, ensure_ascii=True, separators=(',', ':')).encode('ascii')
-    data = base64.b64encode(encoded).decode('ascii')
-    parts = [data[offset:offset + 256] for offset in range(0, len(data), 256)]
-    if len(parts) > 256:
-        raise ValueError('Encoded serial evidence record exceeds 64 KiB')
-    for index, part in enumerate(parts, start=1):
-        print(f'{marker} {index}/{len(parts)} {part}|END|', flush=True)
+    data = json.dumps({'marker': marker, 'value': value}, ensure_ascii=True, separators=(',', ':'))
+    payload = data.encode('ascii') + b'\n'
+    if len(payload) > MAX_RECORD_BYTES:
+        raise ValueError('VM evidence record exceeds 64 KiB')
+    with os.fdopen(os.open(EVIDENCE_PORT, os.O_WRONLY | os.O_NOCTTY), 'wb') as stream:
+        stream.write(payload)
