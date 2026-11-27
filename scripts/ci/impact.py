@@ -86,6 +86,8 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/unlock-vm.py',
     'scripts/bluebuild/release-evidence.py', '.github/workflows/qualification.yml',
     'scripts/ci/release-request.py',
+    # These host-side harnesses consume native artifacts in a separate workflow.
+    'scripts/native-installer/qualify-iso.py', 'scripts/native-installer/qualify-production.py',
     # These reviewed helpers only transport/sign already qualified release
     # packets; they are not image payload or ISO/VM qualification inputs.
     'scripts/ci/release-recovery.py', 'scripts/ci/create-release-draft.sh',

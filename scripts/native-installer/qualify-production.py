@@ -36,7 +36,8 @@ def grub_rescue(guest):
             'search --no-floppy --label FINITE-INSTALL --set=root',
             'linux /images/pxeboot/vmlinuz root=live:CDLABEL=FINITE-INSTALL rd.live.image '
             'enforcing=0 finite.native-installer=1 systemd.unit=multi-user.target console=ttyS0,115200n8 '
-            'rd.plymouth=0 plymouth.enable=0 systemd.mask=finite-native-installer.service systemd.debug_shell=ttyS0',
+            'rd.plymouth=0 plymouth.enable=0 systemd.mask=finite-native-installer.service '
+            'systemd.mask=serial-getty@ttyS0.service systemd.debug_shell=ttyS0',
             'initrd /images/pxeboot/initrd.img'):
         guest.send(command)
         result = guest.expect(rb'grub>|error:')
@@ -48,15 +49,17 @@ def grub_rescue(guest):
 
 
 def install(guest, password):
-    grub_rescue(guest)
     guest.send('/usr/libexec/finite/finite-native-install install')
-    guest.expect(rb'Finite native installer[^\r\n]*Secure Boot enabled', filter_kernel_messages=True)
-    guest.expect(rb'Type the disk ID "virtio-FINITEQUALIFICATION" to continue:')
+    guest.expect(rb'Finite native installer[^\r\n]*Secure Boot enabled', filter_kernel_messages=True, timeout=300)
+    guest.expect(rb'Type the disk ID "virtio-FINITEQUALIFICATION" to continue:',
+                 filter_kernel_messages=True, timeout=60)
+    print('The normal installer verified its payload and selected the disposable disk', flush=True)
     guest.send('virtio-FINITEQUALIFICATION')
-    guest.expect(rb'LUKS passphrase \(recovery fallback\):', filter_kernel_messages=True)
+    guest.expect(rb'LUKS passphrase \(recovery fallback\):', filter_kernel_messages=True, timeout=60)
     guest.send(password)
-    guest.expect(rb'Repeat the passphrase:', filter_kernel_messages=True)
+    guest.expect(rb'Repeat the passphrase:', filter_kernel_messages=True, timeout=60)
     guest.send(password)
+    print('The installer accepted interactive disk and passphrase confirmation', flush=True)
     recovery = guest.expect(RECOVERY_KEY, filter_kernel_messages=True).group().decode('ascii')
     guest.expect(rb'Installation complete\.')
     print('Exact ISO completed installation and generated a recovery key', flush=True)
@@ -157,6 +160,12 @@ def qualify(args):
     # the private VM scratch area, outside both retained Actions artifacts.
     with (state / 'live-serial.log').open('xb') as log:
         with ISO['Guest'](setup, log, 2400) as guest:
+            try:
+                grub_rescue(guest)
+            finally:
+                # Copy only the transcript that precedes the generated LUKS key.
+                shutil.copyfile(log.name, args.evidence / 'live-preinstall-serial.log')
+            print('The ISO shim and GRUB reached the live installer console', flush=True)
             recovery = install(guest, password)
     print('Booting the installed production UKI with its generated recovery key', flush=True)
     monitor = state / 'qmp.sock'

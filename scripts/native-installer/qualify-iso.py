@@ -113,8 +113,9 @@ class Guest:
         if GUEST_FAILURE.search(self.output):
             raise RuntimeError('Guest reported a failure. See the serial log.')
 
-    def expect(self, expression, *, filter_kernel_messages=False):
-        while time.monotonic() < self.deadline:
+    def expect(self, expression, *, filter_kernel_messages=False, timeout=None):
+        deadline = self.deadline if timeout is None else min(self.deadline, time.monotonic() + timeout)
+        while time.monotonic() < deadline:
             output = self.output
             if filter_kernel_messages:
                 # printk can interrupt a prompt mid-word. Keep the saved raw
