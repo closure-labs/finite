@@ -83,6 +83,20 @@ sys.exit(1 if os.environ.get('FAIL_PASS') else 0)
     def verify(self):
         backup.verify(argparse.Namespace(work=self.work, pass_entry='fixture'))
 
+    def test_inventory_includes_herdr_config_and_excludes_rotating_session_snapshots(self):
+        herdr = self.home / '.config/herdr'
+        snapshots = herdr / 'session-snapshots'
+        snapshots.mkdir(parents=True)
+        (snapshots / 'session.json').touch()
+        config = herdr / 'config.toml'
+        config.touch()
+        (self.work / 'inventory.json').unlink()
+        backup.inventory(argparse.Namespace(home=self.home, work=self.work, destination=self.destination, include=[]))
+        plan = backup.read_plan(self.work / 'inventory.json')
+        self.assertIn(str(config), plan['include'])
+        self.assertIn(str(snapshots), plan['exclude'])
+        self.assertFalse(any(Path(path).is_relative_to(snapshots) for path in plan['include']))
+
     def test_round_trip_preserves_modes_and_tests_restored_credentials(self):
         self.create()
         self.verify()

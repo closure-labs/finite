@@ -5,6 +5,7 @@ set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 inventory="$root/artifacts/workstation-recovery/inventory.json"
 [[ -f $inventory ]]
+python3 "$root/scripts/workstation/recovery-backup.py" check-inventory --inventory "$inventory"
 work="$root/artifacts/workstation-recovery/runs/$(date -u +%Y%m%dT%H%M%SZ)"
 install -d -m 0700 "$work"
 for tool in age gpg gpgconf pass cryptsetup efibootmgr lsblk sfdisk tar python3; do

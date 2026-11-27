@@ -15,7 +15,7 @@ REPO = Path(__file__).resolve().parents[2]
 OMIT = ('.cache', '.local/share/containers', '.local/share/Steam',
         '.local/share/Trash', '.npm/_cacache', '.cargo/registry',
         '.cargo/git', '.rustup/toolchains', '.nix-defexpr', '.nix-profile',
-        '.config/Nextcloud/logs')
+        '.config/Nextcloud/logs', '.config/herdr/session-snapshots')
 ESSENTIAL = ('.ssh', '.gnupg', '.password-store', '.config/home-manager',
              '.local/share/keyrings')
 CONFIG_DIRS = ('finite', 'fish', 'gh', 'git', 'jj', 'nix', 'nixpkgs', 'ghostty',
@@ -111,7 +111,9 @@ def inventory(args):
         if not directory.is_dir():
             continue
         for parent, dirs, files in os.walk(directory, followlinks=False):
-            dirs[:] = [d for d in dirs if d not in {'node_modules', '.git', '.jj', 'Cache', 'cache', 'logs', 'extensions', 'globalStorage', 'workspaceStorage'}]
+            dirs[:] = [d for d in dirs if (Path(parent) / d) not in exclude
+                       and d not in {'node_modules', '.git', '.jj', 'Cache', 'cache', 'logs',
+                                     'extensions', 'globalStorage', 'workspaceStorage'}]
             for name in files:
                 path = Path(parent) / name
                 if (path.name.endswith(CONFIG_SUFFIXES) or path.name in CONFIG_NAMES) and path.lstat().st_size <= 512 * 1024:
@@ -129,6 +131,10 @@ def inventory(args):
             'recoveryEssentials': list(ESSENTIAL)}
     write_json(work / 'inventory.json', plan)
     print(f'Private configuration inventory ready: {work / "inventory.json"}; {len(include)} inputs')
+
+
+def check_inventory(args):
+    read_plan(args.inventory)
 
 
 def input_size(plan):
@@ -307,6 +313,8 @@ def main():
     p.add_argument('--destination', type=Path, default=Path('/var/home/dale/Nextcloud/finite-backup'))
     p.add_argument('--work', type=Path, required=True)
     p.add_argument('--include', type=Path, action='append', default=[], help='Additional small unique configuration file/directory')
+    p = sub.add_parser('check-inventory')
+    p.add_argument('--inventory', type=Path, required=True)
     p = sub.add_parser('create')
     p.add_argument('--inventory', type=Path, required=True)
     p.add_argument('--work', type=Path, required=True)
@@ -315,7 +323,7 @@ def main():
     p.add_argument('--pass-entry')
     args = parser.parse_args()
     try:
-        globals()[args.command](args)
+        globals()[args.command.replace('-', '_')](args)
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
         parser.exit(1, str(exc) + '\n')
 
