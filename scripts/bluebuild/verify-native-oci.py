@@ -57,9 +57,11 @@ def check_importer(bootc, lock, validation_sha=None):
                 and re.fullmatch('[0-9a-f]{64}', validation_sha)):
             raise ValueError('Runner-built importer requires the dedicated disposable qualification workflow')
         accepted = {validation_sha}
+    if platform.machine() != lock['architecture'] or actual not in accepted:
+        raise ValueError(f'Canonical importer differs from its reviewed pin (sha256:{actual})')
     version = capture([bootc, '--version'])
-    if platform.machine() != lock['architecture'] or actual not in accepted or version != lock['bootcVersion']:
-        raise ValueError(f'Canonical importer differs from its reviewed pin ({version}, sha256:{actual})')
+    if version != lock['bootcVersion']:
+        raise ValueError(f'Canonical importer differs from its reviewed version ({version}, sha256:{actual})')
     return actual
 
 

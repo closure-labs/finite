@@ -109,7 +109,7 @@ class CompletedArchive(unittest.TestCase):
                'bootcSha256': 'b' * 64}
         env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
                'GITHUB_REF': 'refs/heads/qualification/native-iso'}
-        with patch.object(native, 'capture', return_value=pin['bootcVersion']), \
+        with patch.object(native, 'capture', return_value=pin['bootcVersion']) as invoke, \
                 patch.object(native, 'sha256', return_value=actual), patch.dict(native.os.environ, env):
             self.assertEqual(native.check_importer(bootc, pin, actual), actual)
             with self.assertRaisesRegex(ValueError, 'reviewed pin'):
@@ -119,9 +119,10 @@ class CompletedArchive(unittest.TestCase):
             with patch.dict(native.os.environ, GITHUB_REF='refs/heads/main'), \
                     self.assertRaisesRegex(ValueError, 'disposable'):
                 native.check_importer(bootc, pin, actual)
+            invoke.assert_called_once_with([bootc, '--version'])
 
     def test_unpinned_importer_cannot_create_evidence(self):
-        with self.assertRaisesRegex(ValueError, 'pin'):
+        with self.assertRaisesRegex(ValueError, 'reviewed version'):
             self.verify(bad_importer=True)
 
 

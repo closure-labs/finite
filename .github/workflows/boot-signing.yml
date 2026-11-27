@@ -81,10 +81,10 @@ jobs:
           [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
           importer_sha=$(sha256sum "$importer/bin/bootc" | cut -d' ' -f1)
           printf 'Canonical importer SHA-256: %s\n' "$importer_sha"
-          [[ $("$importer/bin/bootc" --version) == "$(jq -er .bootcVersion sources/native-composefs-verifier.json)" ]]
           jq -e --arg sha "$importer_sha" \
             '([.bootcSha256] + (.additionalBootcSha256 // [])) | index($sha) != null' \
             sources/native-composefs-verifier.json >/dev/null
+          [[ $("$importer/bin/bootc" --version) == "$(jq -er .bootcVersion sources/native-composefs-verifier.json)" ]]
           epoch=$(git show -s --format=%ct "$SOURCE_REVISION")
           [[ $epoch =~ ^[0-9]+$ ]]
           {
