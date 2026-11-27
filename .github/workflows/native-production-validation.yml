@@ -1,7 +1,7 @@
 name: Qualify protected production native candidate
 on:
   push:
-    branches: [qualification/native-production-readiness]
+    branches: [qualification/native-production-readiness, qualification/native-importer-repro]
   workflow_dispatch:
     inputs:
       channel:
@@ -22,7 +22,10 @@ env:
 jobs:
   importer-readiness:
     name: Measure the locked production importer (${{ matrix.runner }})
-    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-production-readiness'
+    if: >-
+      github.repository == 'closure-labs/finite' &&
+      (github.ref == 'refs/heads/qualification/native-production-readiness' ||
+       github.ref == 'refs/heads/qualification/native-importer-repro')
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     strategy:
@@ -45,6 +48,9 @@ jobs:
           readelf -Wd -n -S "$importer/bin/bootc" > "$RUNNER_TEMP/importer-readiness/elf.txt"
           nix-store --query --deriver "$importer" > "$RUNNER_TEMP/importer-readiness/derivation.txt"
           sha256sum "$importer/bin/bootc"
+          if [[ $GITHUB_REF == refs/heads/qualification/native-importer-repro ]]; then
+            exit 0
+          fi
           python3 - "$importer/bin/bootc" <<'PY'
           import json
           from pathlib import Path

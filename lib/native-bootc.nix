@@ -19,6 +19,11 @@ in
     # bootc's final link command; keep this explicit in the portable tool build.
     NIX_LDFLAGS = "-lselinux";
     cargoBuildFlags = ["-p" "bootc"];
+    # Probe whether serial crate scheduling and one Rust codegen unit remove
+    # byte variability between otherwise equivalent hosted realizations.
+    enableParallelBuilding = false;
+    CARGO_INCREMENTAL = "0";
+    CARGO_PROFILE_RELEASE_CODEGEN_UNITS = "1";
     # Full upstream tests exercise mounts/installers. Validate this tool against
     # the Fedora importer and final signed OCI fixtures in the sealing checks.
     doCheck = false;
