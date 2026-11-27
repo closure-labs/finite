@@ -63,25 +63,29 @@ elif name == 'cosign':
 '''
 
 
+DIAGNOSTIC_REF = 'refs/heads/diagnostics/finite-429-brew-preinstall'
+
+
 class LocalVM(unittest.TestCase):
     def test_export_is_local_and_vm_receipt_is_diagnostic_only(self):
-        for event_name in ('pull_request', 'merge_group'):
+        for event_name in ('pull_request', 'merge_group', 'workflow_dispatch'):
             with self.subTest(event=event_name):
                 self.exercise(event_name)
         self.exercise('merge_group', profile='finite-dev')
 
-    def test_premerge_context_remains_required(self):
+    def test_premerge_or_specific_diagnostic_context_is_required(self):
         preamble = (ROOT / 'scripts/bluebuild/local-vm.sh').read_text().split('work=$(mktemp', 1)[0]
         for event in ('pull_request', 'merge_group', 'workflow_dispatch', 'push'):
             for force in ('false', 'true'):
-                for ref in ('refs/heads/main', 'refs/heads/test-validation'):
+                for ref in ('refs/heads/main', 'refs/heads/test-validation', DIAGNOSTIC_REF):
                     with self.subTest(event=event, force=force, ref=ref):
                         env = {**os.environ, 'GITHUB_ACTIONS': 'true',
                                'GITHUB_REPOSITORY': 'closure-labs/finite', 'GITHUB_SHA': 'a' * 40,
                                'GITHUB_EVENT_NAME': event, 'FORCE_QUALIFICATION': force, 'GITHUB_REF': ref}
                         result = subprocess.run(['bash', '-c', preamble, 'fixture', 'finite'],
-                                                env=env, capture_output=True)
-                        expected = ref != 'refs/heads/main' and event in ('pull_request', 'merge_group')
+                                                cwd=ROOT, env=env, capture_output=True)
+                        expected = (ref != 'refs/heads/main' and event in ('pull_request', 'merge_group')
+                                    or ref == DIAGNOSTIC_REF and event == 'workflow_dispatch')
                         self.assertEqual(result.returncode == 0, expected)
 
     def exercise(self, event_name, profile='finite'):
@@ -95,6 +99,7 @@ class LocalVM(unittest.TestCase):
             (root / 'scripts/bluebuild').mkdir(parents=True)
             (root / 'scripts/ci').mkdir(parents=True)
             (root / 'scripts/ci/native-nix-selection.py').write_text('print("true")\n')
+            shutil.copy(ROOT / 'scripts/ci/local_vm.py', root / 'scripts/ci/local_vm.py')
             shutil.copy(ROOT / 'scripts/bluebuild/local-vm.sh', root / 'scripts/bluebuild/local-vm.sh')
             shutil.copy(ROOT / 'scripts/bluebuild/measure.py', root / 'scripts/bluebuild/measure.py')
             (root / 'scripts/bluebuild/prepare-installer.sh').write_text('''#!/usr/bin/env bash
@@ -119,9 +124,12 @@ fi
             (root / 'sources/bluebuild-installer.json').write_text('{"cliAlias":"installer-fixture"}')
             (root / '.bluebuild').mkdir()
             (root / f'.bluebuild/{profile}-image-ref.txt').write_text('a' * 12)
+            refs = {'pull_request': 'refs/pull/5/merge',
+                    'merge_group': 'refs/heads/gh-readonly-queue/main/pr-5-aaaaaaa',
+                    'workflow_dispatch': DIAGNOSTIC_REF}
             env = {**os.environ, 'PATH': str(root / 'bin') + ':' + os.environ['PATH'],
                    'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
-                   'GITHUB_EVENT_NAME': event_name, 'GITHUB_REF': 'refs/pull/5/merge' if event_name == 'pull_request' else 'refs/heads/gh-readonly-queue/main/pr-5-aaaaaaa',
+                   'GITHUB_EVENT_NAME': event_name, 'GITHUB_REF': refs[event_name],
                    'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '5', 'GITHUB_RUN_ATTEMPT': '1'}
             result = subprocess.run(['bash', 'scripts/bluebuild/local-vm.sh', profile], cwd=root,
                                     env=env, capture_output=True, text=True, timeout=15)

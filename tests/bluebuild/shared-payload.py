@@ -237,7 +237,7 @@ class Wiring(unittest.TestCase):
         for name in ('images', 'publish'):
             self.assertFalse(jobs[name]['strategy']['fail-fast'])
             self.assertEqual(jobs[name]['permissions']['actions'], 'read')
-        self.assertEqual(jobs['images']['with']['vm_validation'], "${{ needs.impact.outputs.vm == 'true' }}")
+        self.assertFalse(jobs['images']['with']['publish'])
 
     def test_pr_no_images_and_resume_skip_new_compilation(self):
         producer = workflow('build')['jobs']['payload']
