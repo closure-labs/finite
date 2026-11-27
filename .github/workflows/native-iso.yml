@@ -1,0 +1,54 @@
+name: Build native installer ISO
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Native image channel
+        type: choice
+        required: true
+        default: finite-native
+        options: [finite-native, finite-native-dev]
+      digest:
+        description: Verified native image digest (sha256 followed by 64 hex digits)
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: finite-native-iso-${{ inputs.channel }}-${{ inputs.digest }}
+  cancel-in-progress: false
+jobs:
+  iso:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "80G"
+      - uses: $/.github/actions/setup-cosign
+      - name: Authenticate and build the native installer ISO
+        env:
+          CHANNEL: ${{ inputs.channel }}
+          DIGEST: ${{ inputs.digest }}
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          printf '%s' "$REGISTRY_TOKEN" | sudo podman login --username "$REGISTRY_USER" --password-stdin ghcr.io
+          bash scripts/native-installer/build-iso.sh ghcr.io/closure-labs/finite "$CHANNEL" "$DIGEST"
+      - name: Upload unqualified native installer ISO
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: finite-native-iso-${{ inputs.channel }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/native-iso/*.iso
+            .bluebuild/native-iso/SHA256SUMS
+            .bluebuild/native-iso/installation.json
+          compression-level: 0
+          retention-days: 7

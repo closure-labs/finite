@@ -1,0 +1,134 @@
+name: Qualify protected production native candidate
+on:
+  push:
+    branches: [qualification/native-production-readiness]
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Native profile to seal and qualify
+        type: choice
+        required: true
+        default: finite-native
+        options: [finite-native, finite-native-dev]
+
+permissions:
+  contents: read
+concurrency:
+  group: finite-production-native-${{ github.ref }}-${{ inputs.channel }}
+  cancel-in-progress: false
+env:
+  FINITE_CI_VARS: ${{ toJSON(vars) }}
+
+jobs:
+  importer-readiness:
+    name: Measure the locked production importer (${{ matrix.runner }})
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-production-readiness'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [a, b]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
+          resource-mode: native-qualification
+      - name: Verify the immutable importer against the production lock
+        run: |
+          importer=$(python3 scripts/native-installer/watch-memory.py nix build --max-jobs 1 --cores 2 --file lib/ci-tools.nix native-bootc --no-link --print-out-paths)
+          python3 - "$importer/bin/bootc" <<'PY'
+          import json
+          from pathlib import Path
+          import runpy
+          import sys
+
+          verify = runpy.run_path('scripts/bluebuild/verify-native-oci.py')
+          lock = json.loads(Path('sources/native-composefs-verifier.json').read_text())
+          executable = Path(sys.argv[1]).resolve(strict=True)
+          print(f'Realized importer at {executable}', flush=True)
+          verify['check_importer'](executable, lock)
+          print('Reviewed production importer matched')
+          PY
+
+  inputs:
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    uses: $/.github/workflows/native-qualification-inputs.yml
+
+  candidate:
+    needs: inputs
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    uses: $/.github/workflows/native-image.yml
+    with:
+      profile: ${{ inputs.channel }}
+      channel: ${{ inputs.channel }}
+      force_qualification: true
+      payload_artifact_id: ${{ needs.inputs.outputs.payload_id }}
+      payload_sha256: ${{ needs.inputs.outputs.payload_sha }}
+      payload_revision: ${{ needs.inputs.outputs.payload_revision }}
+      payload_run: ${{ needs.inputs.outputs.payload_run }}
+      payload_attempt: ${{ needs.inputs.outputs.payload_attempt }}
+
+  exact-media:
+    name: Verify exact production image and boot its ISO
+    needs: candidate
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 210
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "110G"
+      - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
+          resource-mode: native-qualification
+      - name: Prepare the pinned Secure Boot VM tools
+        run: python3 scripts/native-installer/watch-memory.py python3 scripts/ci/vm_tools.py # zizmor: ignore[github-env]
+      - name: Check KVM access on the ephemeral runner
+        run: |
+          sudo setfacl -m "u:$(id -un):rw" /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+      - name: Independently verify the same-run seal and qualify its exact ISO
+        env:
+          PROFILE: ${{ inputs.channel }}
+          DIGEST: ${{ needs.candidate.outputs.digest }}
+          SOURCE_REVISION: ${{ needs.candidate.outputs.source_revision }}
+          SEAL_ARTIFACT: ${{ needs.candidate.outputs.evidence }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-production.sh
+      - name: Retain production candidate and VM evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-production-evidence-${{ inputs.channel }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/native-production-evidence/
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Retain the VM-qualified ISO for this exact candidate
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-production-iso-${{ inputs.channel }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            .bluebuild/native-iso/*.iso
+            .bluebuild/native-iso/SHA256SUMS
+            .bluebuild/native-iso/installation.json
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7

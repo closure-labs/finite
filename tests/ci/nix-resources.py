@@ -40,6 +40,42 @@ class Resources(unittest.TestCase):
             with patch.object(resources.os, 'sched_getaffinity', return_value=set(range(16))):
                 self.assertEqual(resources.detect(proc, group), (2, 8 * resources.GIB))
 
+    def test_native_qualification_caps_setup_on_a_larger_runner(self):
+        for cpus, cores in ((4, 2), (1, 1)):
+            self.assertEqual(resources.budget(cpus, 16 * resources.GIB, 'native-qualification'),
+                             {'max-jobs': 1, 'cores': cores, 'eval-cores': cores})
+        with self.assertRaisesRegex(ValueError, 'Unknown Nix resource mode'):
+            resources.budget(4, 16 * resources.GIB, 'typo')
+        workflow = yaml.safe_load((ROOT / '.github/workflows/native-iso-validation.yml').read_text())
+        steps = workflow['jobs']['media']['steps']
+        setup = next(step for step in steps if step.get('uses') == '$/.github/actions/setup-nix')
+        self.assertEqual(setup['with']['resource-mode'], 'native-qualification')
+        self.assertTrue(any('watch-memory.py python3 scripts/ci/vm_tools.py' in step.get('run', '') for step in steps))
+
+    def test_native_qualification_parallelism_keeps_per_runner_limits(self):
+        workflows = ROOT / '.github/workflows'
+        lifecycle_jobs = yaml.safe_load((workflows / 'native-lifecycle-validation.yml').read_text())['jobs']
+        migration_jobs = yaml.safe_load((workflows / 'native-migration-rehearsal.yml').read_text())['jobs']
+        producers = yaml.safe_load((workflows / 'native-qualification-inputs.yml').read_text())['jobs']
+        lifecycle = lifecycle_jobs['lifecycle']
+        self.assertEqual(lifecycle['strategy']['max-parallel'], 2)
+        self.assertEqual(lifecycle['strategy']['matrix']['profile'], ['finite-native', 'finite-native-dev'])
+        for jobs, consumer in ((lifecycle_jobs, 'lifecycle'), (migration_jobs, 'rehearsal')):
+            self.assertEqual(jobs['inputs']['uses'], '$/.github/workflows/native-qualification-inputs.yml')
+            self.assertEqual(jobs[consumer]['needs'], 'inputs')
+            self.assertTrue(any(step.get('uses') == '$/.github/actions/stage-native-qualification'
+                                for step in jobs[consumer]['steps']))
+        for job in (producers['payload'], lifecycle, migration_jobs['rehearsal']):
+            steps = job['steps']
+            setup = next(step for step in steps if step.get('uses') == '$/.github/actions/setup-nix')
+            self.assertEqual(setup['with']['resource-mode'], 'native-qualification')
+            self.assertTrue(any('watch-memory.py' in step.get('run', '') for step in steps))
+        self.assertNotIn('needs', producers['payload'])
+        self.assertNotIn('needs', producers['runtime'])
+        runtime_steps = producers['runtime']['steps']
+        self.assertTrue(any('watch-memory.py python3 scripts/bluebuild/stage-bootc-runtime.py' in step.get('run', '')
+                            for step in runtime_steps))
+
     def test_verify_rejects_ignored_settings_and_wrong_client(self):
         value = resources.budget(4, 16 * resources.GIB)
         config = {name: {'value': setting} for name, setting in value.items()}

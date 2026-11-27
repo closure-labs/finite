@@ -13,6 +13,10 @@ inputs:
     description: baseline, optimized source experiment, or none; pilot defaults small jobs to none and keeps checks snapshots
     required: false
     default: ""
+  resource-mode:
+    description: Use runner sizing by default or the native qualification cap
+    required: false
+    default: runner
   merge-queue-token:
     description: Optional GitHub Actions secret used for trusted update pull requests
     required: false
@@ -41,6 +45,8 @@ runs:
     - name: Measure runner resources
       id: resources
       shell: bash
+      env:
+        FINITE_NIX_RESOURCE_MODE: ${{ inputs.resource-mode }}
       run: python3 scripts/ci/nix-resources.py
 
     - name: Install Determinate Nix
@@ -62,6 +68,8 @@ runs:
 
     - name: Verify Determinate Nix resource settings
       shell: bash
+      env:
+        FINITE_NIX_RESOURCE_MODE: ${{ inputs.resource-mode }}
       run: python3 scripts/ci/nix-resources.py --verify
 
     - name: Apply centralized public cache policy
@@ -155,9 +163,15 @@ runs:
 
     - name: Prepare pinned scoped SecretSpec resolver
       shell: bash
+      env:
+        FINITE_NIX_RESOURCE_MODE: ${{ inputs.resource-mode }}
       # Only a validated locally realized public tool path enters PATH.
       run: | # zizmor: ignore[github-env]
-        resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
+        command=(nix build --file lib/ci-tools.nix ci-secrets-run --no-link --print-out-paths)
+        if [[ $FINITE_NIX_RESOURCE_MODE == native-qualification ]]; then
+          command=(python3 scripts/native-installer/watch-memory.py "${command[@]}")
+        fi
+        resolver=$("${command[@]}")
         [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
         echo "$resolver/bin" >>"$GITHUB_PATH"
 

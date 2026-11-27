@@ -26,6 +26,11 @@ qualification = load('image_qualification_context', 'scripts/bluebuild/qualifica
 PROFILES = ('finite', 'finite-dev')
 PAYLOAD = '/nix/store/fixture-image-payload.drv'
 BUILD_FILES = (
+    'sources/boot-signing.json', 'sources/native-bootc.json',
+    'sources/native-composefs-verifier.json', 'lib/native-bootc.nix', 'lib/ci-tools.nix',
+    'sources/legacy-registry-signatures.json',
+    'sources/bootc-runtime.json',
+    '.github/workflows/native-image.yml', '.github/workflows/boot-signing.yml',
     'cosign.pub', 'sources/cosign-runtime.json', 'scripts/ci/cosign-runtime.py',
     'scripts/ci/image_identity.py', 'sources/bluebuild-cli.json', 'sources/bluebuild-cli.pub',
     'sources/bluefin-trust.json', 'sources/bluefin.pub',

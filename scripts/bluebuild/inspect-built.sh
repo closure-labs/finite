@@ -56,7 +56,7 @@ jq -e --arg revision "${GITHUB_SHA:-local}" --arg base "$expected_base" --arg pr
   .["org.opencontainers.image.source"] == "https://github.com/closure-labs/finite"
 ' ".bluebuild/$profile-image.json" >/dev/null
 case "$profile" in
-  finite|finite-dev) ;;
+  finite|finite-dev|finite-native|finite-native-dev) ;;
   *) echo "Unsupported image profile" >&2; exit 2 ;;
 esac
 "${measure[@]}" runtime-checks docker run --rm --privileged --entrypoint /bin/bash \

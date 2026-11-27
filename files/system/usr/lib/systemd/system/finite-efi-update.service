@@ -1,0 +1,19 @@
+[Unit]
+Description=Refresh Finite shim and signed systemd-boot with recovery journal
+After=local-fs.target
+Before=graphical.target
+ConditionPathExists=!/run/ostree-booted
+ConditionKernelCommandLine=composefs.digest
+ConditionPathExists=/usr/lib/finite/efi/manifest.json
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/libexec/finite/update-efi
+UMask=0077
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=full
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "scope": "Read-only authentication of exact pre-native channel predecessors; never candidate, installation, update or release authority",
+  "certificateIdentity": "https://github.com/closure-labs/finite/.github/workflows/attest-image.yml@refs/heads/main",
+  "certificateOidcIssuer": "https://token.actions.githubusercontent.com",
+  "profiles": {
+    "finite": "sha256:e2d000433f5529dc3f478ab388eab1f246c80d54d4c68c206e829e47d145682d",
+    "finite-dev": "sha256:e9f414a25759f13068f456b3f50d676faba0bca6f9c877fb7b43efea25558016"
+  }
+}

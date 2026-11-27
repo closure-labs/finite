@@ -1,0 +1,458 @@
+#!/usr/bin/python3
+"""Install Finite's native bootc system onto one whole disk.
+
+Runs only from the Finite native installer media. The sequence hardens the
+VM-qualified `scripts/vm-composefs/install-xbootldr.sh` path:
+  ESP (600 MiB) + VFAT XBOOTLDR (4 GiB) + LUKS2 discoverable root,
+  `bootc install to-filesystem --composefs-backend --bootloader systemd`,
+  Finite's shim/MokManager/signed systemd-boot via the image's own update-efi,
+  one firmware entry, and queued MOK enrollment.
+
+`plan` prints the exact steps without touching any disk. `install` asks for a
+typed confirmation of the selected disk before any destructive command.
+"""
+import argparse
+import dataclasses
+import getpass
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+from finite_mok import enrolled_mok_certificates
+
+ESP_MIB = 600
+XBOOTLDR_MIB = 4096
+MIN_DISK_BYTES = 64 * 1024**3
+ESP_TYPE = 'C12A7328-F81F-11D2-BA4B-00A0C93EC93B'
+XBOOTLDR_TYPE = 'BC13C2FF-59E6-4262-A352-B275FD6F7172'
+# Discoverable x86-64 root: systemd-gpt-auto-generator finds and unlocks it
+# without per-machine kernel arguments, which a sealed UKI cannot carry.
+ROOT_TYPE = '4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709'
+ROOT_MAPPING = 'root'
+TARGET = Path('/run/finite-install/target')
+DEPLOYMENT = Path('/run/finite-install/deployment')
+PINS = Path('/usr/lib/finite/installer/pins.json')
+OFFLINE_SOURCE = 'oci:/usr/lib/finite/installer/payload'
+BOOT_CERT = Path('/usr/share/finite/secure-boot/finite-boot.pem')
+MOK_BOOT_CERT = Path('/run/finite-install/finite-boot.der')
+MODULE_CERT = Path('/etc/pki/akmods/certs/akmods-ublue.der')
+SHIM_LOADER = r'\EFI\finite\shimx64.efi'
+
+
+class InstallError(Exception):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class Disk:
+    path: str
+    by_id: str
+    size: int
+    model: str
+    removable: bool
+    read_only: bool
+    mounted: bool
+    holds_boot_medium: bool
+    active_holders: bool = False
+
+    def refusal(self, min_bytes=MIN_DISK_BYTES):
+        if self.holds_boot_medium:
+            return 'holds the installer boot medium'
+        if self.mounted:
+            return 'has mounted filesystems or active swap'
+        if self.active_holders:
+            return 'has active device-mapper, RAID or other block-device holders'
+        if self.read_only:
+            return 'is read-only'
+        if self.size < min_bytes:
+            return f'is smaller than {min_bytes // 1024**3} GiB'
+        if not self.by_id:
+            return 'has no stable /dev/disk/by-id name'
+        return None
+
+
+def partition(disk, number):
+    """Kernel partition naming: nvme0n1p1 / mmcblk0p1 but sda1 / vdb1."""
+    return f'{disk}p{number}' if re.search(r'\d$', disk) else f'{disk}{number}'
+
+
+def layout():
+    return (
+        'label: gpt\n'
+        'unit: sectors\n\n'
+        f'size={ESP_MIB}MiB,type={ESP_TYPE},name=finite-esp\n'
+        f'size={XBOOTLDR_MIB}MiB,type={XBOOTLDR_TYPE},name=finite-xbootldr\n'
+        f'type={ROOT_TYPE},name=finite-root\n'
+    )
+
+
+@dataclasses.dataclass(frozen=True)
+class Step:
+    description: str
+    argv: tuple
+    stdin: str = ''
+    # 'stdin': the passphrase is the whole stdin (cryptsetup --key-file=-).
+    # 'env': passed as $PASSWORD (systemd-cryptenroll's documented interface).
+    secret: str = ''
+    # Prompts on the console itself (mokutil's one-time password); no piped stdin.
+    interactive: bool = False
+
+    def render(self):
+        stdin = '<passphrase>' if self.secret == 'stdin' else ('<console>' if self.interactive else self.stdin)
+        return {'description': self.description, 'argv': list(self.argv), 'stdin': stdin,
+                'passphraseEnv': self.secret == 'env'}
+
+
+def plan(disk, pins, *, fido2=False, recovery_key=True):
+    """Return every command, in order. Pure: reads nothing, writes nothing."""
+    dev = disk.path
+    esp, xbootldr, root = (partition(dev, n) for n in (1, 2, 3))
+    mapped = '/dev/mapper/' + ROOT_MAPPING
+    target = str(TARGET)
+    scratch = target + '/.finite-install-scratch'
+    deployment = str(DEPLOYMENT)
+    steps = [
+        Step('Wipe and partition the disk', ('sfdisk', '--wipe', 'always', '--wipe-partitions', 'always', dev),
+             stdin=layout()),
+        Step('Wait for partition devices', ('udevadm', 'settle')),
+        Step('Encrypt the root partition (LUKS2, passphrase keyslot)',
+             ('cryptsetup', 'luksFormat', '--type', 'luks2', '--batch-mode', '--key-file=-', root),
+             secret='stdin'),
+        Step('Open the encrypted root', ('cryptsetup', 'open', '--key-file=-', root, ROOT_MAPPING),
+             secret='stdin'),
+    ]
+    if recovery_key:
+        # Prints the generated key on the console; the user must record it.
+        steps.append(Step('Add a printed recovery key', ('systemd-cryptenroll', '--recovery-key', root),
+                          secret='env', interactive=True))
+    if fido2:
+        steps.append(Step('Enroll the FIDO2 security key (touch it when it blinks)',
+                          ('systemd-cryptenroll', '--fido2-device=auto', root), secret='env', interactive=True))
+    steps += [
+        Step('Format the ESP', ('mkfs.fat', '-F', '32', '-n', 'FINITEESP', esp)),
+        Step('Format XBOOTLDR', ('mkfs.fat', '-F', '32', '-n', 'XBOOTLDR', xbootldr)),
+        # composefs requires fs-verity on the root filesystem.
+        Step('Format the root filesystem', ('mkfs.ext4', '-O', 'verity', '-L', 'finiteroot', mapped)),
+        Step('Mount the root', ('mount', '--mkdir', mapped, target)),
+        Step('Mount the ESP', ('mount', '--mkdir', esp, target + '/efi')),
+        Step('Mount XBOOTLDR', ('mount', '--mkdir', xbootldr, target + '/boot')),
+        # bootc unpacks the payload under /var/tmp, which is RAM-backed on live media.
+        Step('Move installer scratch space onto the target disk', ('mkdir', '-p', scratch)),
+        # bootc requires a root containing only mounts (and lost+found). Make
+        # scratch a mount boundary before bootc populates it through /var/tmp.
+        Step('Isolate scratch from the empty-root check', ('mount', '--bind', scratch, scratch)),
+        Step('Bind scratch space over /var/tmp', ('mount', '--bind', scratch, '/var/tmp')),
+        # --generic-image: bootc would otherwise create its own firmware entry for
+        # unsigned systemd-boot, which Secure Boot rejects; the shim entry is
+        # created below. --skip-fetch-check: the media installs offline from the
+        # embedded payload. No --karg: bootc refuses kernel arguments for sealed UKIs.
+        Step('Install the native image',
+             ('bootc', 'install', 'to-filesystem', '--composefs-backend', '--bootloader', 'systemd',
+              '--generic-image', '--skip-fetch-check',
+              '--source-imgref', pins['sourceImgref'], '--target-imgref', pins['targetImgref'], target)),
+        Step('Release scratch space', ('umount', '/var/tmp')),
+        Step('Release the scratch mount boundary', ('umount', scratch)),
+        # bootc finalizes the backing filesystems read-only. Briefly reopen
+        # the physical root for scratch cleanup and persistent /etc and /var.
+        Step('Reopen the encrypted filesystem for installer configuration',
+             ('mount', '-o', 'remount,rw', target)),
+        Step('Remove scratch space', ('rm', '-rf', '--one-file-system', scratch)),
+        Step('Check UKIs and entries are on XBOOTLDR, not the ESP',
+             ('/usr/libexec/finite/finite-native-install', 'verify-placement', target)),
+        Step('Prepare the installed deployment mount', ('mkdir', '-p', deployment)),
+        Step('Mount the installed deployment and its writable state',
+             ('bootc', 'install', 'mount', '--sysroot', target, '--latest', deployment)),
+        Step('Configure persistent boot partition mounts and shim fallback',
+             ('/usr/libexec/finite/finite-native-install', 'configure-target')),
+        Step('Install shim, MokManager and the signed systemd-boot',
+             ('/usr/bin/python3', '/usr/libexec/finite/update-efi', '--install-root', deployment,
+              '--esp', target + '/efi', '--state', deployment + '/var/lib/finite/efi-updates')),
+        Step('Label the installed configuration and EFI recovery journal',
+             ('chroot', deployment, 'restorecon', '-RF', '/etc/fstab', '/etc/finite',
+              '/var/lib/finite/efi-updates')),
+        Step('Release the installed deployment', ('umount', '--recursive', deployment)),
+        Step('Flush and return the encrypted filesystem to read-only',
+             ('mount', '-o', 'remount,ro', target)),
+        Step('Create the firmware boot entry',
+             ('efibootmgr', '--create', '--disk', dev, '--part', '1', '--loader', SHIM_LOADER,
+              '--label', 'Finite')),
+        Step('Queue any missing boot and module-signing MOK certificates',
+             ('/usr/libexec/finite/finite-native-install', 'enroll-mok'), interactive=True),
+        Step('Unmount the target', ('umount', '--recursive', target)),
+        Step('Close the encrypted root', ('cryptsetup', 'close', ROOT_MAPPING)),
+        Step('Flush writes', ('sync',)),
+    ]
+    return steps
+
+
+def verify_placement(target):
+    """The VM-qualified placement contract, from install-xbootldr.sh."""
+    target = Path(target)
+    if not any(path.is_file() for path in (target / 'boot/EFI/Linux').rglob('*.efi')):
+        raise InstallError('No UKI was installed on XBOOTLDR')
+    if not any((target / 'boot/loader/entries').glob('*.conf')):
+        raise InstallError('No boot entry was installed on XBOOTLDR')
+    if any((target / 'efi/EFI/Linux').rglob('*.efi')):
+        raise InstallError('A UKI was placed on the ESP instead of XBOOTLDR')
+
+
+def check_environment(pins, *, efi_dir=Path('/sys/firmware/efi'), cmdline=None,
+                      bootc_version=None, bootc_sha256=None):
+    if not efi_dir.is_dir():
+        raise InstallError('Boot the installer in UEFI mode; legacy BIOS is not supported')
+    cmdline = cmdline if cmdline is not None else Path('/proc/cmdline').read_text()
+    if 'finite.native-installer=1' not in cmdline.split():
+        raise InstallError('This command runs only from Finite native installer media')
+    if type(pins.get('schema')) is not int or pins['schema'] != 3 or not re.fullmatch(
+            r'[0-9]+\.[0-9]+\.[0-9]+', str(pins.get('bootcVersion', ''))):
+        raise InstallError('Invalid installer pins')
+    for key in ('sourceImgref', 'targetImgref', 'payloadDigest'):
+        if not isinstance(pins.get(key), str) or not pins[key]:
+            raise InstallError('Installer pins lack ' + key)
+    if not re.fullmatch(r'sha256:[0-9a-f]{64}', pins['payloadDigest']):
+        raise InstallError('Installer payload digest is not immutable')
+    if not re.fullmatch(r'ghcr\.io/closure-labs/finite:finite-native(?:-dev)?', pins['targetImgref']):
+        raise InstallError('Installer target must be a separate native tag in the Finite repository')
+    if pins['sourceImgref'] != OFFLINE_SOURCE:
+        raise InstallError('Installer source must be the embedded native OCI layout')
+    if not re.fullmatch('[0-9a-f]{64}', str(pins.get('bootcSha256', ''))):
+        raise InstallError('Installer pins lack the bootc binary hash')
+    if bootc_version is None:
+        bootc_version = subprocess.check_output(['bootc', '--version'], text=True).strip()
+    if bootc_version != 'bootc ' + pins['bootcVersion']:
+        raise InstallError(f'bootc runtime {bootc_version!r} differs from the pinned {pins["bootcVersion"]}')
+    if bootc_sha256 is None:
+        with Path('/usr/bin/bootc').open('rb') as stream:
+            bootc_sha256 = hashlib.file_digest(stream, 'sha256').hexdigest()
+    if bootc_sha256 != pins['bootcSha256']:
+        raise InstallError('bootc runtime bytes differ from the signed payload')
+
+
+def verify_payload(pins, inspect=None):
+    """Authenticate the original embedded manifest before disk work."""
+    if inspect is None:
+        inspect = json.loads(subprocess.check_output(
+            ['skopeo', 'inspect', '--no-tags', pins['sourceImgref']], text=True, timeout=120))
+    profile = pins['targetImgref'].split(':')[-1]
+    if inspect.get('Digest') != pins['payloadDigest']:
+        raise InstallError('Embedded payload manifest digest differs from the pinned native image')
+    if (inspect.get('Architecture') != 'amd64'
+            or inspect.get('Os') != 'linux' or inspect.get('Labels', {}).get('io.finite.profile') != profile
+            or inspect.get('Labels', {}).get('io.finite.boot-architecture') != 'native-composefs'):
+        raise InstallError('Embedded payload differs from the signed native image pinned in this media')
+
+
+def configure_target(deployment=DEPLOYMENT, target=TARGET):
+    """Write only the new deployment's machine configuration, never live /etc."""
+    deployment = Path(deployment)
+    if not deployment.is_mount() or not (deployment / 'usr/lib/composefs/setup-root-conf.toml').is_file():
+        raise InstallError('Mount the installed native deployment before configuring it')
+    # Discovery of the encrypted root happens in the initrd. Mount the two
+    # distinct boot partitions explicitly after switching to the deployment.
+    mounts = []
+    for name in ('efi', 'boot'):
+        fields = subprocess.check_output(
+            ['findmnt', '-n', '-o', 'PARTUUID,FSTYPE', '--mountpoint', str(Path(target) / name)],
+            text=True).split()
+        if (len(fields) != 2 or fields[1] != 'vfat'
+                or not re.fullmatch(r'[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}', fields[0], re.I)):
+            raise InstallError(f'Expected a mounted VFAT partition with a GPT UUID for /{name}')
+        mounts.append(fields[0].lower())
+    esp, xbootldr = mounts
+    if esp == xbootldr:
+        raise InstallError('The ESP and XBOOTLDR must be distinct partitions')
+    fstab = deployment / 'etc/fstab'
+    if fstab.is_symlink():
+        raise InstallError('Expected a regular fstab in the installed deployment')
+    lines = []
+    if fstab.exists():
+        for line in fstab.read_text().splitlines():
+            fields = line.split()
+            if len(fields) > 1 and not fields[0].startswith('#') and fields[1] in {'/efi', '/boot'}:
+                continue
+            lines.append(line)
+    lines.extend((f'PARTUUID={esp} /efi vfat umask=0077 0 0',
+                  f'PARTUUID={xbootldr} /boot vfat ro,umask=0077 0 0'))
+    fstab.write_text('\n'.join(lines) + '\n')
+    directory = deployment / 'etc/finite'
+    directory.mkdir(mode=0o755, parents=True, exist_ok=True)
+    (directory / 'bootloader.json').write_text(json.dumps({'schema': 1, 'manageFallback': True}) + '\n')
+
+
+def secure_boot_state(efivars=Path('/sys/firmware/efi/efivars')):
+    for variable in efivars.glob('SecureBoot-*'):
+        data = variable.read_bytes()
+        return 'enabled' if len(data) >= 5 and data[4] == 1 else 'disabled'
+    return 'unknown'
+
+
+def by_id_names(directory=Path('/dev/disk/by-id')):
+    names = {}
+    for link in sorted(directory.glob('*')) if directory.is_dir() else []:
+        if re.search(r'-part\d+$', link.name) or link.name.startswith(('wwn-', 'nvme-eui.', 'dm-', 'lvm-')):
+            continue
+        names.setdefault(str(link.resolve()), link.name)
+    return names
+
+
+def boot_medium_disks():
+    """Whole disks backing the live root or installer media, which must never be offered."""
+    disks = set()
+    for mountpoint in ('/run/initramfs/live', '/'):
+        source = subprocess.run(['findmnt', '--noheadings', '--output', 'SOURCE', '--target', mountpoint],
+                                capture_output=True, text=True).stdout.strip()
+        if source.startswith('/dev/'):
+            parent = subprocess.run(['lsblk', '--noheadings', '--nodeps', '--output', 'PKNAME', source],
+                                    capture_output=True, text=True).stdout.strip()
+            disks.add('/dev/' + parent if parent else source)
+    return disks
+
+
+def discover():
+    data = json.loads(subprocess.check_output(
+        ['lsblk', '--json', '--bytes', '--tree', '--output', 'PATH,TYPE,SIZE,RO,RM,MODEL,MOUNTPOINTS']))
+    ids, boot = by_id_names(), boot_medium_disks()
+
+    def busy(node):
+        if any(m for m in node.get('mountpoints') or [] if m):
+            return True
+        return any(busy(child) for child in node.get('children') or [])
+
+    def held(node):
+        name = Path(node['path']).name
+        if any((Path('/sys/class/block') / name / 'holders').glob('*')):
+            return True
+        return any(held(child) for child in node.get('children') or [])
+
+    disks = []
+    for node in data.get('blockdevices', []):
+        if node.get('type') != 'disk':
+            continue
+        disks.append(Disk(path=node['path'], by_id=ids.get(node['path'], ''), size=int(node['size']),
+                          model=(node.get('model') or '').strip(), removable=bool(node.get('rm')),
+                          read_only=bool(node.get('ro')), mounted=busy(node),
+                          holds_boot_medium=node['path'] in boot, active_holders=held(node)))
+    return disks
+
+
+def revalidate_disk(selected, disks=None, by_id=Path('/dev/disk/by-id')):
+    """Recheck eligibility and stable identity immediately before the first wipe."""
+    current = discover() if disks is None else disks
+    matches = [disk for disk in current if disk.path == selected.path and disk.by_id == selected.by_id]
+    if len(matches) != 1 or matches[0] != selected or matches[0].refusal() is not None:
+        raise InstallError('Selected disk changed or became busy; nothing was changed')
+    link = by_id / selected.by_id
+    if not link.is_symlink() or str(link.resolve(strict=True)) != selected.path:
+        raise InstallError('Selected stable disk ID changed; nothing was changed')
+
+
+def choose(disks, ask=input, say=print):
+    eligible = [d for d in disks if d.refusal() is None]
+    for disk in disks:
+        reason = disk.refusal()
+        state = 'available' if reason is None else 'not offered: ' + reason
+        say(f'  {disk.path:<16} {disk.size / 1024**3:8.1f} GiB  {disk.model or "-":<28} {state}')
+    if not eligible:
+        raise InstallError('No disk is eligible for installation')
+    if len(eligible) == 1:
+        selected = eligible[0]
+    else:
+        answer = ask('Install to which disk path? ').strip()
+        matches = [d for d in eligible if d.path == answer]
+        if len(matches) != 1:
+            raise InstallError('No eligible disk matches ' + answer)
+        selected = matches[0]
+    say(f'\nEVERYTHING on {selected.path} ({selected.by_id}) will be permanently erased.')
+    typed = ask(f'Type the disk ID "{selected.by_id}" to continue: ').strip()
+    if typed != selected.by_id:
+        raise InstallError('Confirmation did not match; nothing was changed')
+    return selected
+
+
+def passphrase(read=getpass.getpass):
+    first = read('LUKS passphrase (recovery fallback): ')
+    if len(first) < 12:
+        raise InstallError('Use a passphrase of at least 12 characters')
+    if read('Repeat the passphrase: ') != first:
+        raise InstallError('Passphrases differ')
+    return first
+
+
+def execute(steps, secret, run=subprocess.run, say=print):
+    for index, step in enumerate(steps, 1):
+        say(f'[{index}/{len(steps)}] {step.description}')
+        env = dict(os.environ, PASSWORD=secret) if step.secret == 'env' else None
+        if step.interactive:
+            result = run(list(step.argv), env=env)
+        else:
+            stdin = secret if step.secret == 'stdin' else step.stdin
+            result = run(list(step.argv), input=stdin, text=True, env=env)
+        if result.returncode != 0:
+            raise InstallError(f'Step failed ({step.description}); the disk may be partially written. '
+                               'Rerun the installer to start over.')
+
+
+def load_pins(path=PINS):
+    return json.loads(Path(path).read_text())
+
+
+def enroll_mok(run=subprocess.run):
+    enrolled = enrolled_mok_certificates(run)
+    missing = [str(cert) for cert in (MOK_BOOT_CERT, MODULE_CERT) if cert.read_bytes() not in enrolled]
+    if missing:
+        print('Set the one-time password for MokManager enrollment on next boot.', flush=True)
+        run(['mokutil', '--import', *missing], check=True)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = parser.add_subparsers(dest='command', required=True)
+    for name in ('plan', 'install'):
+        command = sub.add_parser(name)
+        command.add_argument('--fido2', action='store_true', help='also enroll a FIDO2 security key')
+        command.add_argument('--no-recovery-key', action='store_true')
+    placement = sub.add_parser('verify-placement')
+    placement.add_argument('target', type=Path)
+    sub.add_parser('configure-target')
+    sub.add_parser('enroll-mok')
+    args = parser.parse_args(argv)
+    try:
+        if args.command == 'verify-placement':
+            verify_placement(args.target)
+            return 0
+        pins = load_pins()
+        check_environment(pins)
+        if args.command == 'enroll-mok':
+            enroll_mok()
+            return 0
+        verify_payload(pins)
+        if args.command == 'configure-target':
+            configure_target()
+            return 0
+        print(f'Finite native installer — payload {pins["payloadDigest"]}, '
+              f'bootc {pins["bootcVersion"]}, Secure Boot {secure_boot_state()}')
+        disk = choose(discover())
+        steps = plan(disk, pins, fido2=args.fido2, recovery_key=not args.no_recovery_key)
+        if args.command == 'plan':
+            print(json.dumps([step.render() for step in steps], indent=2))
+            return 0
+        secret = passphrase()
+        subprocess.run(['mkdir', '-p', '/run/finite-install'], check=True)
+        subprocess.run(['openssl', 'x509', '-in', str(BOOT_CERT), '-outform', 'DER',
+                        '-out', str(MOK_BOOT_CERT)], check=True)
+        revalidate_disk(disk)
+        execute(steps, secret)
+        print('\nInstallation complete. If certificates were queued, choose "Enroll MOK" on the next boot\n'
+              'and use the one-time password. Keep the rescue media until the installed system boots.', flush=True)
+        return 0
+    except (InstallError, subprocess.SubprocessError, OSError, ValueError, KeyboardInterrupt) as error:
+        print(f'\nInstallation stopped: {error}', file=sys.stderr)
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

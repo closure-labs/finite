@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import stat
+import struct
 import subprocess
 import tempfile
 
@@ -57,11 +58,11 @@ def packages(runner):
     return {name: sorted(records) for name, records in sorted(values.items())}
 
 
-def module_tree(root, release):
+def module_tree(root, release, sealed=False):
     root = Path(root)
     if (any(path.is_symlink() for path in (root, *root.parents)) or not root.is_dir()
             or (root / release).is_symlink() or (root / release / 'vmlinuz').is_symlink()
-            or not (root / release / 'vmlinuz').is_file()):
+            or (not sealed and not (root / release / 'vmlinuz').is_file())):
         raise ValueError('Upstream kernel has no authoritative module tree')
     info = root.stat()
     entries = {'.': {'directory': True, 'mode': stat.S_IMODE(info.st_mode),
@@ -107,14 +108,51 @@ def module_tree(root, release):
     return entries
 
 
-def state(root, runner):
+def state(root, runner, sealed=False):
     inventory = packages(runner)
     evr, arch = inventory['kernel-core'][0]
     release = evr.split(':', 1)[1] + '.' + arch
     if not re.fullmatch(r'[A-Za-z0-9._+~^-]+', release):
         raise ValueError('Invalid upstream kernel release')
     return {'schema': 1, 'kernelRelease': release, 'packages': inventory,
-            'modules': module_tree(root, release)}
+            'modules': module_tree(root, release, sealed=sealed)}
+
+
+def uki_section(path, section):
+    """Read PE virtual section bytes without objcopy's file-alignment padding."""
+    path = Path(path)
+    if path.is_symlink() or not path.is_file() or not 64 <= path.stat().st_size <= MAX_FILE:
+        raise ValueError('Missing or oversized UKI')
+    with path.open('rb') as stream:
+        dos = stream.read(64)
+        offset = struct.unpack_from('<I', dos, 60)[0]
+        if dos[:2] != b'MZ' or offset > 1024**2:
+            raise ValueError('Invalid UKI DOS header')
+        stream.seek(offset)
+        header = stream.read(24)
+        if len(header) != 24 or header[:4] != b'PE\0\0':
+            raise ValueError('Invalid UKI PE header')
+        count = struct.unpack_from('<H', header, 6)[0]
+        optional = struct.unpack_from('<H', header, 20)[0]
+        if not 1 <= count <= 96:
+            raise ValueError('Invalid UKI section count')
+        stream.seek(offset + 24 + optional)
+        entries = [stream.read(40) for _ in range(count)]
+        found = []
+        for entry in entries:
+            if len(entry) != 40:
+                raise ValueError('Truncated UKI section table')
+            if entry[:8].rstrip(b'\0') != section.encode('ascii'):
+                continue
+            size, _, raw_size, position = struct.unpack_from('<IIII', entry, 8)
+            size = size or raw_size
+            if not 0 < size <= raw_size or position < offset + 24 + optional + count * 40 or position + raw_size > path.stat().st_size:
+                raise ValueError('UKI section exceeds file bounds')
+            stream.seek(position)
+            found.append(stream.read(size))
+        if len(found) != 1:
+            raise ValueError('UKI must contain exactly one ' + section + ' section')
+        return found[0]
 
 
 def snapshot(output=RECEIPT, root=Path('/usr/lib/modules'), runner=run):
@@ -131,7 +169,7 @@ def snapshot(output=RECEIPT, root=Path('/usr/lib/modules'), runner=run):
     return value
 
 
-def verify(receipt=RECEIPT, root=Path('/usr/lib/modules'), runner=run):
+def verify(receipt=RECEIPT, root=Path('/usr/lib/modules'), runner=run, uki=None, extract_to=None):
     receipt = Path(receipt)
     if (any(path.is_symlink() for path in (receipt, *receipt.parents))
             or not receipt.is_file() or not 0 < receipt.stat().st_size <= MAX_RECEIPT):
@@ -147,9 +185,32 @@ def verify(receipt=RECEIPT, root=Path('/usr/lib/modules'), runner=run):
 
     expected = json.loads(receipt.read_text(), object_pairs_hook=unique)
     if (not isinstance(expected, dict) or type(expected.get('schema')) is not int
-            or expected['schema'] != 1 or set(expected) != {'schema', 'kernelRelease', 'packages', 'modules'}
-            or expected != state(root, runner)):
+            or expected['schema'] != 1 or set(expected) != {'schema', 'kernelRelease', 'packages', 'modules'}):
+        raise ValueError('Invalid upstream preservation receipt')
+    comparable = expected
+    if uki is not None:
+        release = expected['kernelRelease']
+        linux = uki_section(uki, '.linux')
+        original = expected['modules'].get(release + '/vmlinuz', {})
+        if (original.get('sha256') != hashlib.sha256(linux).hexdigest()
+                or original.get('bytes') != len(linux)
+                or uki_section(uki, '.uname').rstrip(b'\0\n').decode() != release):
+            raise ValueError('Sealed UKI changed the inherited Bluefin kernel')
+        comparable = {**expected, 'modules': dict(expected['modules'])}
+        del comparable['modules'][release + '/vmlinuz']
+    if comparable != state(root, runner, sealed=uki is not None):
         raise ValueError('Finite changed the inherited Bluefin kernel/module/storage set')
+    if extract_to is not None:
+        if uki is None:
+            raise ValueError('Extracting boot payload requires a verified UKI')
+        destination = Path(extract_to)
+        if destination.is_symlink() or not destination.is_dir() or any(destination.iterdir()):
+            raise ValueError('Boot extraction requires an empty private directory')
+        destination = destination / expected['kernelRelease']
+        destination.mkdir(mode=0o700)
+        for name, section in [('vmlinuz', '.linux'), ('initramfs.img', '.initrd')]:
+            with (destination / name).open('xb') as stream:
+                stream.write(uki_section(uki, section))
     return expected
 
 
@@ -157,8 +218,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('operation', choices=('snapshot', 'verify'))
     parser.add_argument('--receipt', type=Path, default=RECEIPT)
+    parser.add_argument('--uki', type=Path)
+    parser.add_argument('--extract-to', type=Path)
     args = parser.parse_args()
-    value = snapshot(args.receipt) if args.operation == 'snapshot' else verify(args.receipt)
+    if args.operation == 'snapshot' and (args.uki or args.extract_to):
+        parser.error('UKI options apply only to verification')
+    value = snapshot(args.receipt) if args.operation == 'snapshot' else verify(args.receipt, uki=args.uki, extract_to=args.extract_to)
     print('Preserved upstream Bluefin kernel/module/storage set: ' + value['kernelRelease'])
 
 

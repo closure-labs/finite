@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "kind": "upstream-snapshot",
+  "version": "1.17.4",
+  "ref": "8275daa9227f7c4ee893c0b05b4134dc2ff11283",
+  "revision": "8275daa9227f7c4ee893c0b05b4134dc2ff11283",
+  "archiveSha256": "fc15b6f85b409a3ce97a6acdbaab7c09746f1100170b9a63cba8ba0c647b8b67",
+  "requiredFix": "8275daa9227f7c4ee893c0b05b4134dc2ff11283",
+  "minimumOfficialVersion": "1.17.5",
+  "rpmRelease": "0.1.finite.git8275daa9227f",
+  "buildBase": "registry.fedoraproject.org/fedora@sha256:89fe812033e4b10bb8b05bd573fce914e7a11c2337772ede441c9382f874717b",
+  "buildFedoraVersion": 45,
+  "purpose": "Temporary upstream XBOOTLDR implementation for installer and installed OS; transition to the next qualifying official release, without a downstream source patch"
+}

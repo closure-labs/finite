@@ -13,6 +13,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -78,6 +80,21 @@ class BluefinTests(unittest.TestCase):
             'org.opencontainers.image.source': 'https://github.com/closure-labs/finite',
         }}
 
+    def test_native_recipes_are_supported_without_joining_automatic_channels(self):
+        self.assertEqual(set(upstream.recipes(self.root)), {'finite', 'finite-dev'})
+        native = upstream.recipe('finite-native-dev', self.root)
+        self.assertEqual(native['base'], 'ghcr.io/ublue-os/bluefin-dx')
+        self.assertEqual(native['tags'], ['finite-native-dev'])
+        self.assertEqual(set(upstream.recipes(self.root, include_native=True)),
+                         {'finite', 'finite-dev', 'finite-native', 'finite-native-dev'})
+
+    def test_default_channel_cannot_silently_become_native(self):
+        path = self.root / 'recipes/finite.yml'
+        path.write_text(path.read_text().replace('labels:\n',
+            'labels:\n  io.finite.boot-architecture: native-composefs\n', 1))
+        with self.assertRaisesRegex(ValueError, 'boot architecture'):
+            upstream.recipes(self.root)
+
     def test_unchanged_poll_is_noop(self):
         before = self.snapshot()
         with patch.object(upstream, 'resolve', side_effect=lambda base: self.observed[base]):
@@ -88,7 +105,7 @@ class BluefinTests(unittest.TestCase):
         self.observed['ghcr.io/ublue-os/bluefin'] = NEW
         before = self.snapshot()
         result = upstream.update(self.root, self.observed)
-        self.assertEqual(set(result['profiles']), {'finite'})
+        self.assertEqual(set(result['profiles']), {'finite', 'finite-native'})
         for name, content in self.snapshot().items():
             if name.startswith('bluefin-dx'):
                 self.assertEqual(content, before[name])
@@ -652,13 +669,25 @@ class PublisherAuthentication(unittest.TestCase):
         self.assertEqual({call.args[0][-1] for call in run.call_args_list},
                          {recipe['base'] + '@' + recipe['digest'] for recipe in upstream.recipes(self.root).values()})
 
+    def test_native_verification_refuses_a_recipe_digest_that_diverges(self):
+        recipe_file = self.root / 'recipes/finite-native.yml'
+        recipe = yaml.safe_load(recipe_file.read_text())
+        recipe['image-version'] = 'stable@' + NEW
+        recipe_file.write_text(yaml.safe_dump(recipe))
+        with patch.object(upstream.subprocess, 'run') as run:
+            self.assertEqual(len(upstream.verify(self.root)['verified']), 2)
+            run.reset_mock()
+            with self.assertRaisesRegex(ValueError, 'Inconsistent approved digests'):
+                upstream.verify(self.root, include_native=True)
+            run.assert_not_called()
+
 
 class DeterministicIdentity(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        for directory in ('recipes', 'files', 'sources', 'scripts', '.github'):
+        for directory in ('recipes', 'files', 'sources', 'scripts', '.github', 'lib'):
             shutil.copytree(ROOT / directory, self.root / directory,
                             ignore=shutil.ignore_patterns('payload', '__pycache__', '*.pyc', '*.pyo'))
         shutil.copy2(ROOT / 'cosign.pub', self.root / 'cosign.pub')

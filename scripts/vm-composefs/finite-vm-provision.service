@@ -1,0 +1,13 @@
+[Unit]
+Description=Provision disposable Finite VM SSH access
+Before=sshd.service
+After=local-fs.target
+RequiresMountsFor=/var/roothome
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/finite-vm/provision.sh
+RemainAfterExit=yes
+
+[Install]
+RequiredBy=sshd.service

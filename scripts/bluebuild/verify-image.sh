@@ -4,7 +4,7 @@ set -euo pipefail
 expected="${1:?expected profile required}"
 repository="${2:-ghcr.io/closure-labs/finite}"
 case "$expected" in
-  finite|finite-dev) ;;
+  finite|finite-dev|finite-native|finite-native-dev) ;;
   *) echo 'Unsupported image profile' >&2; exit 2 ;;
 esac
 [[ $(cat /usr/share/finite/build-profile) == "$expected" ]]
@@ -17,11 +17,38 @@ rpm -q cloud-init jq nix nix-daemon nix-filesystem nix-system yq zenity \
 mapfile -t kernels < <(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}\n' kernel-core)
 [[ ${#kernels[@]} == 1 ]]
 [[ ${kernels[0]} == "$(jq -r .kernelRelease /usr/share/finite/profile.json)" ]]
+if [[ -f /usr/lib/composefs/setup-root-conf.toml ]]; then
+  python3 - <<'PY_RUNTIME'
+import hashlib,json,subprocess
+from pathlib import Path
+receipt=json.loads(Path('/usr/share/finite/bootc-runtime.json').read_text())
+pin=receipt['source']
+assert receipt['schema']==1 and pin['kind'] in ('upstream-snapshot','release')
+assert set(receipt['files'])=={'/usr/bin/bootc','/usr/lib/bootc/initramfs-setup'}
+assert subprocess.check_output(['bootc','--version'],text=True).strip()=='bootc '+pin['version']
+assert subprocess.check_output(['rpm','-q','--qf','%{VERSION}-%{RELEASE}','bootc'],text=True)==receipt['rpm']
+for name,digest in receipt['files'].items():
+ with open(name,'rb') as stream:
+  assert hashlib.file_digest(stream,'sha256').hexdigest()==digest, 'Native runtime bytes changed'
+PY_RUNTIME
+fi
 # The receipt was captured from the authenticated Bluefin base before addons.
 # It binds inherited RPM NEVRAs and kernel/module bytes, including ZFS and any
 # upstream camera modules. Trust belongs to that preserved upstream set.
-python3 /usr/libexec/finite/check-upstream-kernel verify
-bash /usr/libexec/finite/check-initramfs "${kernels[0]}"
+if [[ -f /usr/lib/composefs/setup-root-conf.toml && ! -f /usr/lib/modules/${kernels[0]}/vmlinuz ]]; then
+  uki="/boot/EFI/Linux/${kernels[0]}.efi"
+  certificate=/usr/share/finite/secure-boot/finite-boot.pem
+  sbverify --cert "$certificate" "$uki"
+  payload=$(mktemp -d)
+  trap 'rm -rf -- "$payload"' EXIT
+  python3 /usr/libexec/finite/check-upstream-kernel verify --uki "$uki" --extract-to "$payload"
+  bash /usr/libexec/finite/check-initramfs "${kernels[0]}" "$payload" native
+  rm -rf -- "$payload"
+  trap - EXIT
+else
+  python3 /usr/libexec/finite/check-upstream-kernel verify
+  bash /usr/libexec/finite/check-initramfs "${kernels[0]}"
+fi
 test -s /usr/lib/finite/determinate-nix-seed/receipt.json
 test -x /usr/lib/finite/determinate-nix-seed/nix-installer
 test -d /usr/lib/finite/determinate-nix-seed/store

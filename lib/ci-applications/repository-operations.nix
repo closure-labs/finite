@@ -14,7 +14,7 @@
       profile="''${1:?usage: finite-ci-secrets-run PROFILE -- COMMAND}"
       shift
       case "$profile" in
-        ci-options|image-signing|release-signing|release-publishing|release-set-publishing|repository-audit|repository-read|review-app|updater) ;;
+        ci-options|boot-signing|image-signing|release-signing|release-publishing|release-set-publishing|repository-audit|repository-read|review-app|updater) ;;
         *) echo "Unsupported Finite SecretSpec profile" >&2; exit 2 ;;
       esac
       [[ "''${1:-}" == -- ]] || { echo "Expected -- before the child command" >&2; exit 2; }

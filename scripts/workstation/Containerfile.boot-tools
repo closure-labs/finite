@@ -1,0 +1,4 @@
+FROM registry.fedoraproject.org/fedora@sha256:3fcae46546ac42b44e7af262329b033ce1dc800a5d2583e5025cb43531dba55d
+RUN dnf -y install systemd-boot-unsigned systemd-ukify sbsigntools openssl binutils && dnf clean all
+COPY build-boot-trial.sh /usr/local/bin/build-boot-trial
+ENTRYPOINT ["/usr/local/bin/build-boot-trial"]

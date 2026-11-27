@@ -1,0 +1,14 @@
+[Unit]
+Description=Record disposable native media boot facts
+After=local-fs.target finite-efi-update.service
+ConditionVirtualization=vm
+ConditionKernelCommandLine=composefs.digest
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /usr/libexec/finite/validation-guest.py
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,13 @@
+{
+  "imageBuilder": {
+    "version": "v91.0.0",
+    "image": "ghcr.io/osbuild/image-builder-cli",
+    "digest": "sha256:f33fa06204ab382eed24979bc99e880b221fbded5a369a0f40ded881d649d392",
+    "revision": "e1d4c683",
+    "imageType": "generic-iso",
+    "source": "https://github.com/osbuild/image-builder/blob/v91.0.0/doc/20-advanced/20-bootc/10-isos.md"
+  },
+  "isoLabel": "FINITE-INSTALL",
+  "liveKernelArgument": "finite.native-installer=1",
+  "reason": "Anaconda cannot install composefs + systemd-boot + XBOOTLDR with sealed UKIs; see docs/native-installer-research.md. generic-iso boots the installer container as a live squashfs and embeds the payload in containers-storage."
+}

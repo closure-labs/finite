@@ -1,0 +1,49 @@
+name: Stage native qualification inputs
+description: Download and verify the payload and bootc runtime produced by this run
+inputs:
+  payload-id:
+    description: Immutable payload artifact ID
+    required: true
+  payload-sha:
+    description: SHA-256 of the payload archive
+    required: true
+  payload-revision:
+    description: Source revision bound to the payload
+    required: true
+  payload-run:
+    description: Run ID bound to the payload
+    required: true
+  payload-attempt:
+    description: Producer attempt bound to the payload
+    required: true
+  runtime-id:
+    description: Immutable bootc runtime artifact ID
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Download the same-run shared payload
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+      with:
+        artifact-ids: ${{ inputs.payload-id }}
+        path: .bluebuild/qualification-payload
+        merge-multiple: true
+    - name: Stage and verify the shared payload
+      shell: bash
+      env:
+        PAYLOAD_ID: ${{ inputs.payload-id }}
+        PAYLOAD_SHA: ${{ inputs.payload-sha }}
+        PAYLOAD_REVISION: ${{ inputs.payload-revision }}
+        PAYLOAD_RUN: ${{ inputs.payload-run }}
+        PAYLOAD_ATTEMPT: ${{ inputs.payload-attempt }}
+      run: |
+        python3 scripts/bluebuild/shared-payload.py stage .bluebuild/qualification-payload/payload.tar \
+          --artifact-id "$PAYLOAD_ID" --sha256 "$PAYLOAD_SHA" --revision "$PAYLOAD_REVISION" \
+          --run "$PAYLOAD_RUN" --attempt "$PAYLOAD_ATTEMPT" > .bluebuild/qualification-payload.json
+        rm -- .bluebuild/qualification-payload/payload.tar
+    - name: Download the same-run bootc runtime
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+      with:
+        artifact-ids: ${{ inputs.runtime-id }}
+        path: ${{ runner.temp }}/native-qualification-runtime
+        merge-multiple: true

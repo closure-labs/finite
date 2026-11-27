@@ -76,6 +76,20 @@ class Reuse(unittest.TestCase):
         artifact, _, build, security = self.metadata()
         self.assertEqual((artifact['id'], build, security), (11, 4, 5))
 
+    def test_native_boot_security_reuse_requires_the_completed_scoped_signer(self):
+        self.jobs[3]['name'] = f'Publish ({PROFILE}) / build / root / build'
+        seal = {**deepcopy(self.jobs[3]), 'id': 99, 'name': f'Publish ({PROFILE}) / build / seal / seal',
+                'steps': [{'name': name, 'conclusion': 'success'} for name in (
+                    'Bind unsigned native root', 'Seal native archive with scoped production key',
+                    'Verify assembled native image', 'Bind sealed image evidence', 'Save sealed build evidence')]}
+        with self.assertRaises(ValueError):
+            self.metadata()
+        self.jobs.append(seal)
+        self.assertEqual(self.metadata()[2], 99)
+        seal['conclusion'] = 'failure'
+        with self.assertRaises(ValueError):
+            self.metadata()
+
     def test_untrusted_wrong_attempt_failed_or_ambiguous_jobs_rejected(self):
         changes = [lambda: self.run.update(head_branch='branch'), lambda: self.run.update(event='pull_request'),
                    lambda: self.run.update(path='.github/workflows/other.yml'),

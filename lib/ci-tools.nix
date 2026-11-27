@@ -16,6 +16,13 @@ in {
   shell = shells.ci;
   image-tools = shells.imageTools;
   scanner-tools = shells.scannerTools;
+  native-boot-tools = pkgs.buildEnv {
+    name = "finite-native-boot-tools";
+    paths = with pkgs; [systemdUkify sbsigntool libfaketime binutils openssl skopeo umoci python3];
+    pathsToLink = ["/bin"];
+  };
+  native-bootc = import ./native-bootc.nix {inherit system;};
+  native-console-ocr = pkgs.tesseract;
   vm-tools = import ./vm-tools.nix {inherit pkgs;};
   oras = pkgs.oras;
   secretspec-tools = secretspec;

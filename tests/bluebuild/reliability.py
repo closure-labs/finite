@@ -62,7 +62,7 @@ class ImageIdentity(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        for directory in ('recipes', 'files', 'sources', 'scripts', '.github'):
+        for directory in ('recipes', 'files', 'sources', 'scripts', '.github', 'lib'):
             shutil.copytree(ROOT / directory, self.root / directory,
                             ignore=shutil.ignore_patterns('payload', '__pycache__'))
         shutil.copy2(ROOT / 'cosign.pub', self.root / 'cosign.pub')
@@ -197,6 +197,9 @@ class PromotionQualification(unittest.TestCase):
         (self.evidence / (self.profile + '-image-ref.txt')).write_text(self.image)
 
     def promote(self):
+        recipes = self.root / 'recipes'
+        recipes.mkdir(exist_ok=True)
+        (recipes / 'finite.yml').write_text('labels: {}\n')
         with patch.dict(os.environ, {'GITHUB_SHA': 'd' * 40, 'FINITE_QUALIFICATION_MODE': 'enforce'}):
             publication.promote(self.profile, self.root)
 
@@ -205,7 +208,7 @@ class PromotionQualification(unittest.TestCase):
         recipes.mkdir()
         recipe = recipes / (self.profile + '.yml')
         previous = {'Digest': 'sha256:' + 'b' * 64,
-                    'Labels': {'io.finite.build-inputs': 'identity'}}
+                    'Labels': {'io.finite.build-inputs': 'identity', 'io.finite.profile': self.profile}}
         acceptance_path = self.evidence / (self.profile + '-acceptance.json')
         for event in ('schedule', 'schedule', 'push', 'workflow_dispatch'):
             with self.subTest(event=event):

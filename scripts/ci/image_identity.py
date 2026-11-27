@@ -44,7 +44,7 @@ QUALIFICATION_ONLY = {
 
 
 def identity(profile, root, payload=None):
-    if profile not in ('finite', 'finite-dev'):
+    if profile not in ('finite', 'finite-dev', 'finite-native', 'finite-native-dev'):
         raise ValueError('Unsupported image profile')
     root = Path(root)
     if payload is None:
@@ -55,6 +55,11 @@ def identity(profile, root, payload=None):
     if not payload.startswith('/nix/store/') or not payload.endswith('.drv'):
         raise ValueError('Invalid Nix payload identity')
     paths = [root / 'recipes' / (profile + '.yml'), root / 'cosign.pub',
+             root / 'sources/boot-signing.json', root / 'sources/native-bootc.json',
+             root / 'sources/native-composefs-verifier.json', root / 'lib/native-bootc.nix',
+             root / 'sources/legacy-registry-signatures.json',
+             root / 'sources/bootc-runtime.json',
+             root / 'lib/ci-tools.nix',
              root / 'sources/cosign-runtime.json', root / 'scripts/ci/cosign-runtime.py',
              root / 'scripts/ci/image_identity.py']
     for directory in ('recipes/shared', 'files/scripts', 'files/security', 'files/system', 'files/dnf',
@@ -65,6 +70,7 @@ def identity(profile, root, payload=None):
     paths.extend((root / 'sources').glob('bluefin*'))
     paths.extend((root / 'automation/security').glob('*.json'))
     paths.extend(root / '.github/workflows' / name for name in ('image.yml', 'publication.yml', 'iso.yml', 'vm-acceptance.yml'))
+    paths.extend(root / '.github/workflows' / name for name in ('native-image.yml', 'boot-signing.yml'))
     paths.extend((root / '.github/workflows').glob('*qualification*.yml'))
     entries = []
     for path in sorted(set(paths)):

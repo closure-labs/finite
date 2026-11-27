@@ -30,6 +30,9 @@ class Resume(unittest.TestCase):
         self.image = pub.upstream.REPOSITORY + '@' + self.digest
         self.identity = 'v1:' + 'e' * 64
         shutil.copytree(ROOT / 'recipes', self.root / 'recipes')
+        # Retain historical resume fixtures for the pre-native pipeline.
+        for path in (self.root / 'recipes').glob('finite*.yml'):
+            path.write_text(path.read_text().replace('  io.finite.boot-architecture: native-composefs\n', ''))
         self.git('init')
         self.git('config', 'user.email', 'fixture@example.invalid')
         self.git('config', 'user.name', 'Fixture')
@@ -89,6 +92,26 @@ class Resume(unittest.TestCase):
         for event in ('push', 'workflow_dispatch'):
             self.run['event'] = event
             self.metadata()
+
+    def test_native_origin_requires_successful_root_and_scoped_sealing_jobs(self):
+        self.jobs[-1]['name'] = 'Publish (finite) / build / root / build'
+        seal = {**copy.deepcopy(self.jobs[-1]), 'id': 99, 'name': 'Publish (finite) / build / seal / seal',
+                'steps': [{'name': name, 'conclusion': 'success'} for name in (
+                    'Bind unsigned native root', 'Seal native archive with scoped production key',
+                    'Verify assembled native image', 'Bind sealed image evidence', 'Save sealed build evidence')]}
+        with self.assertRaises(ValueError):
+            pub.origin_metadata(self.run, self.jobs, [self.artifact], self.profile, '123', native=True)
+        self.jobs.append(seal)
+        _, job = pub.origin_metadata(self.run, self.jobs, [self.artifact], self.profile, '123', native=True)
+        self.assertEqual(job, 99)
+        self.assertEqual(pub.origin_metadata(self.run, self.jobs, [self.artifact], self.profile, '123')[1], 99)
+        self.jobs.append({**self.jobs[-2], 'name': 'Publish (finite) / build / build'})
+        with self.assertRaisesRegex(ValueError, 'mixes legacy and native'):
+            pub.origin_metadata(self.run, self.jobs, [self.artifact], self.profile, '123')
+        self.jobs.pop()
+        seal['steps'][1]['conclusion'] = 'failure'
+        with self.assertRaises(ValueError):
+            pub.origin_metadata(self.run, self.jobs, [self.artifact], self.profile, '123', native=True)
 
     def test_cancelled_parent_with_completed_trusted_build_can_resume_for_fresh_checks(self):
         self.run['conclusion'] = 'cancelled'
@@ -428,6 +451,8 @@ class PromotionState(unittest.TestCase):
     def test_diagnostic_acceptance_cannot_authorize_promotion_even_with_matching_record(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            (root / 'recipes').mkdir()
+            (root / 'recipes/finite.yml').write_text('labels: {}\n')
             evidence = root / '.bluebuild'
             evidence.mkdir()
             candidate = 'ghcr.io/closure-labs/finite@sha256:' + 'd' * 64
@@ -453,6 +478,8 @@ class PromotionState(unittest.TestCase):
     def test_resumed_candidate_cannot_overwrite_channel_after_fresh_checks(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            (root / 'recipes').mkdir()
+            (root / 'recipes/finite.yml').write_text('labels: {}\n')
             evidence = root / '.bluebuild'
             evidence.mkdir()
             candidate = 'ghcr.io/closure-labs/finite@sha256:' + 'd' * 64

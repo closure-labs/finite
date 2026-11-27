@@ -94,6 +94,8 @@ def job_role(name, workflow=None):
                     'Stage shared image payload': 'payload'}
     if name in source_roles:
         return source_roles[name]
+    if re.fullmatch(r'Publish \([a-z0-9-]+\) / build / seal / seal', name):
+        return 'boot-signing'
     for role in ('fresh', 'upgrade'):
         if f'phase ({role})' in name:
             return 'qualification-' + role

@@ -7,6 +7,7 @@ __pycache__/
 
 # BlueBuild staging (recipes and authored scripts are tracked).
 /files/payload/
+/files/bootc-runtime/
 /.bluebuild/
 /cosign.key
 /.bluebuild-scripts_*

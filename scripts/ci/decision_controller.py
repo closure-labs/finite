@@ -433,6 +433,18 @@ def pending_proposal(findings, supersedes):
     return None
 
 
+def completed_publication_build(jobs, profile):
+    prefix = f'Publish ({profile}) / build / '
+    legacy = [job for job in jobs if job.get('name') == prefix + 'build']
+    root = [job for job in jobs if job.get('name') == prefix + 'root / build']
+    seal = [job for job in jobs if job.get('name') == prefix + 'seal / seal']
+    groups = [root, seal] if root or seal else [legacy]
+    if (root or seal) and legacy:
+        return False
+    return all(len(group) == 1 and group[0].get('status') == 'completed'
+               and group[0].get('conclusion') == 'success' for group in groups)
+
+
 def request_consolidation(origin):
     """One full build after a proven single-profile run; never retry a failed full build."""
     trusted_context()
@@ -454,9 +466,8 @@ def request_consolidation(origin):
     if len(intended) != 1:
         raise ValueError('Missing profile evidence is a technical failure of a full build, not a consolidation request')
     profile = next(iter(intended))
-    builds = [j for j in jobs if j['name'] == f'Publish ({profile}) / build / build']
     scans = [j for j in jobs if j['name'] == f'Publish ({profile}) / security']
-    if (len(builds) != 1 or builds[0].get('status') != 'completed' or builds[0].get('conclusion') != 'success'
+    if (not completed_publication_build(jobs, profile)
             or len(scans) != 1 or scans[0].get('status') != 'completed'):
         raise ValueError('Single-profile build/scan did not complete and cannot request consolidation')
     artifacts = collection(f'repos/{REPOSITORY}/actions/runs/{live["runId"]}/artifacts', 'artifacts')

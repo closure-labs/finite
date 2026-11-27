@@ -9,6 +9,8 @@ the recorded revision and date.
 
 | Record | Scope |
 | --- | --- |
+| [Native rollout continuation, November 25](native-rollout-progress.md) | Rebased stack, separate native recipes, installer hardening and exact remaining gates |
+| [Native installer research, November 25](native-installer-research.md) | Existing primary-source Anaconda/image-builder assessment retained from jj `zlxnkvqm` |
 | [Recent complete cost census, October 27 UTC](ci-recent-census-2026-10-27.md) | Conserved 159-run recent cohort, completed diagnostics rollout and bounded natural controller canary |
 | [Bounded predecessor reuse diagnostics, October 27 UTC](ci-predecessor-diagnostics-2026-10-27.md) | Native-bound miss counters and capped input-path samples with unchanged acceptance and fallback behavior |
 | [Recent rollout completion and costs, October 26 UTC](ci-recent-rollout-2026-10-26.md) | Completed two-profile production integration, conserved recent costs and explicit reuse/receipt limits |
