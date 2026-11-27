@@ -142,7 +142,8 @@
           "type": "script@v1",
           "snippets": [
             "python3 \"$CONFIG_DIRECTORY/scripts/security-remediate.py\"",
-            "python3 \"$CONFIG_DIRECTORY/scripts/tailscale-security.py\""
+            "python3 \"$CONFIG_DIRECTORY/scripts/tailscale-security.py\"",
+            "python3 \"$CONFIG_DIRECTORY/scripts/remove-legacy-compass.py\""
           ]
         },
         {
@@ -233,7 +234,8 @@
     "pamAndFido2": "files/scripts/authselect.sh",
     "profileAndChannel": "files/scripts/profile.sh",
     "finalRuntimeContracts": "scripts/bluebuild/verify-image.sh",
-    "finalize": "files/scripts/finalize.sh"
+    "finalize": "files/scripts/finalize.sh",
+    "legacyCompassCleanup": "files/scripts/remove-legacy-compass.py"
   },
   "intentionalDifferences": [
     "No BlueBuild recipe/module execution or Nushell added by the builder",
