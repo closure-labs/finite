@@ -501,13 +501,30 @@ boot and all later recovery forks.
 [Shrink and rollback boot evidence](https://github.com/closure-labs/finite/actions/runs/45979289021/artifacts/15193768815)
 [Prompt handling retry](https://github.com/closure-labs/finite/actions/runs/45992389140)
 
+Run `45992389140` passed the full workstation-layout rehearsal on
+`c2500e1d4be689664132ff330043b72a514ba58c`. The source, seal, media, same-run
+payload and all 11 raw guest record files matched the final report. The ISO
+SHA-256 was `4b3793eed28042ce924f7bbc9c71d94703dddaf8208470e3808829fb494555e4`.
+Each recovery fork selected the rescue ISO by GPT ESP and retained BootOrder
+`0003,0000,0001,0002,0004`. The old root booted after the interrupted shrink,
+the EFI journal recovery and the missing-loader BootNext. The final fork
+created the 4 GiB XBOOTLDR, booted `/root-native` via `0006` with the alternate
+keyslot and strict composefs integrity, and returned to the original `0003`
+default. The six disk boots preserved the shared home, `/nix` and UID/GID.
+The VM used 2 vCPUs and 3072 MiB, with a 3072 MiB host reserve.
+[Workstation-layout evidence](https://github.com/closure-labs/finite/actions/runs/45992389140/artifacts/15205435307)
+
+The two producer jobs finished in 11m42s and 22m05s in parallel. The full run
+took 2h28m29s. Image and media assembly took 1h34m22s on this runner before the
+first rescue phase. All guest phases and final checks took about 29 minutes.
+The operator sequence uses the measured geometry and rollback checkpoints.
+[Workstation migration runbook](workstation-native-migration-runbook.md)
+
 ## Next execution sequence
 
-1. Extend full-profile qualification to cover real kernel and loader upgrades,
-   rollback, rejection and recovery. Bind those receipts to authenticated
-   image, source, importer, certificate and media identities. Carry forward
-   the Secure Boot, SELinux, encrypted-root, XBOOTLDR and persistence checks
-   from the fresh-install job.
+1. Extend the full-profile checks to cover rejection and rescue recovery on
+   exact release artifacts. Carry forward the authenticated evidence and the
+   already measured real kernel and loader upgrade and rollback checks.
 2. Qualify first-boot account creation, interrupted-install cleanup and
    interactive MOK enrollment. The passing install exercised the scratch
    self-bind and committed the offline EFI journal with pre-enrolled public
@@ -523,17 +540,10 @@ boot and all later recovery forks.
    Promote native tags only after those gates pass; verify updater selection of
    a qualifying official bootc release without confusing its runtime with the
    independently pinned canonical importer.
-5. Rehearse the exact workstation layout in one capped, file-backed VM: 600 MiB
-   ESP, 2 GiB ext4 old `/boot`, LUKS2 Btrfs old root/home, preserved GRUB path,
-   offline filesystem/mapping/partition shrink, 4 GiB VFAT XBOOTLDR and a new
-   `root-native` subvolume. Prove signed root-subvolume discovery, numeric
-   ownership, Nix/home preservation and interruption/old-root recovery. Derive
-   sector geometry from the fixture; no generic hardware shrink command is
-   qualified yet. Never substitute `to-existing-root` on the workstation.
-6. Only after the VM rehearsal, write the exact hardware runbook. The operator
-   verifies a fresh backup, enrolls the production MOK, test-boots rescue media
-   and executes partition/firmware changes from rescue media. Keep the old
-   GRUB/rEFInd path and default until hardware update/rollback acceptance.
+5. After production media qualification, the operator verifies a fresh backup,
+   enrolls the production MOK, test-boots rescue media and follows the runbook.
+   Keep the old GRUB/rEFInd path and default until hardware update and rollback
+   acceptance. The rehearsal used OVMF, synthetic data and synthetic keyslots.
 
 The full-flake Home Manager evaluations were not rerun on this 16 GiB host.
 Do not launch parallel builds or VMs to close the remaining gates. Apply the
