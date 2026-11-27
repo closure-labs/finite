@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "bootcVersion": "bootc 1.17.1",
+  "bootcSha256": "59121d7c612836629db48dc3502a22f8ebf64f83625fad512b1b632a3ebb29d2",
+  "nixSourcePin": "sources/native-bootc.json",
+  "architecture": "x86_64",
+  "interface": "bootc internals cfs",
+  "purpose": "Independent canonical OCI import of completed native candidates. Changing the importer requires rebuilding and requalifying both profiles. This lock does not qualify a production sealing pipeline."
+}

@@ -1,0 +1,18 @@
+[Unit]
+Description=Run the disposable workstation migration fixture
+ConditionVirtualization=vm
+ConditionKernelCommandLine=finite.native-installer=1
+After=systemd-user-sessions.service plymouth-quit-wait.service systemd-udev-settle.service
+Conflicts=serial-getty@ttyS0.service
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 /usr/libexec/finite/migration-guest.py
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/ttyS0
+TTYReset=yes
+
+[Install]
+WantedBy=multi-user.target

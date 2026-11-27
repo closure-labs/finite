@@ -21,6 +21,8 @@
       ../scripts/bluebuild
       ../scripts/ci
       ../scripts/home
+      ../scripts/native-installer
+      ../scripts/vm-composefs
       ../scripts/workstation
       ../tests
       ../modules/outputs.nix
@@ -123,6 +125,7 @@ in {
     python3 tests/ci/recovery-completion.py
     python3 tests/ci/reconcile-decisions.py
     python3 tests/workstation/cleanup-brew.py
+    python3 tests/workstation/recovery-backup.py
     python3 tests/ci/verify-attestation-subject.py
     python3 tests/ci/release-handoff.py
     python3 tests/ci/ci-savings.py
@@ -171,6 +174,14 @@ in {
     python3 tests/bluebuild/local-vm.py
     python3 tests/bluebuild/iso.py
     python3 tests/bluebuild/initramfs.py
+    python3 tests/bluebuild/native-oci.py
+    python3 tests/bluebuild/native-oci-layer.py
+    python3 tests/bluebuild/native-sealing.py
+    python3 tests/bluebuild/native-handoff.py
+    python3 tests/bluebuild/efi-update.py
+    python3 tests/bluebuild/native-installer.py
+    python3 tests/bluebuild/boot-signer.py
+    python3 tests/bluebuild/bootc-runtime.py
     python3 tests/bluebuild/vm-mok.py
     python3 tests/bluebuild/vm-signature-rejection.py
     python3 tests/bluebuild/vm-upgrade.py
@@ -225,6 +236,7 @@ in {
     zizmor --offline --no-config --collect=all .github
     shellcheck --exclude=SC1091 files/scripts/*.sh scripts/bluebuild/*.sh experiments/containerfile/build.sh
     shellcheck -s bash files/installer/install_finite_fstab
+    shellcheck scripts/workstation/capture-recovery.sh scripts/workstation/backup-local.sh scripts/native-installer/*.sh
     shellcheck files/system/usr/libexec/finite/check-initramfs
   '';
   repository-security = check "repository-security" (with pkgs; [jq python3 applications.repositorySecurityAudit]) ''

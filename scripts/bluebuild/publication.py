@@ -36,8 +36,17 @@ def github(path, paginated=False):
         [*command, 'repos/' + REPOSITORY + '/' + path], text=True, timeout=120))
 
 
-def origin_metadata(run, jobs, artifacts, profile, run_id):
+def native_job_layout(jobs, profile):
+    names = {f'Publish ({profile}) / build / root / build', f'Publish ({profile}) / build / seal / seal'}
+    return any(job.get('name') in names for job in jobs)
+
+
+def origin_metadata(run, jobs, artifacts, profile, run_id, native=None):
     """Later failure/cancellation cannot erase a fully evidenced trusted build."""
+    if native is None:
+        native = native_job_layout(jobs, profile)
+    if native and any(job.get('name') == f'Publish ({profile}) / build / build' for job in jobs):
+        raise ValueError('Resume origin mixes legacy and native build job layouts')
     if (run.get('id') != int(run_id) or run.get('status') != 'completed'
             or run.get('conclusion') not in ('success', 'failure', 'cancelled')
             or run.get('event') not in ('push', 'schedule', 'workflow_dispatch')
@@ -50,8 +59,11 @@ def origin_metadata(run, jobs, artifacts, profile, run_id):
     # A cancelled parent is reusable only after every required source/build job
     # and named build step below succeeded at this exact revision and attempt.
     # This authorizes fresh qualification, never release or promotion by itself.
-    image_job = f'Publish ({profile}) / build / build'
+    image_job = f'Publish ({profile}) / build / root / build' if native else f'Publish ({profile}) / build / build'
+    seal_job = f'Publish ({profile}) / build / seal / seal'
     required = ('Select checks', 'Documentation checks', 'Nix and runtime contracts', image_job)
+    if native:
+        required += (seal_job,)
     selected = {}
     for name in required:
         matches = [job for job in jobs if job.get('name') == name]
@@ -67,6 +79,12 @@ def origin_metadata(run, jobs, artifacts, profile, run_id):
         steps = [step for step in selected[image_job].get('steps', []) if step.get('name') == name]
         if len(steps) != 1 or steps[0].get('conclusion') != 'success':
             raise ValueError('Resume requires an original completed image build: ' + name)
+    if native:
+        for name in ('Bind unsigned native root', 'Seal native archive with scoped production key',
+                     'Verify assembled native image', 'Bind sealed image evidence', 'Save sealed build evidence'):
+            steps = [step for step in selected[seal_job].get('steps', []) if step.get('name') == name]
+            if len(steps) != 1 or steps[0].get('conclusion') != 'success':
+                raise ValueError('Resume requires an original completed native seal: ' + name)
     artifact_name = f'image-{profile}-{run_id}-{run["run_attempt"]}'
     matches = [entry for entry in artifacts if entry.get('name') == artifact_name]
     if len(matches) != 1:
@@ -80,12 +98,14 @@ def origin_metadata(run, jobs, artifacts, profile, run_id):
             or not 0 < artifact['size_in_bytes'] <= 64 * 1024 * 1024
             or binding.get('id') != run['id'] or binding.get('head_sha') != run['head_sha']):
         raise ValueError('Resume origin artifact lacks its immutable run/digest binding')
-    return artifact, selected[image_job]['id']
+    return artifact, selected[seal_job if native else image_job]['id']
 
 
-def origin_files(artifact, profile):
+def origin_files(artifact, profile, native=False):
     """Read only bounded named evidence files; never extract artifact paths."""
     names = (f'{profile}-publication.json', f'{profile}-image-ref.txt', f'{profile}.Containerfile')
+    if native:
+        names += (f'{profile}-native-seal.json',)
     with single_archive_reader(artifact, REPOSITORY, max_bytes=64 * 1024**2, timeout=180) as archive:
         with zipfile.ZipFile(archive) as zipped:
             entries = zipped.infolist()
@@ -119,6 +139,36 @@ def validate_candidate(profile, digest, source_revision, record, image_ref, info
         raise ValueError('Resume candidate labels do not match its trusted origin and current inputs')
 
 
+def validate_boot_seal(record, receipt_bytes, digest, source_revision, root):
+    proof = record.get('bootSeal', {})
+    signer = json.loads((root / 'sources/boot-signing.json').read_text())
+    importer = json.loads((root / 'sources/native-composefs-verifier.json').read_text())
+    receipt = json.loads(receipt_bytes)
+    integrity = receipt.get('integrity', {})
+    if (proof.get('schema') != 1 or proof.get('validationOnly') is not False
+            or proof.get('imageDigest') != digest or proof.get('sourceRevision') != source_revision
+            or proof.get('buildIdentity') != record.get('buildIdentity')
+            or not isinstance(proof.get('sourceDigest'), str) or not DIGEST.fullmatch(proof['sourceDigest'])
+            or not isinstance(proof.get('bootableRootDigest'), str)
+            or not re.fullmatch('[0-9a-f]{128}', proof['bootableRootDigest'])
+            or proof.get('certificateDerSha256') != signer['certificateDerSha256']
+            or proof.get('receiptSha256') != hashlib.sha256(receipt_bytes).hexdigest()
+            or receipt.get('validationOnly') is not False or receipt.get('sourceRevision') != source_revision
+            or receipt.get('profile') != record.get('profile') or receipt.get('profile') != proof.get('profile')
+            or receipt.get('sourceArchiveSha256') != proof.get('sourceArchiveSha256')
+            or receipt.get('archiveSha256') != proof.get('archiveSha256')
+            or receipt.get('certificateDerSha256') != signer['certificateDerSha256']
+            or receipt.get('importerSha256') not in {importer['bootcSha256'], *importer.get('additionalBootcSha256', [])}
+            or integrity.get('importerBinarySha256') != receipt.get('importerSha256')
+            or integrity.get('validationOnly') is True
+            or integrity.get('strictVerity') is not True or not integrity.get('ukis')
+            or integrity.get('archiveSha256') != receipt.get('archiveSha256')
+            or integrity.get('certificateDerSha256') != signer['certificateDerSha256']
+            or integrity.get('bootableRootDigest') != proof.get('bootableRootDigest')
+            or receipt.get('bootableRootDigest') != proof.get('bootableRootDigest')):
+        raise ValueError('Native resume requires the original production sealing proof')
+
+
 def resume(profile, run_id, digest, root=upstream.ROOT):
     if (os.environ.get('GITHUB_REPOSITORY') != REPOSITORY or os.environ.get('GITHUB_REF') != 'refs/heads/main'
             or os.environ.get('GITHUB_EVENT_NAME') != 'workflow_dispatch'
@@ -134,26 +184,36 @@ def resume(profile, run_id, digest, root=upstream.ROOT):
             for job in page['jobs']]
     artifacts = [entry for page in github(f'actions/runs/{run_id}/artifacts?per_page=100', True)
                  for entry in page['artifacts']]
-    artifact, job_id = origin_metadata(run, jobs, artifacts, profile, run_id)
+    native = upstream.yaml.safe_load((root / 'recipes' / (profile + '.yml')).read_text()).get('labels', {}).get('io.finite.boot-architecture') == 'native-composefs'
+    artifact, job_id = origin_metadata(run, jobs, artifacts, profile, run_id, native=native)
     source_revision = run['head_sha']
     head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True, timeout=30).strip()
     if head != os.environ['GITHUB_SHA']:
         raise ValueError('Resume checkout differs from the current qualification revision')
     subprocess.run(['git', 'merge-base', '--is-ancestor', source_revision, head], cwd=root, check=True, timeout=30)
-    recipe = upstream.recipes(root)[profile]
+    recipe = upstream.recipe(profile, root)
     identity = upstream.image_identity(profile, root)
     # Repeat publisher authentication here, independently of workflow ordering.
     upstream.verify(root)
-    files = origin_files(artifact, profile)
+    files = origin_files(artifact, profile, native=native)
     origin_record = json.loads(files[f'{profile}-publication.json'])
     image_ref = files[f'{profile}-image-ref.txt'].decode('utf-8')
     info = upstream.inspect(upstream.REPOSITORY + '@' + digest)
     validate_candidate(profile, digest, source_revision, origin_record, image_ref, info, recipe, identity)
+    if native:
+        if (info.get('Labels') or {}).get('io.finite.boot-architecture') != 'native-composefs':
+            raise ValueError('Native resume image has a different boot architecture')
+        validate_boot_seal(origin_record, files[f'{profile}-native-seal.json'], digest, source_revision, root)
     origin = {'runId': run['id'], 'runAttempt': attempt, 'jobId': job_id,
               'artifactId': artifact['id'], 'artifactDigest': artifact['digest'],
               'sourceRevision': source_revision, 'digest': digest}
     prepare(profile, True, root, source_revision=source_revision, resume_origin=origin)
     evidence = root / '.bluebuild'
+    if native:
+        current_record = json.loads((evidence / f'{profile}-publication.json').read_text())
+        current_record['bootSeal'] = origin_record['bootSeal']
+        (evidence / f'{profile}-publication.json').write_text(json.dumps(current_record, indent=2) + '\n')
+        (evidence / f'{profile}-native-seal.json').write_bytes(files[f'{profile}-native-seal.json'])
     (evidence / f'{profile}.Containerfile').write_bytes(files[f'{profile}.Containerfile'])
     (evidence / f'{profile}-image-ref.txt').write_text(upstream.REPOSITORY + '@' + digest + '\n')
     (evidence / f'{profile}-resume-origin.json').write_text(json.dumps(origin, indent=2) + '\n')
@@ -184,8 +244,31 @@ def recovery_baseline(profile, published_digest, root):
     return published_digest, ''
 
 
+def authenticate_predecessor(profile, digest, root):
+    """Bounded historical read authority; future candidates always use cosign.pub."""
+    policy_path = root / 'sources/legacy-registry-signatures.json'
+    command = ['cosign', 'verify', '--new-bundle-format=false', '--key', str(root / 'cosign.pub')]
+    if policy_path.exists():
+        policy = json.loads(policy_path.read_text())
+        identity = 'https://github.com/closure-labs/finite/.github/workflows/attest-image.yml@refs/heads/main'
+        issuer = 'https://token.actions.githubusercontent.com'
+        if (set(policy) != {'schema', 'scope', 'certificateIdentity', 'certificateOidcIssuer', 'profiles'}
+                or type(policy['schema']) is not int or policy['schema'] != 1
+                or policy['certificateIdentity'] != identity or policy['certificateOidcIssuer'] != issuer
+                or not isinstance(policy['scope'], str) or not policy['scope']
+                or not isinstance(policy['profiles'], dict)
+                or any(name not in upstream.PROFILES or not isinstance(value, str) or not DIGEST.fullmatch(value)
+                       for name, value in policy['profiles'].items())):
+            raise ValueError('Invalid exact historical registry signature policy')
+        if policy['profiles'].get(profile) == digest:
+            command = ['cosign', 'verify', '--certificate-identity', identity,
+                       '--certificate-oidc-issuer', issuer]
+    subprocess.run([*command, upstream.REPOSITORY + '@' + upstream.digest(digest)],
+                   check=True, stdout=subprocess.DEVNULL, timeout=150)
+
+
 def prepare(profile, publish, root=upstream.ROOT, source_revision=None, resume_origin=None):
-    recipe = upstream.recipes(root)[profile]
+    recipe = upstream.recipe(profile, root)
     build_identity = upstream.image_identity(profile, root)
     mode = os.environ.get('FINITE_QUALIFICATION_MODE', 'enforce')
     if mode != 'enforce':
@@ -193,9 +276,9 @@ def prepare(profile, publish, root=upstream.ROOT, source_revision=None, resume_o
     previous = upstream.inspect(upstream.REPOSITORY + ':' + recipe['tags'][0], allow_missing=True) if publish else None
     previous_digest = upstream.digest(previous['Digest']) if previous else ''
     if previous_digest:
-        subprocess.run(['cosign', 'verify', '--new-bundle-format=false', '--key', str(root / 'cosign.pub'),
-                        upstream.REPOSITORY + '@' + previous_digest],
-                       check=True, stdout=subprocess.DEVNULL, timeout=150)
+        if (previous.get('Labels') or {}).get('io.finite.profile') != profile:
+            raise ValueError('Published predecessor belongs to a different profile')
+        authenticate_predecessor(profile, previous_digest, root)
     published_digest = previous_digest
     previous_digest, recovery_reason = recovery_baseline(profile, published_digest, root)
     if recovery_reason:
@@ -298,6 +381,8 @@ def promotion_state(record):
 
 
 def promote(profile, root=upstream.ROOT):
+    if profile in upstream.NATIVE_PROFILES:
+        raise ValueError('Native channel promotion requires dedicated encrypted native qualification')
     evidence = root / '.bluebuild'
     record = json.loads((evidence / f'{profile}-publication.json').read_text())
     if not record['publish'] or record['profile'] != profile or record['tags'] != upstream.PROFILES[profile][1]:
@@ -316,6 +401,12 @@ def promote(profile, root=upstream.ROOT):
         raise ValueError('Verified image must belong to the Finite repository')
     expected = upstream.digest(image.removeprefix(prefix))
     source_revision = record.get('sourceRevision', record['revision'])
+    native = upstream.yaml.safe_load((root / 'recipes' / (profile + '.yml')).read_text()).get('labels', {}).get('io.finite.boot-architecture') == 'native-composefs'
+    if native:
+        receipt_path = evidence / f'{profile}-native-seal.json'
+        if receipt_path.is_symlink() or not receipt_path.is_file() or not 0 < receipt_path.stat().st_size <= 4 * 1024**2:
+            raise ValueError('Native candidate lacks its original production sealing proof')
+        validate_boot_seal(record, receipt_path.read_bytes(), expected, source_revision, root)
     if source_revision != record['revision']:
         origin = record.get('resumeOrigin', {})
         if origin.get('sourceRevision') != source_revision or origin.get('digest') != expected:
@@ -365,7 +456,7 @@ def promote(profile, root=upstream.ROOT):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('command', choices=['prepare', 'promote', 'resume'])
-    parser.add_argument('profile', choices=upstream.PROFILES)
+    parser.add_argument('profile', choices={**upstream.PROFILES, **upstream.NATIVE_PROFILES})
     parser.add_argument('--publish', action='store_true')
     parser.add_argument('--run')
     parser.add_argument('--digest')

@@ -13,6 +13,19 @@ Development version: `0.8.3-dev`. The next stable release is 0.8.3.
 - Let native auto-merge and the protected merge queue wait for dependency PR
   checks and human approval, without idle runner waits, replacement CI dispatches,
   direct execution approvals or automatic changes to the reviewed head.
+- Add separate native composefs recipes and tags, preserving the default OSTree
+  channels and inherited kernel/module provenance,
+  and seal signed UKIs through protected CI with independent final-OCI import
+  verification and immutable source/build evidence. Guard OSTree-only services.
+- Add encrypted configuration/key recovery and journaled shim/systemd-boot
+  updates with rescue restoration. Disposable sealer boots and FAT interruption
+  tests pass; production release and hardware migration remain gated.
+- Pin the merged upstream bootc XBOOTLDR fix in the native installer and both
+  recipes. Fresh fixture installation and Secure Boot pass with UKIs on a
+  separate 4 GiB XBOOTLDR. Propose the first official release at least 1.17.5
+  containing the fix through a daily source-update PR.
+- Provision an isolated main-only production boot signer, distribute its public
+  certificate, and verify SSH-encrypted recovery escrow separately from Cosign.
 - Make Home Manager selection readers, first-login and seed writers schema-3-only.
   Remove the legacy seed implementation; reject older saved/provisioned profiles
   without rewriting user data or generating replacement selections.

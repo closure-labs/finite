@@ -1,5 +1,6 @@
 [Unit]
 Description=Run Finite rpm-ostree first-boot tasks
+ConditionPathExists=/run/ostree-booted
 After=network-online.target rpm-ostreed.service
 Wants=network-online.target rpm-ostreed.service
 

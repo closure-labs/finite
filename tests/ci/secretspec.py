@@ -193,13 +193,14 @@ class Manifest(unittest.TestCase):
                 OPTIONS.iso_preservation_enabled(value, {})
 
     def test_new_profiles_are_standalone_canonical_and_narrow(self):
-        for profile in ('ci-options', 'image-signing', 'release-signing', 'release-publishing', 'release-set-publishing',
+        for profile in ('ci-options', 'boot-signing', 'image-signing', 'release-signing', 'release-publishing', 'release-set-publishing',
                         'repository-audit', 'repository-read', 'updater'):
             values = MANIFEST['profiles'][profile]
             self.assertFalse(values['defaults']['inherit'])
             self.assertEqual(set(values) - {'defaults'}, set(MANIFEST['scopes'][profile]['secrets']))
             self.assertTrue(all('ref' not in value for key, value in values.items() if key != 'defaults'))
         self.assertTrue(MANIFEST['profiles']['image-signing']['COSIGN_PRIVATE_KEY']['required'])
+        self.assertTrue(MANIFEST['profiles']['boot-signing']['FINITE_BOOT_SIGNING_KEY']['required'])
         self.assertTrue(MANIFEST['profiles']['release-signing']['COSIGN_PRIVATE_KEY']['required'])
         self.assertTrue(MANIFEST['profiles']['repository-read']['GH_TOKEN']['required'])
         self.assertTrue(MANIFEST['profiles']['repository-audit']['SECAUDIT_PEM']['required'])
@@ -284,6 +285,9 @@ class Resolution(unittest.TestCase):
             read = self.run_cli(directory, 'repository-read', values=values)
             self.assertEqual(read.returncode, 0, read.stderr)
             self.assertEqual(json.loads(read.stdout), {'GH_TOKEN': 'fixture-read'})
+            boot = self.run_cli(directory, 'boot-signing', values={**values, 'FINITE_BOOT_SIGNING_KEY': 'fixture-boot'})
+            self.assertEqual(boot.returncode, 0, boot.stderr)
+            self.assertEqual(json.loads(boot.stdout), {'FINITE_BOOT_SIGNING_KEY': 'fixture-boot'})
 
     def test_updater_derives_github_cli_token_only_inside_updater_scope(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -316,7 +320,7 @@ class Resolution(unittest.TestCase):
             directory = Path(temporary)
             marker = directory / 'child-ran'
             command = [sys.executable, '-c', 'from pathlib import Path; Path(' + repr(str(marker)) + ').touch()']
-            for profile in ('image-signing', 'release-signing', 'release-publishing', 'release-set-publishing', 'repository-read', 'repository-audit', 'updater'):
+            for profile in ('boot-signing', 'image-signing', 'release-signing', 'release-publishing', 'release-set-publishing', 'repository-read', 'repository-audit', 'updater'):
                 result = self.run_cli(directory, profile, command=command)
                 self.assertNotEqual(result.returncode, 0, profile)
                 self.assertFalse(marker.exists())

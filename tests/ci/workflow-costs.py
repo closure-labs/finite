@@ -434,6 +434,8 @@ class Costs(unittest.TestCase):
         self.assertEqual({r['role'] for r in costs.aggregate([historical, current])},
                          {'qualification', 'qualification-upgrade'})
         self.assertEqual(costs.job_role('Publish (finite) / other / qualify'), 'unknown')
+        self.assertEqual(costs.job_role('Publish (finite) / build / root / build'), 'build')
+        self.assertEqual(costs.job_role('Publish (finite) / build / seal / seal'), 'boot-signing')
 
     def test_authority_roles_bind_native_workflow_and_conserve_retry_cost(self):
         worker = 'authority (269, ' + 'a' * 40 + ', ' + 'b' * 40 + ')'

@@ -1,0 +1,77 @@
+name: Validate native installer media
+on:
+  push:
+    branches: [qualification/native-iso]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: finite-native-iso-validation
+  cancel-in-progress: true
+env:
+  FINITE_CI_VARS: ${{ toJSON(vars) }}
+jobs:
+  media:
+    name: Qualify both native profiles in sequence
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/qualification/native-iso'
+    runs-on: ubuntu-24.04
+    # The observed two-ISO build took 200 minutes before either guest installed.
+    # Leave 55 minutes per guest for install and first boot, plus evidence upload.
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hastd/free-disk-space@68572aeaadb7f76bd408246328e95926323402b5 # v0.1.2
+        with:
+          skip-if-available: "110G"
+      - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
+          resource-mode: native-qualification
+      - uses: $/.github/actions/setup-cosign
+      - name: Install the verified locked BlueBuild CLI
+        run: bash scripts/bluebuild/install-cli.sh
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          name: bluebuild
+          driver: docker-container
+          driver-opts: default-load=true
+          use: false
+      - name: Prepare pinned VM tools under the qualification cap
+        # Only VM tools and firmware paths checked by the provisioner enter the workflow environment.
+        run: python3 scripts/native-installer/watch-memory.py python3 scripts/ci/vm_tools.py # zizmor: ignore[github-env]
+      - name: Check KVM access on the ephemeral runner
+        id: kvm
+        run: |
+          sudo setfacl -m "u:$(id -un):rw" /dev/kvm
+          test -r /dev/kvm && test -w /dev/kvm
+      - name: Build and test finite-native
+        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh finite-native
+      - name: Retain finite-native evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-iso-validation-${{ github.run_id }}-${{ github.run_attempt }}-finite-native
+          path: |
+            .bluebuild/native-validation/finite-native/
+            .bluebuild/native-iso/finite-native/installation.json
+            .bluebuild/native-iso/finite-native/SHA256SUMS
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 7
+      - name: Build and test finite-native-dev
+        if: ${{ !cancelled() && steps.kvm.outcome == 'success' }}
+        run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-validation.sh finite-native-dev
+      - name: Retain finite-native-dev evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-iso-validation-${{ github.run_id }}-${{ github.run_attempt }}-finite-native-dev
+          path: |
+            .bluebuild/native-validation/finite-native-dev/
+            .bluebuild/native-iso/finite-native-dev/installation.json
+            .bluebuild/native-iso/finite-native-dev/SHA256SUMS
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 7

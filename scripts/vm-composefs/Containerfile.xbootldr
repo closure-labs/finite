@@ -1,0 +1,9 @@
+# Derive the existing disposable raw fixture; only public build inputs enter it.
+ARG FIXTURE
+FROM ${FIXTURE}
+COPY bootc-runtime.rpm source-lock.json receipt.json /usr/lib/finite/bootc-build/
+COPY install-native-bootc.sh /run/install-native-bootc.sh
+RUN bash /run/install-native-bootc.sh && rm /run/install-native-bootc.sh \
+    && mkdir -p /var/roothome /efi \
+    && kver=$(ls /kernel) \
+    && dracut --force --no-hostonly --omit ostree --add bootc /kernel/$kver/initramfs.img "$kver"

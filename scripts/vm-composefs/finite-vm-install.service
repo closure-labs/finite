@@ -1,0 +1,15 @@
+[Unit]
+Description=Install native composefs only onto the disposable VM target disk
+ConditionKernelCommandLine=finite.vm.install=1
+After=local-fs.target
+OnFailure=poweroff.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/finite-vm/install.sh
+TimeoutStartSec=30min
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

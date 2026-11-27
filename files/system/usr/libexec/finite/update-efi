@@ -1,0 +1,237 @@
+#!/usr/bin/python3
+"""Journal and recover Finite's shim/systemd-boot files without changing BootOrder."""
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tempfile
+import uuid
+
+PAYLOAD_NAMES = {'shimx64.efi', 'mmx64.efi', 'grubx64.efi'}
+MAX_EFI = 16 * 1024**2
+
+
+def hash_file(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def sync_directory(path):
+    fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def atomic_bytes(path, content):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix='.' + path.name + '.', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'wb') as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+        sync_directory(path.parent)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def record(path, value):
+    atomic_bytes(path, (json.dumps(value, sort_keys=True, indent=2) + '\n').encode())
+
+
+def target(esp, relative):
+    path = esp / relative
+    if not relative.startswith('EFI/') or '..' in Path(relative).parts or not path.resolve().is_relative_to(esp):
+        raise ValueError('EFI target escapes the selected ESP')
+    if path.is_symlink() or any(p.is_symlink() for p in path.parents if p != esp and p.is_relative_to(esp)):
+        raise ValueError('EFI targets cannot use symlinks')
+    if path.exists() and not path.is_file():
+        raise ValueError('EFI target is not a regular file')
+    return path
+
+
+def load_payload(directory, certificate):
+    manifest_path = directory / 'manifest.json'
+    if manifest_path.is_symlink() or not 0 < manifest_path.stat().st_size < 65536:
+        raise ValueError('Invalid EFI payload manifest')
+    manifest = json.loads(manifest_path.read_text())
+    if manifest.get('schema') != 1 or set(manifest.get('files', {})) != PAYLOAD_NAMES:
+        raise ValueError('EFI payload must include shim, MokManager and the signed loader')
+    der = subprocess.check_output(['openssl', 'x509', '-in', certificate, '-outform', 'DER'])
+    if hashlib.sha256(der).hexdigest() != manifest.get('certificateDerSha256'):
+        raise ValueError('EFI payload certificate identity differs')
+    result = {}
+    for name, digest in manifest['files'].items():
+        path = directory / name
+        if (not re.fullmatch('[0-9a-f]{64}', digest) or path.is_symlink() or not path.is_file()
+                or not 0 < path.stat().st_size <= MAX_EFI or hash_file(path) != digest):
+            raise ValueError('EFI payload bytes differ from the signed-root manifest')
+        result[name] = path.read_bytes()
+    subprocess.run(['sbverify', '--cert', certificate, directory / 'grubx64.efi'], check=True)
+    return result
+
+
+def mapping(payload, fallback):
+    files = {'EFI/finite/' + name: value for name, value in payload.items()}
+    files['EFI/systemd/systemd-bootx64.efi'] = payload['grubx64.efi']
+    if fallback:
+        files.update({'EFI/BOOT/BOOTX64.EFI': payload['shimx64.efi'],
+                      'EFI/BOOT/grubx64.efi': payload['grubx64.efi'],
+                      'EFI/BOOT/mmx64.efi': payload['mmx64.efi']})
+    return files
+
+
+def apply(esp, state, files, esp_uuid=None):
+    # A prepared journal stops a second update until explicit recovery. All
+    # preimages are persisted before the first write to FAT.
+    for journal in state.glob('*/journal.json'):
+        if json.loads(journal.read_text()).get('phase') == 'prepared':
+            raise ValueError('Interrupted EFI update requires --recover GENERATION')
+    changed = {name: data for name, data in files.items()
+               if not target(esp, name).exists() or hash_file(target(esp, name)) != hashlib.sha256(data).hexdigest()}
+    if not changed:
+        return None
+    if shutil.disk_usage(esp).free < sum(map(len, changed.values())) + 32 * 1024**2:
+        raise ValueError('Insufficient ESP space; EFI files were not modified')
+    generation = state / uuid.uuid4().hex
+    generation.mkdir(mode=0o700)
+    previous = {}
+    for index, (name, data) in enumerate(sorted(changed.items())):
+        path = target(esp, name)
+        backup = None
+        if path.exists():
+            if path.stat().st_size > MAX_EFI:
+                raise ValueError('Existing EFI file exceeds recovery bound')
+            backup = f'{index}.before'
+            atomic_bytes(generation / backup, path.read_bytes())
+        previous[name] = {'backup': backup, 'before': hash_file(path) if backup else None,
+                          'after': hashlib.sha256(data).hexdigest()}
+    value = {'schema': 1, 'esp': str(esp), 'espUuid': esp_uuid, 'phase': 'prepared', 'files': previous}
+    record(generation / 'journal.json', value)
+    sync_directory(state)
+    for name, data in sorted(changed.items()):
+        atomic_bytes(target(esp, name), data)
+        if hash_file(target(esp, name)) != previous[name]['after']:
+            raise ValueError('EFI write verification failed; recovery journal retained')
+    value['phase'] = 'committed'
+    record(generation / 'journal.json', value)
+    return generation
+
+
+def recover(esp, state, name, esp_uuid=None):
+    if not re.fullmatch('[0-9a-f]{32}', name):
+        raise ValueError('Recovery requires a recorded generation identifier')
+    generation = state / name
+    value = json.loads((generation / 'journal.json').read_text())
+    allowed = set(mapping({name: b'' for name in PAYLOAD_NAMES}, True))
+    same_esp = (value.get('espUuid') == esp_uuid if value.get('espUuid') else value.get('esp') == str(esp))
+    if value.get('schema') != 1 or not same_esp or not set(value.get('files', {})) <= allowed:
+        raise ValueError('Recovery journal does not describe this ESP')
+    if value.get('phase') not in ('prepared', 'committed'):
+        raise ValueError('EFI generation is not recoverable')
+    # Check the entire recovery set before undoing any file.
+    for name, entry in value['files'].items():
+        path = target(esp, name)
+        current = hash_file(path) if path.exists() else None
+        if current not in (entry['before'], entry['after']):
+            raise ValueError('EFI file changed outside this transaction; refusing recovery')
+        if entry['backup'] is not None:
+            if not re.fullmatch(r'[0-9]+\.before', entry['backup']):
+                raise ValueError('Invalid recovery backup name')
+            backup = generation / entry['backup']
+            if backup.is_symlink() or hash_file(backup) != entry['before']:
+                raise ValueError('EFI recovery backup differs')
+    for name, entry in value['files'].items():
+        path = target(esp, name)
+        if entry['backup'] is None:
+            path.unlink(missing_ok=True)
+            if path.parent.exists():
+                sync_directory(path.parent)
+        else:
+            atomic_bytes(path, (generation / entry['backup']).read_bytes())
+    value['phase'] = 'recovered'
+    record(generation / 'journal.json', value)
+
+
+def refresh_root(install_root, esp, state, command_line, ostree_booted):
+    """Runtime refresh and an explicitly mounted live-installer deployment."""
+    if install_root is None:
+        if ostree_booted or not any(re.fullmatch(
+                r'composefs.digest=v1-sha512-12:[0-9a-f]{128}', arg) for arg in command_line):
+            raise ValueError('EFI refresh requires a booted native sealed system')
+        return Path('/')
+    if ('finite.native-installer=1' not in command_line or ostree_booted
+            or esp is None or state is None):
+        raise ValueError('Offline EFI installation requires native installer media and explicit ESP/state')
+    root = install_root.resolve(strict=True)
+    if not root.is_mount() or not (root / 'usr/lib/composefs/setup-root-conf.toml').is_file():
+        raise ValueError('Offline EFI installation requires a mounted native deployment')
+    if not state.resolve().is_relative_to(root / 'var/lib/finite'):
+        raise ValueError('Installer EFI recovery state must persist in the installed deployment')
+    return root
+
+
+def main():
+    os.umask(0o077)
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--esp', type=Path)
+    p.add_argument('--state', type=Path)
+    p.add_argument('--install-root', type=Path, help='mounted deployment, only on native installer media')
+    p.add_argument('--recover', metavar='GENERATION')
+    args = p.parse_args()
+    try:
+        if os.geteuid() != 0:
+            raise ValueError('EFI updates require root')
+        if args.recover and args.install_root:
+            raise ValueError('Use the ordinary rescue recovery interface for an existing journal')
+        root = Path('/') if args.recover else refresh_root(args.install_root, args.esp, args.state,
+            Path('/proc/cmdline').read_text().split(), Path('/run/ostree-booted').exists())
+        configured = root / 'etc/finite/bootloader.json'
+        config = json.loads(configured.read_text()) if configured.exists() else {'schema': 1, 'manageFallback': False}
+        if config.get('schema') != 1 or type(config.get('manageFallback')) is not bool:
+            raise ValueError('Invalid per-machine bootloader configuration')
+        esp = args.esp or Path(subprocess.check_output(['bootctl', '--print-esp-path'], text=True).strip())
+        esp = esp.resolve(strict=True)
+        mount = json.loads(subprocess.check_output(['findmnt', '--json', '--mountpoint', esp, '-o', 'TARGET,FSTYPE,OPTIONS,UUID'], text=True))['filesystems']
+        if len(mount) != 1 or mount[0]['fstype'] != 'vfat' or mount[0]['target'] != str(esp):
+            raise ValueError('EFI target must be a mounted VFAT ESP')
+        esp_uuid = mount[0].get('uuid')
+        if not isinstance(esp_uuid, str) or not re.fullmatch('[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}', esp_uuid):
+            raise ValueError('EFI target requires a stable FAT filesystem UUID')
+        esp_uuid = esp_uuid.upper()
+        state = (args.state or Path('/var/lib/finite/efi-updates')).resolve()
+        if state.is_relative_to(esp):
+            raise ValueError('Recovery journal must remain outside the ESP')
+        state.mkdir(mode=0o700, parents=True, exist_ok=True)
+        if state.stat().st_uid != 0 or state.stat().st_mode & 0o077:
+            raise ValueError('EFI recovery state must be root-private')
+        with (state / '.lock').open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            files = None if args.recover else mapping(load_payload(root / 'usr/lib/finite/efi',
+                root / 'usr/share/finite/secure-boot/finite-boot.pem'), config['manageFallback'])
+            readonly = 'ro' in mount[0]['options'].split(',')
+            try:
+                if readonly:
+                    subprocess.run(['mount', '-o', 'remount,rw', esp], check=True)
+                if args.recover:
+                    recover(esp, state, args.recover, esp_uuid=esp_uuid)
+                else:
+                    generation = apply(esp, state, files, esp_uuid=esp_uuid)
+                    print('EFI payload already current' if generation is None else 'EFI update committed: ' + generation.name)
+            finally:
+                if readonly:
+                    subprocess.run(['mount', '-o', 'remount,ro', esp], check=True)
+    except (OSError, ValueError, subprocess.CalledProcessError, KeyError) as exc:
+        p.exit(1, str(exc) + '\n')
+
+
+if __name__ == '__main__':
+    main()

@@ -234,11 +234,19 @@ def reuse(run_id, profile, digest, output):
     recipe = publication.upstream.recipes(ROOT)[profile]
     identity = publication.upstream.image_identity(profile, ROOT)
     publication.upstream.verify(ROOT)
-    files = publication.origin_files(image_artifact, profile)
+    native_boot = publication.native_job_layout(jobs, profile)
+    files = publication.origin_files(image_artifact, profile, native=native_boot)
     image = publication.upstream.REPOSITORY + '@' + digest
+    record = json.loads(files[f'{profile}-publication.json'])
+    info = inspect_candidate(image)
     publication.validate_candidate(profile, digest, run['head_sha'],
-        json.loads(files[f'{profile}-publication.json']), files[f'{profile}-image-ref.txt'].decode(),
-        inspect_candidate(image), recipe, identity)
+        record, files[f'{profile}-image-ref.txt'].decode(), info, recipe, identity)
+    if native_boot:
+        if (info.get('Labels') or {}).get('io.finite.boot-architecture') != 'native-composefs':
+            raise ValueError('Native security reuse image has a different boot architecture')
+        publication.validate_boot_seal(record, files[f'{profile}-native-seal.json'], digest, run['head_sha'], ROOT)
+    elif (info.get('Labels') or {}).get('io.finite.boot-architecture') == 'native-composefs':
+        raise ValueError('Native security reuse lacks the original signing job')
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='.security-reuse-', dir=output.parent) as temporary:
         staging = Path(temporary) / 'evidence'

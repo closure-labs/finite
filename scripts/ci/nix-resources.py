@@ -9,9 +9,13 @@ import subprocess
 GIB = 1024 ** 3
 
 
-def budget(cpus, memory):
+def budget(cpus, memory, mode='runner'):
     if cpus < 1 or memory < 1:
         raise ValueError('CPU and memory capacity must be positive')
+    if mode == 'native-qualification':
+        return {'max-jobs': 1, 'cores': min(cpus, 2), 'eval-cores': min(cpus, 2)}
+    if mode != 'runner':
+        raise ValueError('Unknown Nix resource mode: ' + mode)
     # Reserve one GiB for the OS/daemon; allow three GiB per active builder.
     jobs = max(1, min(cpus, (memory - GIB) // (3 * GIB)))
     cores = max(1, cpus // jobs)
@@ -77,7 +81,7 @@ def main():
     parser.add_argument('--nix', default='nix')
     args = parser.parse_args()
     cpus, memory = detect()
-    settings = budget(cpus, memory)
+    settings = budget(cpus, memory, os.environ.get('FINITE_NIX_RESOURCE_MODE', 'runner'))
     if args.verify:
         verify(settings, args.nix)
     elif args.config:

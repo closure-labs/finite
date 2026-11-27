@@ -726,6 +726,8 @@ class PublicationBoundary(unittest.TestCase):
             output = root / '.bluebuild'
             output.mkdir()
             profile = 'finite'
+            (root / 'recipes').mkdir()
+            (root / 'recipes/finite.yml').write_text('labels: {}\n')
             record = {'publish': True, 'profile': profile, 'tags': ['finite', 'latest'],
                       'revision': 'revision', 'publishedDigest': '', 'previousDigest': '',
                       'recoveryReason': '', 'buildIdentity': 'identity', 'qualificationMode': 'enforce'}

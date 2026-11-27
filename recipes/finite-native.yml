@@ -1,0 +1,34 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+version: 1
+name: finite
+description: Finite bluefin with Home Manager and generic-x86_64
+base-image: ghcr.io/ublue-os/bluefin
+image-version: stable@sha256:57dce95ae29b968ad61732c8d63cc9d1996782191ee79a5d0eeceec5736201f0
+blue-build-tag: v0.9.37
+cosign-version: 3.1.3@sha256:9e5c2f2edc34351160407ca3416c61855bdf9403c3c5936e0f0be7fc261611b8
+alt-tags: [finite-native]
+labels:
+  org.opencontainers.image.title: Finite
+  org.opencontainers.image.vendor: Closure Labs
+  org.opencontainers.image.url: https://github.com/closure-labs/finite
+  org.opencontainers.image.revision: "${GITHUB_SHA:-local}"
+  io.finite.profile: finite-native
+  io.finite.foundation: bluefin
+  io.finite.hardware: generic-x86_64
+  io.finite.boot-architecture: native-composefs
+modules:
+  - type: script@v1
+    snippets:
+      - install -Dm755 "$CONFIG_DIRECTORY/scripts/upstream-kernel.py" /usr/libexec/finite/check-upstream-kernel
+      - python3 /usr/libexec/finite/check-upstream-kernel snapshot
+  - from-file: shared/base.yml
+  - type: script@v1
+    snippets:
+      - bash "$CONFIG_DIRECTORY/scripts/profile.sh" finite-native bluefin generic-x86_64 finite-native
+  # Native bootc initramfs; sealing happens in the isolated boot signer.
+  - from-file: shared/native-root.yml
+  - type: script@v1
+    snippets:
+      - python3 /usr/libexec/finite/check-upstream-kernel verify
+  - from-file: shared/final.yml
