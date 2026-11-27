@@ -175,6 +175,7 @@ def legacy(disk, secret, alternate, rescue_entry):
             '--karg', 'rd.luks.uuid=' + luks, '--karg', 'console=ttyS0,115200n8',
             '--karg', 'rd.plymouth=0', '--karg', 'plymouth.enable=0', TARGET, timeout=1800)
     process('umount', '/var/tmp')
+    require((TARGET / 'ostree/repo/config').is_file(), 'Legacy fixture install did not create an OSTree repository')
     DEPLOYMENT.mkdir()
     process('bootc', 'install', 'mount', '--sysroot', TARGET, '--latest', DEPLOYMENT)
     account_and_home(DEPLOYMENT, fsuuid, rescue_entry=rescue_entry)

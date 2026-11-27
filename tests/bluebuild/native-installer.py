@@ -410,6 +410,18 @@ class Media(unittest.TestCase):
         self.assertNotIn('--bootc-installer-payload-ref', script)
         self.assertNotIn('anaconda-iso', script)
 
+    def test_migration_rescue_supplies_the_ostree_default_for_legacy_install(self):
+        container = (self.directory / 'Containerfile').read_text()
+        before, migration = container.split('if [ "$MIGRATION" = true ]; then', 1)
+        migration, after = migration.split('    fi\n', 1)
+        setup = '/etc/ostree/prepare-root.conf'
+        self.assertIn('test "$VALIDATION" = true', migration)
+        self.assertIn(setup, migration)
+        self.assertNotIn(setup, before + after)
+        guest = (self.directory / 'migration-guest.py').read_text()
+        self.assertIn("(TARGET / 'ostree/repo/config').is_file()", guest)
+        self.assertIn("'--composefs-backend', '--bootloader', 'systemd'", guest)
+
     def test_capped_guest_keeps_the_complete_failure_line_in_its_serial_log(self):
         spec = importlib.util.spec_from_file_location('qualify_iso', self.directory / 'qualify-iso.py')
         qual = importlib.util.module_from_spec(spec)
