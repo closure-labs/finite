@@ -27,6 +27,7 @@ dnf -y makecache
 dnf -y install --setopt=install_weak_deps=True "${packages[@]}"
 python3 "$CONFIG_DIRECTORY/scripts/security-remediate.py"
 python3 "$CONFIG_DIRECTORY/scripts/tailscale-security.py"
+python3 "$CONFIG_DIRECTORY/scripts/remove-legacy-compass.py"
 cp -a "$CONFIG_DIRECTORY/system/." /
 rm -f /.gitkeep
 python3 /ctx/experiment/image-config.py payload /ctx

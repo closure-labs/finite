@@ -212,6 +212,7 @@ class Contract(unittest.TestCase):
         script = (ROOT / 'experiments/containerfile/build.sh').read_text()
         sequence = ['check-upstream-kernel snapshot', 'scripts/nix-identities.sh', 'dnf -y install',
                     'scripts/security-remediate.py', 'scripts/tailscale-security.py',
+                    'scripts/remove-legacy-compass.py',
                     'image-config.py payload', 'scripts/nix-install.sh', 'scripts/authselect.sh',
                     'systemctl -f enable', 'systemctl --global -f enable', 'scripts/profile.sh',
                     '--no-hostonly --reproducible', 'check-upstream-kernel verify',

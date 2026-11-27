@@ -29,6 +29,7 @@ modules:
     snippets:
       - python3 "$CONFIG_DIRECTORY/scripts/security-remediate.py"
       - python3 "$CONFIG_DIRECTORY/scripts/tailscale-security.py"
+      - python3 "$CONFIG_DIRECTORY/scripts/remove-legacy-compass.py"
   - type: files@v1
     files:
       - source: system
