@@ -129,12 +129,35 @@ class Premerge(unittest.TestCase):
                         {'image': 'ghcr.io/closure-labs/finite@sha256:' + 'b' * 64}):
             with self.assertRaises(ValueError): validate_context({**receipt, **changes}, env)
 
+    def test_manual_receipt_is_limited_to_standard_diagnostic_branch(self):
+        env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
+               'GITHUB_EVENT_NAME': 'workflow_dispatch',
+               'GITHUB_REF': 'refs/heads/diagnostics/finite-429-brew-preinstall',
+               'GITHUB_SHA': 'a' * 40, 'FINITE_LOCAL_VM_VALIDATION': 'true'}
+        receipt = {'localValidation': True, 'sourceRevision': 'a' * 40, 'profile': 'finite',
+                   'image': 'local-image@sha256:' + 'b' * 64, 'installationTag': 'localhost/finite-validation:v1-1'}
+        self.assertEqual(validate_context(receipt, env), receipt)
+        for change in ({'GITHUB_REF': 'refs/heads/main'}, {'GITHUB_REF': 'refs/heads/diagnostics/other'},
+                       {'GITHUB_REPOSITORY': 'fork/finite'}, {'GITHUB_EVENT_NAME': 'push'},
+                       {'GITHUB_SHA': 'c' * 40}, {'FINITE_LOCAL_VM_VALIDATION': 'false'}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                validate_context(receipt, {**env, **change})
+        with self.assertRaises(ValueError):
+            validate_context({**receipt, 'profile': 'finite-dev'}, env)
+
     def test_vm_is_in_required_build_path_with_read_only_permissions(self):
         build = workflow('build')
         images = build['jobs']['images']
         self.assertIn("github.event_name != 'pull_request'", images['if'])
         self.assertNotIn("github.event_name != 'merge_group'", images['if'])
-        self.assertEqual(images['with']['vm_validation'], "${{ needs.impact.outputs.vm == 'true' }}")
+        self.assertEqual(
+            " ".join(images['with']['vm_validation'].split()),
+            "${{ needs.impact.outputs.vm == 'true' || "
+            "(github.event_name == 'workflow_dispatch' && "
+            "github.repository == 'closure-labs/finite' && "
+            "github.ref == 'refs/heads/diagnostics/finite-429-brew-preinstall' && "
+            "inputs.target == 'finite' && matrix.profile == 'finite') }}",
+        )
         self.assertFalse(images['with']['publish'])
         self.assertNotIn('secrets', images)
         self.assertEqual(images['permissions'], {'contents': 'read', 'pull-requests': 'read', 'packages': 'read', 'actions': 'read'})
