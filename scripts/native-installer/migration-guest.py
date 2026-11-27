@@ -162,28 +162,35 @@ def legacy(disk, secret, alternate, rescue_entry):
     archive = MEDIA / 'legacy.oci.tar'
     require(sha256(archive) == (MEDIA / 'legacy.sha256').read_text().strip(), 'Legacy archive hash differs')
     luks = run('cryptsetup', 'luksUUID', root)
+    fsuuid = run('blkid', '-s', 'UUID', '-o', 'value', DEVICE)
+    root_spec = 'UUID=' + fsuuid
+    subvolume = 'rootflags=subvol=/root'
     scratch = TOP / 'scratch'
     scratch.mkdir()
     process('mount', '--bind', scratch, '/var/tmp')
     process('bootc', 'install', 'to-filesystem', '--bootloader', 'grub', '--skip-fetch-check',
             '--skip-finalize', '--bound-images', 'skip', '--source-imgref', 'oci-archive:' + str(archive),
             '--target-imgref', 'ghcr.io/closure-labs/finite:finite',
+            '--root-mount-spec', root_spec, '--karg', subvolume,
             '--karg', 'rd.luks.uuid=' + luks, '--karg', 'console=ttyS0,115200n8',
             '--karg', 'rd.plymouth=0', '--karg', 'plymouth.enable=0', TARGET, timeout=1800)
     process('umount', '/var/tmp')
     DEPLOYMENT.mkdir()
     process('bootc', 'install', 'mount', '--sysroot', TARGET, '--latest', DEPLOYMENT)
-    account_and_home(DEPLOYMENT, run('blkid', '-s', 'UUID', '-o', 'value', DEVICE),
-                     rescue_entry=rescue_entry)
+    account_and_home(DEPLOYMENT, fsuuid, rescue_entry=rescue_entry)
     process('umount', '--recursive', DEPLOYMENT)
-    entries = [path.read_text() for path in (TARGET / 'boot/loader/entries').glob('*.conf')]
-    require(any('rootflags=subvol=/root' in entry.split() and 'ostree=' in entry for entry in entries),
-            'The original BLS entry must use explicit old-root selection')
+    options = [line.split()[1:] for path in (TARGET / 'boot/loader/entries').glob('*.conf')
+               for line in path.read_text().splitlines() if line.startswith('options ')]
+    selections = [sorted(arg for arg in entry if arg.startswith(('root=', 'rootflags=')))
+                  for entry in options if any(arg.startswith('ostree=') for arg in entry)]
+    require(['root=' + root_spec, subvolume] in selections,
+            f'Unexpected original OSTree BLS root selection: {selections}')
     process('umount', '--recursive', TARGET)
     process('umount', TOP, MEDIA)
     process('cryptsetup', 'close', MAPPER)
     _, order = boot_firmware()
-    mark('legacy-created', bootOrder=order, gpt=table(disk), luksKeyslots=len(keyslots))
+    mark('legacy-created', bootOrder=order, gpt=table(disk), luksKeyslots=len(keyslots),
+         rootMountSpec=root_spec, rootFlags=subvolume)
 
 
 def resize(disk, secret, *, interrupt=False):
