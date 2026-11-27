@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# Build a disposable installer from the exact local PR image, with no registry push.
+# Build a disposable installer from the exact local candidate, with no registry push.
 set -euo pipefail
 profile=${1:?profile required}
 [[ $profile =~ ^finite(-dev)?$ ]]
 export PROFILE="$profile"
 unset CANDIDATE_DIGEST
-[[ ${GITHUB_ACTIONS:-} == true && ${GITHUB_REPOSITORY:-} == closure-labs/finite ]]
-[[ ${GITHUB_EVENT_NAME:-} == pull_request || ${GITHUB_EVENT_NAME:-} == merge_group ]]
-[[ ${GITHUB_REF:-} != refs/heads/main ]]
+PYTHONPATH=scripts/ci python3 -c 'from local_vm import require_runner; import sys; require_runner(sys.argv[1])' "$profile"
 [[ ${GITHUB_SHA:-} =~ ^[0-9a-f]{40}$ ]]
 work=$(mktemp -d /tmp/finite-local-vm.XXXXXXXX)
 trap 'rm -rf -- "$work"' EXIT

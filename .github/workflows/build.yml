@@ -303,7 +303,14 @@ jobs:
       profile: ${{ matrix.profile }}
       channel: ${{ matrix.channel }}
       publish: false
-      vm_validation: ${{ needs.impact.outputs.vm == 'true' }}
+      # On this disposable branch, boot the standard image in the same runner.
+      # Keep premerge selection and publication gates unchanged.
+      vm_validation: >-
+        ${{ needs.impact.outputs.vm == 'true' ||
+          (github.event_name == 'workflow_dispatch' &&
+           github.repository == 'closure-labs/finite' &&
+           github.ref == 'refs/heads/diagnostics/finite-429-brew-preinstall' &&
+           inputs.target == 'finite' && matrix.profile == 'finite') }}
       diagnostic_security: ${{ inputs.diagnostic_security || false }}
       payload_artifact_id: ${{ needs.payload.outputs.artifact_id }}
       payload_sha256: ${{ needs.payload.outputs.sha256 }}
