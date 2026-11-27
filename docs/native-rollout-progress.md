@@ -454,6 +454,24 @@ any migration fork. Run `45947216850` exercises that gate.
 [Second rehearsal artifact](https://github.com/closure-labs/finite/actions/runs/45938632142/artifacts/15175112266)
 [Measured GRUB boot rehearsal](https://github.com/closure-labs/finite/actions/runs/45947216850)
 
+The measured run reached Fedora shim and GRUB and mounted the
+recorded UUID with `rootflags=subvol=/root`. Its kernel command
+line showed that bootc had selected composefs for the legacy
+fixture. The observer rejected that backend before any disk shrink.
+Change `mrsrpmmy` gives the disposable rescue image an OSTree
+`prepare-root.conf` so the pinned bootc defaults to OSTree for the
+legacy archive. The native install continues to pass
+`--composefs-backend` explicitly.
+[Kernel and boot inventory evidence](https://github.com/closure-labs/finite/actions/runs/45947216850/artifacts/15181206656)
+
+Run `45962209031` tests that backend selection. Change `wmwtptsl`
+lets the rehearsal reuse the independent lifecycle input jobs.
+The Nix payload and locked RPM started together and passed in
+21m53s and 11m59s respectively. The rehearsal runner verified both
+same-run inputs before image builds. Migration acceptance still
+requires both boot paths and all three recovery forks.
+[OSTree migration rehearsal](https://github.com/closure-labs/finite/actions/runs/45962209031)
+
 ## Next execution sequence
 
 1. Extend full-profile qualification to cover real kernel and loader upgrades,
