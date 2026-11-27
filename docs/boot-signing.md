@@ -116,3 +116,15 @@ The `qualification/native-production-readiness` branch runs a credential-free
 importer check on two ephemeral runners. It can diagnose a pinned executable
 mismatch before a production run. The signing job requires the reviewed
 executable hash and version even when the Nix output path agrees.
+
+The first readiness run produced two known `bootc 1.17.1` executable hashes
+at the same pinned Nix output. Runner `b` produced `9e8d8d74…`, also measured
+in run `45705616551` and used in both independent OCI checks in `45803664314`.
+Runner `a` produced `86802621…`, also used in the accepted stable lifecycle
+and the workstation-layout rehearsal. The lock includes these two exact
+digests. The production workflow still measures its actual executable and
+checks the signed UKI bytes and root digest independently on the consumer.
+[Importer readiness](https://github.com/closure-labs/finite/actions/runs/46051317042)
+[Earlier native media run](https://github.com/closure-labs/finite/actions/runs/45803664314)
+[Accepted lifecycle](https://github.com/closure-labs/finite/actions/runs/45918999917)
+[Accepted migration rehearsal](https://github.com/closure-labs/finite/actions/runs/45992389140)
