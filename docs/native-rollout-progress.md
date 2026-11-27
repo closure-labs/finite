@@ -386,17 +386,45 @@ the installed kernel provides it. Changes `yuryrtnm` and `sknktsuv`
 build the common Nix payload and locked bootc RPM once in parallel
 producer jobs. Then stable and development qualify on separate hosted
 runners, each with the original guest and memory caps. Run
-`45907617967` exercises the updated policy and workflow.
+`45907617967` finished its shared Nix payload in 21m54s while the
+11m24s RPM build ran concurrently. The profile jobs started one
+second apart. Stable took 60m27s on its runner and passed 82m24s
+after the producers started. The previous serialized stable job
+took 146m04s and stopped on the unavailable ZFS module before
+rollback, so these measurements cover different endpoints.
 [Parallel lifecycle run](https://github.com/closure-labs/finite/actions/runs/45907617967)
+
+Stable booted the new sealed root, verified the running new EFI
+loader, rolled back, and verified the original root and loader
+with both persistence sentinels present. The ISO SHA-256 is
+`16e83ec11ff92f9444f1fc7dfdd8a0fd7d3d3cb85a9385d87e3053bfe91bc2a2`.
+Each receipt proves Secure Boot, enforcing SELinux, encrypted
+root, prerequisite signed modules and successful EFI refresh.
+[Stable lifecycle evidence](https://github.com/closure-labs/finite/actions/runs/45907617967/artifacts/15162017874)
+
+Development built and booted ISO SHA-256
+`da9484f25e54075cc3b81dfb9fa30d0ecc77a881cf9c613d0606a42fb79f9723`,
+staged the verified candidate and finalized it on shutdown. A
+kernel EXT4 message interrupted the third baseline receipt chunk
+inside its Base64 payload. The host stopped before the updated
+boot. Change `uornztuk` puts complete, bounded JSON lines on a named
+VirtIO evidence port and keeps the UART for prompts and diagnosis.
+Run `45918999917` exercises the independent transport for both
+profiles under the same caps.
+[Development serial evidence](https://github.com/closure-labs/finite/actions/runs/45907617967/artifacts/15163276195)
+[Dedicated evidence channel run](https://github.com/closure-labs/finite/actions/runs/45918999917)
 
 The local `qualification/native-migration` bookmark prepares the
 workstation-layout rehearsal. Changes `pmmnzpkr`, `nwsysplz` and
 `vvpvlpot` add the exact sparse GPT fixture, old OSTree and new
 `root-native` subvolumes, shared home and Nix state, independent LUKS
-keyslots, and three isolated failure cases. The local regular-file
-checks verified GPT and keyslot arithmetic. The hosted rehearsal
-follows both lifecycle passes and supplies the evidence needed for the
-hardware runbook.
+keyslots, and three isolated failure cases. Change `vyqvysvx` boots
+the attached rescue ISO using a one-time entry on later forks so
+OVMF preserves the baseline EFI order. Change `pvvmxtkk` reads
+each rehearsal checkpoint from the dedicated evidence port. The
+local regular-file checks verified GPT and keyslot arithmetic.
+The hosted rehearsal follows both lifecycle passes and supplies
+the evidence needed for the hardware runbook.
 
 ## Next execution sequence
 
