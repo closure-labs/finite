@@ -89,6 +89,39 @@ class Upgrade(unittest.TestCase):
             self.assertEqual([r['status'] for r in rows], [0, 7])
             self.assertNotIn('homebrew-setup', [r['stage'] for r in rows])
 
+    def test_brew_journal_is_bounded_and_only_collected_on_standard_home_init_failure(self):
+        source = (ROOT / 'scripts/bluebuild/vm-functional.sh').read_text()
+        guest = source.split("<<'GUEST' 2>&1 | python3 scripts/bluebuild/guest-timings.py", 1)[1].split('\n', 1)[1]
+        trap_setup = guest[:guest.index('guest_begin startup-checks')]
+        fixture = """
+guest_disk_snapshot() { :; }
+journalctl() { return 99; }
+timeout() {
+    printf '%s\n' "$*"
+    head -c 20000 /dev/zero | tr '\\000' 'x'
+    return 124
+}
+guest_begin "$2"
+exit "$3"
+"""
+        # Replace the timer helper's external timeout with the fixture only
+        # after overriding disk snapshots, so output is journal-specific.
+        cases = [('finite', 'home-init', 7, True),
+                 ('finite-dev', 'home-init', 7, False),
+                 ('finite', 'homebrew-setup', 7, False),
+                 ('finite', 'home-init', 0, False)]
+        for profile, stage, code, capture in cases:
+            with self.subTest(profile=profile, stage=stage, code=code):
+                result = subprocess.run(['bash', '-s', '--', profile, stage, str(code)],
+                                        input=trap_setup + fixture, text=True, capture_output=True)
+                self.assertEqual(result.returncode, code)
+                self.assertEqual('BEGIN Bluefin brew-preinstall diagnostics' in result.stdout, capture)
+                self.assertIn(f'FINITE_GUEST_STAGE {stage} ', result.stdout)
+                if capture:
+                    self.assertIn('10s journalctl --user --boot --unit=brew-preinstall.service --no-pager --lines=100', result.stdout)
+                    self.assertIn('END Bluefin brew-preinstall diagnostics', result.stdout)
+                    self.assertLess(len(result.stdout), 17000)
+
     def test_marker_is_verified_after_initialization_before_upgrade(self):
         source = (ROOT / 'scripts/bluebuild/vm-functional.sh').read_text()
         probe = source.split("<<'HOME_INITIALIZED'\n", 1)[1].split('\nHOME_INITIALIZED', 1)[0]

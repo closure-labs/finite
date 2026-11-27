@@ -25,6 +25,7 @@ guest_now() {
   read -r uptime unused </proc/uptime
   printf '%s\n' "${uptime%.*}"
 }
+guest_profile=${1-}
 guest_stage=
 guest_started=0
 guest_finish() {
@@ -49,6 +50,15 @@ guest_disk_snapshot() {
 guest_exit() {
   local status=$?
   trap - EXIT
+  if [[ $status != 0 && ${guest_stage-} == home-init && ${guest_profile-} == finite ]]; then
+    # Capture only the stock Bluefin user unit in this disposable guest, while
+    # the desktop user's session bus is still available. Keep the original
+    # failure status, even when journal capture is unavailable.
+    printf 'BEGIN Bluefin brew-preinstall diagnostics\n'
+    timeout 10s journalctl --user --boot --unit=brew-preinstall.service \
+      --no-pager --lines=100 2>&1 | head -c 16384 || true
+    printf '\nEND Bluefin brew-preinstall diagnostics\n'
+  fi
   guest_disk_snapshot after-initialize
   guest_finish "$status"
   exit "$status"
