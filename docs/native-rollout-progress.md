@@ -439,9 +439,17 @@ the attached rescue ISO using a one-time entry on later forks so
 OVMF preserves the baseline EFI order. Change `pvvmxtkk` reads
 each rehearsal checkpoint from the dedicated evidence port. The
 local regular-file checks verified GPT and keyslot arithmetic. Run
-`45930095266` began after both lifecycle receipts were verified and
-will produce the evidence required for the hardware runbook.
-[Workstation-layout rehearsal](https://github.com/closure-labs/finite/actions/runs/45930095266)
+`45930095266` began after both lifecycle receipts were verified. Its
+rescue ISO booted, created the encrypted layout and installed the
+Finite OSTree image and Fedora shim/GRUB. The pre-reboot BLS check
+stopped the run before any shrink. Finite's default `root-mount-spec`
+skips bootc's subvolume detection, so the generated entry lacked
+explicit old-root selection. Change `olkqxqly` passes the actual
+filesystem UUID and `rootflags=subvol=/root` to the fixture install
+and checks the generated BLS entry. Run `45938632142` tests the fix
+and the remaining migration phases.
+[First rehearsal artifact](https://github.com/closure-labs/finite/actions/runs/45930095266/artifacts/15171412216)
+[Workstation-layout rehearsal retry](https://github.com/closure-labs/finite/actions/runs/45938632142)
 
 ## Next execution sequence
 
