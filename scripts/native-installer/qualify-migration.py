@@ -75,7 +75,7 @@ def qualify(args):
         print('Rehearsal rescue phase ' + phase, flush=True)
         with (args.evidence / f'{phase}-serial.log').open('xb') as log:
             with Guest(command, log, 2400) as guest:
-                firmware_boot = guest.record(b'FINITE_MIGRATION')
+                firmware_boot = guest.record('FINITE_MIGRATION')
                 require(firmware_boot['phase'] == 'rescue-boot', 'Missing rescue boot identity')
                 observations['rescue-boot'] = firmware_boot
                 if baseline is not None:
@@ -88,7 +88,7 @@ def qualify(args):
                     guest.expect(rb'LUKS alternate passphrase:')
                     guest.send(alternate)
                 for event in [*events, 'shutdown']:
-                    outcome = guest.record(b'FINITE_MIGRATION')
+                    outcome = guest.record('FINITE_MIGRATION')
                     require(outcome['phase'] == event, 'Out-of-order rescue checkpoint for ' + phase)
                     observations[event] = outcome
                 guest.shutdown()
@@ -100,7 +100,7 @@ def qualify(args):
             with Guest(guest_command(disk, vars_file, phase), log, 900) as guest:
                 guest.expect(rb'(?i)(?:please )?(?:enter passphrase|password for|unlock disk)[^\r\n]{0,200}:')
                 guest.send(alternate if phase == 'new' else password)
-                result = guest.record(b'FINITE_MIGRATION_BOOT')
+                result = guest.record('FINITE_MIGRATION_BOOT')
                 guest.shutdown()
         result['unlockKeyslot'] = 'alternate' if phase == 'new' else 'primary'
         return result
