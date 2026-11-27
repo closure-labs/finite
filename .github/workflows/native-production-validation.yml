@@ -37,9 +37,14 @@ jobs:
         with:
           job-profile: image
           resource-mode: native-qualification
-      - name: Verify the immutable importer against the production lock
+      - name: Capture the importer ELF and verify the production lock
         run: |
           importer=$(python3 scripts/native-installer/watch-memory.py nix build --max-jobs 1 --cores 2 --file lib/ci-tools.nix native-bootc --no-link --print-out-paths)
+          mkdir "$RUNNER_TEMP/importer-readiness"
+          cp -- "$importer/bin/bootc" "$RUNNER_TEMP/importer-readiness/bootc"
+          readelf -Wd -n -S "$importer/bin/bootc" > "$RUNNER_TEMP/importer-readiness/elf.txt"
+          nix-store --query --deriver "$importer" > "$RUNNER_TEMP/importer-readiness/derivation.txt"
+          sha256sum "$importer/bin/bootc"
           python3 - "$importer/bin/bootc" <<'PY'
           import json
           from pathlib import Path
@@ -53,6 +58,14 @@ jobs:
           verify['check_importer'](executable, lock)
           print('Reviewed production importer matched')
           PY
+      - name: Retain public importer comparison inputs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-importer-${{ matrix.runner }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/importer-readiness/
+          if-no-files-found: warn
+          retention-days: 7
 
   inputs:
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
