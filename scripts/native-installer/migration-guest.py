@@ -179,18 +179,24 @@ def legacy(disk, secret, alternate, rescue_entry):
     process('bootc', 'install', 'mount', '--sysroot', TARGET, '--latest', DEPLOYMENT)
     account_and_home(DEPLOYMENT, fsuuid, rescue_entry=rescue_entry)
     process('umount', '--recursive', DEPLOYMENT)
-    options = [line.split()[1:] for path in (TARGET / 'boot/loader/entries').glob('*.conf')
-               for line in path.read_text().splitlines() if line.startswith('options ')]
-    selections = [sorted(arg for arg in entry if arg.startswith(('root=', 'rootflags=')))
-                  for entry in options if any(arg.startswith('ostree=') for arg in entry)]
-    require(['root=' + root_spec, subvolume] in selections,
-            f'Unexpected original OSTree BLS root selection: {selections}')
+    boot_dir = TARGET / 'boot'
+    loader = boot_dir / 'loader'
+    # Retain the offline view for triage. The running GRUB entry and actual
+    # mounted old subvolume are the gate before opening any migration fork.
+    bls_entries = {}
+    for entry in sorted(boot_dir.glob('loader*/entries/*.conf')):
+        options = [words[1:] for line in entry.read_text().splitlines()
+                   if (words := line.split()) and words[0] == 'options']
+        bls_entries[str(entry.relative_to(boot_dir))] = [
+            arg for row in options for arg in row if arg.startswith(('root=', 'rootflags=', 'ostree='))]
+    boot_inventory = {'loaderLink': os.readlink(loader) if loader.is_symlink() else None,
+                      'topLevel': sorted(entry.name for entry in boot_dir.iterdir()), 'blsEntries': bls_entries}
     process('umount', '--recursive', TARGET)
     process('umount', TOP, MEDIA)
     process('cryptsetup', 'close', MAPPER)
     _, order = boot_firmware()
     mark('legacy-created', bootOrder=order, gpt=table(disk), luksKeyslots=len(keyslots),
-         rootMountSpec=root_spec, rootFlags=subvolume)
+         rootMountSpec=root_spec, rootFlags=subvolume, bootInventory=boot_inventory)
 
 
 def resize(disk, secret, *, interrupt=False):

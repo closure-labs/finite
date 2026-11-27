@@ -118,6 +118,9 @@ def qualify(args):
     before = boot(original, variables, 'old-initialize', 'legacy-before')
     require(before['nextRescue'] == created['rescue-boot']['bootCurrent'],
             'Legacy boot selected an unexpected rescue entry for subsequent forks')
+    root_spec = created['legacy-created']['rootMountSpec']
+    require(before['rootMountSpec'] == root_spec and before['rootSubvolume'] == '/root',
+            'Original firmware path did not boot the exact legacy Btrfs root')
     boots = {'legacyBefore': before}
     recovery = {}
     for phase, events in (
@@ -142,6 +145,8 @@ def qualify(args):
                 and phase['native'] == (name == 'nativeBootNext'), 'Unexpected BootOrder or boot path for ' + name)
         if name != 'nativeBootNext':
             require(phase['bootCurrent'] == before['bootCurrent'], 'Original Fedora entry changed for ' + name)
+            require(phase['rootMountSpec'] == root_spec and phase['rootSubvolume'] == '/root',
+                    'Original Btrfs root changed for ' + name)
     native = boots['nativeBootNext']
     require(native['bootCurrent'] == staged['native-armed']['bootNext']
             and 'composefs.digest=v1-sha512-12:' + seal['bootableRootDigest'] in native['preflight']['cmdline'].split(),

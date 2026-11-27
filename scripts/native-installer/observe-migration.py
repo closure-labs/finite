@@ -26,6 +26,8 @@ def main():
             'Unexpected migration boot phase')
     command_line = Path('/proc/cmdline').read_text().split()
     native = identifier == 'finite-migration-new'
+    root_mount_spec = None
+    root_subvolume = run('findmnt', '-n', '-o', 'FSROOT', '--mountpoint', '/sysroot')
     if native:
         preflight = runpy.run_path('/etc/finite-migration/preflight.py')['inspect']()
         require(not preflight['blockers'], 'Full native preflight failed: ' + str(preflight['blockers']))
@@ -39,11 +41,14 @@ def main():
                 and deployment['missingVerityAllowed'] is False, 'Unexpected native integrity policy')
         require(not any(arg.startswith(('root=', 'rootflags=', 'rd.luks.')) for arg in command_line),
                 'Native boot is using machine-specific root or LUKS arguments')
-        require(run('findmnt', '-n', '-o', 'FSROOT', '--mountpoint', '/sysroot') == '/root-native',
-                'Native sysroot is not in root-native')
+        require(root_subvolume == '/root-native', 'Native sysroot is not in root-native')
     else:
-        require(any(arg.startswith('ostree=') for arg in command_line) and 'rootflags=subvol=/root' in command_line
-                and Path('/run/ostree-booted').exists(), 'Original OSTree root did not boot')
+        roots = [arg.removeprefix('root=') for arg in command_line if arg.startswith('root=')]
+        flags = [arg for arg in command_line if arg.startswith('rootflags=')]
+        require(len(roots) == 1 and roots[0].startswith('UUID=') and flags == ['rootflags=subvol=/root']
+                and root_subvolume == '/root' and any(arg.startswith('ostree=') for arg in command_line)
+                and Path('/run/ostree-booted').exists(), 'Original OSTree root did not boot explicitly')
+        root_mount_spec = roots[0]
         preflight = None
     require(run('mokutil', '--sb-state').splitlines()[0] == 'SecureBoot enabled', 'Secure Boot disabled')
     require(run('getenforce') == 'Enforcing', 'SELinux not enforcing')
@@ -85,6 +90,7 @@ def main():
     emit_record('FINITE_MIGRATION_BOOT', {
         'native': native, 'bootOrder': order, 'bootCurrent': current,
         'nextRescue': next_rescue,
+        'rootMountSpec': root_mount_spec, 'rootSubvolume': root_subvolume,
         'bootId': Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
         'preflight': preflight, 'secureBoot': True, 'selinuxEnforcing': True,
         'uid': 1234, 'gid': 2345, 'sharedHome': True, 'sharedNix': True,
