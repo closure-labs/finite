@@ -468,9 +468,20 @@ Run `45962209031` tests that backend selection. Change `wmwtptsl`
 lets the rehearsal reuse the independent lifecycle input jobs.
 The Nix payload and locked RPM started together and passed in
 21m53s and 11m59s respectively. The rehearsal runner verified both
-same-run inputs before image builds. Migration acceptance still
-requires both boot paths and all three recovery forks.
+same-run inputs before image builds.
 [OSTree migration rehearsal](https://github.com/closure-labs/finite/actions/runs/45962209031)
+
+The installed legacy OSTree system passed its GRUB boot, encrypted
+`/root` mount, Secure Boot, SELinux and shared home and Nix checks.
+On the first recovery fork, OVMF had reassigned the original rescue
+entry number to the installed disk. The fork booted the legacy
+unlock prompt and timed out before any shrink. Change `mqprssto`
+creates an entry for the rescue ISO's exact GPT ESP and fallback
+loader and uses it only via BootNext. It keeps the original BootOrder
+and rechecks the firmware device path during each fork. Run
+`45979289021` tests that selection and the recovery phases.
+[Legacy boot and recovery console](https://github.com/closure-labs/finite/actions/runs/45962209031/artifacts/15188365605)
+[GPT rescue rehearsal](https://github.com/closure-labs/finite/actions/runs/45979289021)
 
 ## Next execution sequence
 
