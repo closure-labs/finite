@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "bootcVersion": "bootc 1.17.1",
-  "bootcSha256": "bc4cf9f1f133eb5a583f1d6591e0506bd2a20a87fc7b2dbf24fd8ba06da05c4c",
+  "bootcSha256": "59121d7c612836629db48dc3502a22f8ebf64f83625fad512b1b632a3ebb29d2",
   "nixSourcePin": "sources/native-bootc.json",
   "architecture": "x86_64",
   "interface": "bootc internals cfs",
