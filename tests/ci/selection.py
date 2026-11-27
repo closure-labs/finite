@@ -45,6 +45,14 @@ class Selection(unittest.TestCase):
         self.assertEqual(impact.classify([*impact.HOST_SCANNER_ONLY, 'flake.lock']),
                          {'checks': True, 'nix': True, 'profiles': []})
 
+    def test_native_console_harness_keeps_source_checks_without_default_image_builds(self):
+        harness = [
+            'scripts/native-installer/qualify-iso.py',
+            'scripts/native-installer/qualify-production.py',
+        ]
+        self.assertEqual(impact.classify(harness), {'checks': True, 'nix': False, 'profiles': []})
+        self.assertEqual(impact.classify([*harness, 'recipes/finite-dev.yml'])['profiles'], ['finite-dev'])
+
     def test_scanner_dependencies_remain_host_only(self):
         allowed = {('incoming-secret-scan.yml', 'scan'),
                    ('finding-id-fixtures.yml', 'fixtures'),

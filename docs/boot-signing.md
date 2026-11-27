@@ -113,6 +113,18 @@ verify Secure Boot and SELinux, and record the encrypted mounts and EFI update.
 Only a successful qualification uploads the exact ISO. Publication, production
 MOK enrollment through MokManager and physical acceptance remain separate gates.
 
+The disposable console rehearsal at `96befe78` passed with the production
+UKI command line and a temporary signing certificate. The first attempt
+reached the installer prompts and timed out before observing a key. The
+successful attempt masked the serial getty on the same guest UART as the
+debug shell. It exercised the normal encrypted install, entered the
+installer-generated recovery key at the graphical prompt, and independently
+matched the installed UKI and composefs root to the seal. The guest ran offline
+with 2 vCPUs, 3072 MiB memory and a 3072 MiB host reserve. The receipt carries
+`validationOnly: true` and records this specific disposable ISO.
+[First console attempt](https://github.com/closure-labs/finite/actions/runs/46051724775)
+[Console acceptance receipt](https://github.com/closure-labs/finite/actions/runs/46062576108/artifacts/15233010426)
+
 The `qualification/native-production-readiness` branch runs a credential-free
 importer check on two ephemeral runners. It can diagnose a pinned executable
 mismatch before a production run. The signing job requires the reviewed
