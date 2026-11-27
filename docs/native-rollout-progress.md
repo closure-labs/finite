@@ -414,7 +414,23 @@ profiles under the same caps.
 [Development serial evidence](https://github.com/closure-labs/finite/actions/runs/45907617967/artifacts/15163276195)
 [Dedicated evidence channel run](https://github.com/closure-labs/finite/actions/runs/45918999917)
 
-The local `qualification/native-migration` bookmark prepares the
+Both profiles passed the dedicated-channel run at source revision
+`74b8e04082ae1d3750026c01e74b4aa2be7ddb05`. Their jobs started at the
+same second and finished in 90m17s and 90m29s. The whole workflow
+finished in 112m22s. Each guest installed from its hybrid ISO and
+verified five separate boots, including kernel `7.2.11` to `7.3.4`
+and back and systemd-boot `262-3.fc45` to `262.1-1.fc45` and back.
+The downloaded artifacts bind the ISO to its sealed roots, boot
+certificate and bootc RPM. The dedicated JSONL receipts match the
+accepted stage, update, rollback and shutdown observations. Both
+upstream update bases omit ZFS and boot with signed v4l2loopback.
+
+| Profile | ISO SHA-256 | Hosted evidence |
+| --- | --- | --- |
+| `finite-native` | `ec392bea04be11ba44b968776380aeb5ee1fbad04d64a8d043a45dbdf2dedab7` | [Stable artifact](https://github.com/closure-labs/finite/actions/runs/45918999917/artifacts/15168690054) |
+| `finite-native-dev` | `ed619ba3464e4c7e43125e4ef5346473b6201660db10442279396c29592286a6` | [Development artifact](https://github.com/closure-labs/finite/actions/runs/45918999917/artifacts/15167956512) |
+
+The `qualification/native-migration` bookmark contains the
 workstation-layout rehearsal. Changes `pmmnzpkr`, `nwsysplz` and
 `vvpvlpot` add the exact sparse GPT fixture, old OSTree and new
 `root-native` subvolumes, shared home and Nix state, independent LUKS
@@ -422,9 +438,10 @@ keyslots, and three isolated failure cases. Change `vyqvysvx` boots
 the attached rescue ISO using a one-time entry on later forks so
 OVMF preserves the baseline EFI order. Change `pvvmxtkk` reads
 each rehearsal checkpoint from the dedicated evidence port. The
-local regular-file checks verified GPT and keyslot arithmetic.
-The hosted rehearsal follows both lifecycle passes and supplies
-the evidence needed for the hardware runbook.
+local regular-file checks verified GPT and keyslot arithmetic. Run
+`45930095266` began after both lifecycle receipts were verified and
+will produce the evidence required for the hardware runbook.
+[Workstation-layout rehearsal](https://github.com/closure-labs/finite/actions/runs/45930095266)
 
 ## Next execution sequence
 
