@@ -46,7 +46,7 @@ def bind(directory, profile, digest):
             or any(verified.get(key) != seal['integrity'].get(key) for key in (
                 'bootableRootDigest', 'certificateDerSha256', 'ukis'))):
         raise ValueError('Independent production import differs from the protected signer receipt')
-    return {'schema': 1, 'profile': profile, 'image': reference, 'sourceRevision': revision,
+    return {'schema': 1, 'validationOnly': False, 'profile': profile, 'image': reference, 'sourceRevision': revision,
             'producerRun': os.environ['GITHUB_RUN_ID'], 'producerAttempt': os.environ['GITHUB_RUN_ATTEMPT'],
             'artifact': f'image-{profile}-{os.environ["GITHUB_RUN_ID"]}-{os.environ["GITHUB_RUN_ATTEMPT"]}',
             'archiveSha256': verified['archiveSha256'], 'bootableRootDigest': verified['bootableRootDigest'],
