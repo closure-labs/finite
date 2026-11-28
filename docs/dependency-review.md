@@ -55,6 +55,14 @@ change that needs a pattern: add it to the JSON file and both
 `tests/fixtures/repository-security` snapshots in the PR that introduces the
 action, then add it to the live setting.
 
+One pattern covers an action that no file under `.github` references:
+`DeterminateSystems/nix-installer-action@*`. The pinned
+`DeterminateSystems/determinate-nix-action` used by
+`.github/actions/setup-nix` is a composite action that calls it internally,
+and the allowed-actions setting also applies to actions called inside
+composite actions. Do not remove it as unused. Before removing any pattern,
+check the nested `uses:` steps of the actions that remain.
+
 ## Never use "Update branch" on a Dependabot PR
 
 "Update branch" adds a merge commit authored by the person who clicked it. The
