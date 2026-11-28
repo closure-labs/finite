@@ -98,13 +98,16 @@ class BlueBuildContracts(unittest.TestCase):
         publication = read('.github/workflows/publication.yml')
         self.assertEqual(publication['jobs']['build']['uses'], '$/.github/workflows/image.yml')
         self.assertIs(publication['jobs']['build']['with']['publish'], True)
-        native = read('.github/workflows/native-image.yml')
-        payload = ('payload_artifact_id', 'payload_sha256', 'payload_revision', 'payload_run', 'payload_attempt')
-        for name in payload:
-            self.assertIn(name, native[True]['workflow_call']['inputs'])
-            self.assertEqual(native['jobs']['root']['with'][name], '${{ inputs.' + name + ' }}')
+        native = read('.github/workflows/native-production-validation.yml')
+        root = native['jobs']['root']
+        self.assertEqual(root['uses'], '$/.github/workflows/image.yml')
+        self.assertIs(root['with']['publish'], True)
+        payload = {'payload_artifact_id': 'payload_id', 'payload_sha256': 'payload_sha',
+                   'payload_revision': 'payload_revision', 'payload_run': 'payload_run',
+                   'payload_attempt': 'payload_attempt'}
+        for name, output in payload.items():
+            self.assertEqual(root['with'][name], '${{ needs.inputs.outputs.' + output + ' }}')
         self.assertEqual(native['env']['FINITE_CI_VARS'], '${{ toJSON(vars) }}')
-        self.assertEqual(native['jobs']['seal']['uses'], '$/.github/workflows/boot-signing.yml')
         # Automatic publication stays on the qualified pair until the native VM
         # workflow can authenticate encrypted native acceptance independently.
         import sys

@@ -71,17 +71,18 @@ jobs:
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     uses: $/.github/workflows/native-qualification-inputs.yml
 
-  candidate:
+  root:
     needs: inputs
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
       actions: read
-    uses: $/.github/workflows/native-image.yml
+    uses: $/.github/workflows/image.yml
     with:
       profile: ${{ inputs.channel }}
       channel: ${{ inputs.channel }}
+      publish: true
       force_qualification: true
       payload_artifact_id: ${{ needs.inputs.outputs.payload_id }}
       payload_sha256: ${{ needs.inputs.outputs.payload_sha }}
@@ -89,9 +90,141 @@ jobs:
       payload_run: ${{ needs.inputs.outputs.payload_run }}
       payload_attempt: ${{ needs.inputs.outputs.payload_attempt }}
 
+  seal:
+    name: Seal the exact native root in the protected environment
+    needs: root
+    if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      packages: write
+      actions: read
+    environment: boot-signing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    outputs:
+      digest: ${{ steps.finalize.outputs.digest }}
+      evidence: ${{ steps.finalize.outputs.evidence }}
+    env:
+      PROFILE: ${{ inputs.channel }}
+      SOURCE_DIGEST: ${{ needs.root.outputs.digest }}
+      SOURCE_REVISION: ${{ needs.root.outputs.source_revision }}
+      BUILD_IDENTITY: ${{ needs.root.outputs.identity }}
+      ROOT_EVIDENCE: ${{ needs.root.outputs.evidence }}
+    steps:
+      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+        with:
+          egress-policy: audit
+      - name: Validate the protected workflow and root evidence
+        run: |
+          [[ $GITHUB_REPOSITORY == closure-labs/finite && $GITHUB_REF == refs/heads/main ]]
+          [[ $GITHUB_WORKFLOW_REF == closure-labs/finite/.github/workflows/native-production-validation.yml@refs/heads/main ]]
+          [[ $SOURCE_REVISION == "$GITHUB_SHA" && $SOURCE_REVISION =~ ^[0-9a-f]{40}$ ]]
+          [[ $PROFILE == finite-native || $PROFILE == finite-native-dev ]]
+          [[ $SOURCE_DIGEST =~ ^sha256:[0-9a-f]{64}$ && $BUILD_IDENTITY =~ ^v1:[0-9a-f]{64}$ ]]
+          [[ $ROOT_EVIDENCE == "root-image-$PROFILE-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" ]]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: $/.github/actions/setup-nix
+        with:
+          job-profile: image
+          resource-mode: native-qualification
+      - name: Reject obsolete source before boot signing setup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - name: Free disk space without third-party code
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost
+          df -h
+      - name: Prepare pinned native signing tools without credentials
+        run: | # zizmor: ignore[github-env]
+          tools=$(nix build --file lib/ci-tools.nix native-boot-tools --out-link "$RUNNER_TEMP/native-tools" --print-out-paths)
+          importer=$(nix build --file lib/ci-tools.nix native-bootc --out-link "$RUNNER_TEMP/native-importer" --print-out-paths --cores 2)
+          resolver=$(nix build --file lib/ci-tools.nix ci-secrets-run --out-link "$RUNNER_TEMP/native-resolver" --print-out-paths)
+          [[ $tools =~ ^/nix/store/[a-z0-9]{32}-finite-native-boot-tools$ ]]
+          [[ $importer =~ ^/nix/store/[a-z0-9]{32}-finite-native-bootc-importer-1.17.1$ ]]
+          [[ $resolver =~ ^/nix/store/[a-z0-9]{32}-finite-ci-secrets-run$ ]]
+          importer_sha=$(sha256sum "$importer/bin/bootc" | cut -d' ' -f1)
+          printf 'Canonical importer SHA-256: %s\n' "$importer_sha"
+          jq -e --arg sha "$importer_sha" \
+            '([.bootcSha256] + (.additionalBootcSha256 // [])) | index($sha) != null' \
+            sources/native-composefs-verifier.json >/dev/null
+          [[ $("$importer/bin/bootc" --version) == "$(jq -er .bootcVersion sources/native-composefs-verifier.json)" ]]
+          epoch=$(git show -s --format=%ct "$SOURCE_REVISION")
+          [[ $epoch =~ ^[0-9]+$ ]]
+          {
+            echo "BOOT_TOOLS=$tools"
+            echo "BOOT_EPOCH=$epoch"
+          } >>"$GITHUB_ENV"
+          {
+            echo "$tools/bin"
+            echo "$importer/bin"
+            echo "$resolver/bin"
+          } >>"$GITHUB_PATH"
+      - name: Bind unsigned native root
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$ROOT_EVIDENCE" --dir .bluebuild
+          printf '%s' "$REGISTRY_TOKEN" | skopeo login --authfile "$RUNNER_TEMP/native-auth.json" --username "$REGISTRY_USER" --password-stdin ghcr.io
+          source="ghcr.io/closure-labs/finite@$SOURCE_DIGEST"
+          skopeo inspect --authfile "$RUNNER_TEMP/native-auth.json" "docker://$source" >"$RUNNER_TEMP/native-source-info.json"
+          skopeo --tmpdir "$RUNNER_TEMP" copy --authfile "$RUNNER_TEMP/native-auth.json" "docker://$source" "oci-archive:$RUNNER_TEMP/native-root.oci.tar"
+          python3 scripts/bluebuild/native-handoff.py prepare --directory .bluebuild --profile "$PROFILE" \
+            --digest "$SOURCE_DIGEST" --revision "$SOURCE_REVISION" --identity "$BUILD_IDENTITY" \
+            --info "$RUNNER_TEMP/native-source-info.json" --archive "$RUNNER_TEMP/native-root.oci.tar"
+      - name: Recheck source before resolving boot signing credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+      - name: Seal native archive with scoped production key
+        env:
+          FINITE_BOOT_SIGNING_KEY: ${{ secrets.FINITE_BOOT_SIGNING_KEY }}
+        run: |
+          finite-ci-secrets-run boot-signing -- python3 scripts/bluebuild/seal-native.py \
+            --source "$RUNNER_TEMP/native-root.oci.tar" --output "$RUNNER_TEMP/native-sealed.oci.tar" \
+            --work "$RUNNER_TEMP/native-seal" --tools "$BOOT_TOOLS" --profile "$PROFILE" \
+            --revision "$SOURCE_REVISION" --epoch "$BOOT_EPOCH"
+      - name: Upload verified sealed candidate without signing credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
+          current=$(skopeo inspect --authfile "$RUNNER_TEMP/native-auth.json" --format '{{.Digest}}' "docker://ghcr.io/closure-labs/finite:candidate-$PROFILE")
+          [[ $current == "$SOURCE_DIGEST" ]]
+          skopeo --tmpdir "$RUNNER_TEMP" copy --preserve-digests --authfile "$RUNNER_TEMP/native-auth.json" \
+            "oci-archive:$RUNNER_TEMP/native-sealed.oci.tar" "docker://ghcr.io/closure-labs/finite:candidate-$PROFILE"
+      - name: Verify assembled native image
+        run: bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$PROFILE" true
+      - name: Bind sealed image evidence
+        id: finalize
+        run: |
+          digest=$(cat ".bluebuild/$PROFILE-image-ref.txt")
+          digest=${digest##*@}
+          skopeo inspect --authfile "$RUNNER_TEMP/native-auth.json" "docker://ghcr.io/closure-labs/finite@$digest" >"$RUNNER_TEMP/native-final-info.json"
+          python3 scripts/bluebuild/native-handoff.py finalize --directory .bluebuild --profile "$PROFILE" \
+            --digest "$digest" --revision "$SOURCE_REVISION" --identity "$BUILD_IDENTITY" \
+            --info "$RUNNER_TEMP/native-final-info.json" --archive "$RUNNER_TEMP/native-sealed.oci.tar" \
+            --receipt "$RUNNER_TEMP/native-seal/sealed.json"
+      - name: Save sealed build evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: image-${{ inputs.channel }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/
+          include-hidden-files: true
+          retention-days: 14
+      - name: Remove registry credentials
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/native-auth.json"
+
   exact-media:
     name: Verify exact production image and boot its ISO
-    needs: candidate
+    needs: [root, seal]
     if: github.repository == 'closure-labs/finite' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -120,9 +253,9 @@ jobs:
       - name: Independently verify the same-run seal and qualify its exact ISO
         env:
           PROFILE: ${{ inputs.channel }}
-          DIGEST: ${{ needs.candidate.outputs.digest }}
-          SOURCE_REVISION: ${{ needs.candidate.outputs.source_revision }}
-          SEAL_ARTIFACT: ${{ needs.candidate.outputs.evidence }}
+          DIGEST: ${{ needs.seal.outputs.digest }}
+          SOURCE_REVISION: ${{ needs.root.outputs.source_revision }}
+          SEAL_ARTIFACT: ${{ needs.seal.outputs.evidence }}
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/native-installer/watch-memory.py bash scripts/native-installer/hosted-production.sh
       - name: Retain production candidate and VM evidence
