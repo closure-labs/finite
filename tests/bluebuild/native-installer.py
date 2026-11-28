@@ -580,11 +580,24 @@ class Media(unittest.TestCase):
         document = yaml.safe_load((ROOT / '.github/workflows/native-production-validation.yml').read_text())
         self.assertEqual(document['permissions'], {'contents': 'read'})
         jobs = document['jobs']
-        self.assertEqual(jobs['candidate']['uses'], '$/.github/workflows/native-image.yml')
-        for name in ('inputs', 'candidate', 'exact-media'):
+        for name in ('inputs', 'root', 'seal', 'exact-media'):
             self.assertIn("github.ref == 'refs/heads/main'", jobs[name]['if'])
         self.assertIn("github.ref == 'refs/heads/qualification/native-production-readiness'", jobs['importer-readiness']['if'])
-        self.assertEqual(jobs['exact-media']['needs'], 'candidate')
+        seal = jobs['seal']
+        self.assertEqual(seal['environment'], 'boot-signing')
+        self.assertEqual(seal['needs'], 'root')
+        self.assertIn("github.event_name == 'workflow_dispatch'", seal['if'])
+        self.assertNotIn('uses', seal)
+        secret_steps = [(name, step['name'], key) for name, job in jobs.items()
+                        for step in job.get('steps', []) for key, value in step.get('env', {}).items()
+                        if 'secrets.' in value]
+        self.assertEqual(secret_steps, [('seal', 'Seal native archive with scoped production key',
+                                        'FINITE_BOOT_SIGNING_KEY')])
+        self.assertEqual(jobs['exact-media']['needs'], ['root', 'seal'])
+        consumer = next(step for step in jobs['exact-media']['steps'] if 'hosted-production.sh' in step.get('run', ''))
+        self.assertEqual(consumer['env']['DIGEST'], '${{ needs.seal.outputs.digest }}')
+        self.assertEqual(consumer['env']['SEAL_ARTIFACT'], '${{ needs.seal.outputs.evidence }}')
+        self.assertEqual(consumer['env']['SOURCE_REVISION'], '${{ needs.root.outputs.source_revision }}')
         self.assertEqual(jobs['exact-media']['permissions']['packages'], 'read')
         self.assertNotIn('secrets', jobs['exact-media'])
         self.assertNotIn('always()', jobs['exact-media']['steps'][-1].get('if', ''))

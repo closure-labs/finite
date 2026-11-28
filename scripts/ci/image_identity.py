@@ -70,7 +70,7 @@ def identity(profile, root, payload=None):
     paths.extend((root / 'sources').glob('bluefin*'))
     paths.extend((root / 'automation/security').glob('*.json'))
     paths.extend(root / '.github/workflows' / name for name in ('image.yml', 'publication.yml', 'iso.yml', 'vm-acceptance.yml'))
-    paths.extend(root / '.github/workflows' / name for name in ('native-image.yml', 'boot-signing.yml'))
+    paths.append(root / '.github/workflows/native-production-validation.yml')
     paths.extend((root / '.github/workflows').glob('*qualification*.yml'))
     entries = []
     for path in sorted(set(paths)):

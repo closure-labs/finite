@@ -55,8 +55,9 @@ Root build artifacts use `root-image-*` only for native signing; default
 publication retains `image-*`. Setup actions declare the current workload roles.
 
 `publication.yml` routes the qualified OSTree pair through `image.yml`.
-`native-image.yml` has the protected root/seal interface and forwards same-run
-payload identities, but it is not an enabled native channel publisher.
+`native-production-validation.yml` passes same-run payload identities to
+`image.yml` and seals the resulting digest in its protected `seal` job. This
+workflow writes an isolated candidate tag for qualification.
 `publication.py promote` explicitly rejects the native profiles until dedicated
 native acceptance exists. Do not remove that guard just to get a green run.
 
@@ -520,6 +521,38 @@ first rescue phase. All guest phases and final checks took about 29 minutes.
 The operator sequence uses the measured geometry and rollback checkpoints.
 [Workstation migration runbook](workstation-native-migration-runbook.md)
 
+## Reviewed importer lifecycle and production signing
+
+Both jobs in [run 46061995549](https://github.com/closure-labs/finite/actions/runs/46061995549)
+passed on source `4e802ac1ad665fad687d6d26a91f6c96832e4b08` with the locked
+canonical importer SHA-256
+`59121d7c612836629db48dc3502a22f8ebf64f83625fad512b1b632a3ebb29d2`.
+Both retained evidence bundles were compared against their five boot records.
+The capped VMs exercised encrypted initial installation, staging before reboot,
+booting the upgraded deployment, staging a rollback and booting the restored
+deployment. Both exercised kernel `7.2.11-300.fc45.x86_64` to
+`7.3.4-300.fc45.x86_64` and back, plus a real systemd-boot update and rollback.
+They verified Secure Boot, LUKS, SELinux enforcing, a strict composefs root,
+signed ESP and fallback loaders and the preserved `/etc` and `/var` sentinels.
+The stable ISO SHA-256 was
+`9504c6483894ff4f23bc3d562890e07673e641dda14c3480a1176b992af1079b`.
+The dev ISO SHA-256 was
+`5e56a63cf455eab0236dfdc539b03bea670603fd53478a1f67a48846bffd27b2`.
+Both used disposable signing certificates.
+[Stable evidence](https://github.com/closure-labs/finite/actions/runs/46061995549/artifacts/15235731645)
+[Dev evidence](https://github.com/closure-labs/finite/actions/runs/46061995549/artifacts/15237484181)
+
+[Production run 46076475582](https://github.com/closure-labs/finite/actions/runs/46076475582)
+built unsigned digest
+`sha256:15f7711c6ecabb499595a8a7d045f5e91b2950381d6a99257d1a0e450046d1c5`
+from main `b46e3ba5c8fb5c23ee452387069a63fb9b0f267f`. The protected signer
+verified the importer and bound the root evidence before failing on an empty
+credential. The existing environment secret was provisioned on 2026-11-17, and
+deployment `8121072108` targeted the `boot-signing` environment on `main`.
+The exact ISO job was skipped. The next attempt needs a new build and seal from
+the same reviewed main revision and run attempt, then independent verification
+of the sealed manifest and its ISO. See [the signing boundary](boot-signing.md).
+
 ## Next execution sequence
 
 1. Extend the full-profile checks to cover rejection and rescue recovery on
@@ -529,7 +562,7 @@ The operator sequence uses the measured geometry and rollback checkpoints.
    interactive MOK enrollment. The passing install exercised the scratch
    self-bind and committed the offline EFI journal with pre-enrolled public
    certificates. Qualify recovery-key unlock before the optional FIDO2 path.
-3. Wire the native qualifier and `native-image.yml` into publication, then widen
+3. Wire the native qualifier and protected seal into publication, then widen
    the profile contracts together: `impact.PROFILES`, `payloads.py`, explicit
    selection/matrices, `collect-qualification.py`, `decision_controller.py`,
    security profiles/reuse, `workflow_costs.py`, and their tests. Keep paired

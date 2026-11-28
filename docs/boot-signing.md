@@ -69,10 +69,20 @@ and coexistence qualification remain required.
 
 ## Protected sealing boundary
 
-`native-image.yml` builds an unsigned native root and calls `boot-signing.yml`
-only for a trusted same-revision main publication. PR/local diagnostics cannot
-resolve the production key. The signing environment's branch restriction is
-independent of the workflow's own checks.
+`native-production-validation.yml` calls `image.yml` to build an unsigned
+native root. Its `seal` job directly binds the `boot-signing` environment on a
+manual run of reviewed `main`. The job validates the workflow ref and consumes
+the root digest, build identity and root artifact from the same run and attempt.
+Only the sealing step resolves `FINITE_BOOT_SIGNING_KEY`. The environment's
+branch restriction is independent of the workflow's own checks.
+
+Run [46076475582](https://github.com/closure-labs/finite/actions/runs/46076475582)
+built and imported the unsigned root. GitHub registered a `boot-signing`
+deployment for its nested reusable signing job, but the step environment
+contained an empty signing credential. The environment metadata confirmed the
+named secret had been provisioned before the run. The direct job removes that
+workflow boundary and uses the existing protected environment. A successful
+main signing run and exact-media VM receipt are required to verify the change.
 
 The host toolchain and source archive are prepared before credentials are
 resolved. `seal-native.py` strips the key from its environment before any child
