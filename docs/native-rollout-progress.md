@@ -553,6 +553,20 @@ The exact ISO job was skipped. The next attempt needs a new build and seal from
 the same reviewed main revision and run attempt, then independent verification
 of the sealed manifest and its ISO. See [the signing boundary](boot-signing.md).
 
+[Run 46092379577](https://github.com/closure-labs/finite/actions/runs/46092379577)
+then signed stable native production source `91f2f0bec96d6272e2d2442764cd1fb0e3832eff`
+and independently matched the signed UKI to the imported root. Its unsigned
+root artifact was `15243123115` and its unsigned manifest was
+`sha256:04563b50155a17e66229f76b6fe059f46e367cc92dcee0be02dcb7f27f92a61a`.
+The registry upload failed during rootless OCI tar extraction. Skopeo attempted
+to restore the transport directory's owner to root outside the image layers.
+The upload now uses the same content-addressed layout extraction as the
+importer, then copies with `--preserve-digests`. A rootless Skopeo 1.22.2
+fixture reproduced the archive failure and preserved the expected manifest
+when copied from the extracted layout. The run emitted no final registry seal
+receipt or ISO. The next run must verify those from the registry in the capped
+VM job.
+
 ## Next execution sequence
 
 1. Extend the full-profile checks to cover rejection and rescue recovery on

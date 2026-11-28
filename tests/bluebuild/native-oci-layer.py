@@ -3,7 +3,9 @@
 import hashlib
 import io
 import json
+import os
 from pathlib import Path
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -110,11 +112,17 @@ class NativeLayer(unittest.TestCase):
         self.assertEqual(output.read_bytes(), b'keep')
 
     def test_transport_unpack_retains_blobs_and_normalizes_only_reference_name(self):
+        sealed = self.root / 'sealed.tar'
+        digest = oci.append(self.source, sealed, [oci.File('boot/EFI/Linux/kernel.efi', b'signed fixture')])
         target = self.root / 'oci'
-        self.assertEqual(oci.extract_layout(self.source, target), f'oci:{target}:candidate')
+        script = ROOT / 'scripts/bluebuild/native_oci.py'
+        transport = subprocess.check_output([sys.executable, script, sealed, target], text=True).strip()
+        self.assertEqual(transport, f'oci:{target}:candidate')
         index = json.loads((target / 'index.json').read_text())
         self.assertEqual(index['manifests'][0]['annotations']['org.opencontainers.image.ref.name'], 'candidate')
+        self.assertEqual(index['manifests'][0]['digest'], digest)
         for blob in (target / 'blobs/sha256').iterdir():
+            self.assertEqual(blob.stat().st_uid, os.geteuid())
             self.assertEqual(hashlib.sha256(blob.read_bytes()).hexdigest(), blob.name)
 
 

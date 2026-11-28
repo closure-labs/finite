@@ -81,8 +81,16 @@ built and imported the unsigned root. GitHub registered a `boot-signing`
 deployment for its nested reusable signing job, but the step environment
 contained an empty signing credential. The environment metadata confirmed the
 named secret had been provisioned before the run. The direct job removes that
-workflow boundary and uses the existing protected environment. A successful
-main signing run and exact-media VM receipt are required to verify the change.
+workflow boundary and uses the existing protected environment.
+
+Run [46092379577](https://github.com/closure-labs/finite/actions/runs/46092379577)
+resolved the production credential in the direct job, signed the EFI binaries,
+and verified the signed UKI against a fresh canonical import. The subsequent
+registry copy hit `chown .../blobs/sha256: operation not permitted` opening the
+outer OCI tar. The keyless upload now extracts the content-addressed blobs as
+the runner user and passes the resulting OCI layout to Skopeo. This leaves the
+image manifest, layer bytes and layer metadata intact. The exact-media VM
+still needs a successful registry copy and matching production seal receipt.
 
 The host toolchain and source archive are prepared before credentials are
 resolved. `seal-native.py` strips the key from its environment before any child

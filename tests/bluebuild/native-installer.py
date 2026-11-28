@@ -593,6 +593,10 @@ class Media(unittest.TestCase):
                         if 'secrets.' in value]
         self.assertEqual(secret_steps, [('seal', 'Seal native archive with scoped production key',
                                         'FINITE_BOOT_SIGNING_KEY')])
+        upload = next(step['run'] for step in seal['steps'] if 'skopeo' in step.get('run', '')
+                      and 'copy --preserve-digests' in step['run'])
+        self.assertIn('python3 scripts/bluebuild/native_oci.py', upload)
+        self.assertIn('"$layout" "docker://ghcr.io/closure-labs/finite:candidate-$PROFILE"', upload)
         self.assertEqual(jobs['exact-media']['needs'], ['root', 'seal'])
         consumer = next(step for step in jobs['exact-media']['steps'] if 'hosted-production.sh' in step.get('run', ''))
         self.assertEqual(consumer['env']['DIGEST'], '${{ needs.seal.outputs.digest }}')
