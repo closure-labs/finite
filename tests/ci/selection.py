@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -27,7 +28,7 @@ class Selection(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         for path in ('scripts/bluebuild/new-host-helper.py', 'files/installer/new-hook',
-                     '.github/workflows/new-qualification.yml'):
+                     '.github/actions/new-action/action.yml'):
             self.assertEqual(impact.classify([path])['profiles'], sorted(impact.PROFILES))
         mixed = impact.classify(['scripts/bluebuild/unlock-vm.py', 'files/system/shipped-file'])
         self.assertEqual(mixed['profiles'], sorted(impact.PROFILES))
@@ -39,8 +40,10 @@ class Selection(unittest.TestCase):
                 self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
         for path in ('.github/actions/setup-gitleaks/new-helper.sh',
                      'scripts/ci/new-scanner.py', '.github/security/new-policy.json',
-                     'files/system/etc/changed.conf', '.github/workflows/image.yml'):
+                     'files/system/etc/changed.conf'):
             self.assertEqual(impact.classify([*impact.HOST_SCANNER_ONLY, path])['profiles'], sorted(impact.PROFILES))
+        self.assertEqual(impact.classify([*impact.HOST_SCANNER_ONLY, '.github/workflows/image.yml'])['profiles'],
+                         [impact.SMOKE_PROFILE])
         self.assertEqual(impact.classify([*impact.HOST_SCANNER_ONLY, 'recipes/finite-dev.yml'])['profiles'], ['finite-dev'])
         self.assertEqual(impact.classify([*impact.HOST_SCANNER_ONLY, 'flake.lock']),
                          {'checks': True, 'nix': True, 'profiles': []})
@@ -88,8 +91,12 @@ class Selection(unittest.TestCase):
         self.assertIn(scanner, impact.HOST_SCANNER_ONLY)
         cases = [([scanner], set()),
                  ([scanner, 'tests/ci/gitleaks-workflow.py'], set())]
-        for control in ('.github/workflows/build.yml', '.github/workflows/image.yml',
-                        '.github/workflows/qualification.yml', 'scripts/ci/vm-selection.py',
+        # Premerge build workflows take one image and no guest; main-only
+        # qualification.yml cannot be exercised before merge at all.
+        for control in impact.PREMERGE_BUILD_PATH:
+            cases.append(([scanner, control], {impact.SMOKE_PROFILE}))
+        cases.append(([scanner, '.github/workflows/qualification.yml'], set()))
+        for control in ('scripts/ci/vm-selection.py',
                         'scripts/bluebuild/vm-acceptance.sh', 'recipes/finite.yml',
                         'files/system/usr/libexec/finite/example'):
             cases.append(([scanner, control], set(impact.PROFILES)))
@@ -100,15 +107,115 @@ class Selection(unittest.TestCase):
                     IMPACT=json.dumps({key: json.dumps(plan[key]) for key in ('nix', 'profiles')}),
                     VM_VALIDATION=str(vm.required(changed)).lower())
                 self.assertEqual({row['profile'] for row in json.loads(output['matrix'])['include']}, expected)
-                self.assertEqual(vm.required(changed), bool(expected))
-        # Unknown siblings still select both images; no directory-wide exemption.
-        self.assertEqual(set(impact.classify(['.github/workflows/incoming-secret-scan-new.yml'])['profiles']),
+                self.assertEqual(vm.required(changed), expected == set(impact.PROFILES))
+        # A new workflow cannot run before merge unless build.yml calls it, and
+        # that call selects the build-path image. Unknown actions stay conservative.
+        self.assertEqual(impact.classify(['.github/workflows/incoming-secret-scan-new.yml'])['profiles'], [])
+        self.assertEqual(impact.classify(['.github/workflows/incoming-secret-scan-new.yml',
+                                          '.github/workflows/build.yml'])['profiles'], [impact.SMOKE_PROFILE])
+        self.assertEqual(set(impact.classify(['.github/actions/setup-gitleaks/new-helper.sh'])['profiles']),
                          set(impact.PROFILES))
+
+    def test_workflow_only_changes_take_one_image_and_no_guest(self):
+        spec = importlib.util.spec_from_file_location('vm_selection_workflows', ROOT / 'scripts/ci/vm-selection.py')
+        vm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(vm)
+        # The paths of an Actions version bump such as Dependabot PR 434.
+        bump = ['.github/workflows/build.yml', '.github/workflows/image.yml',
+                '.github/workflows/native-production-validation.yml',
+                '.github/workflows/update-bootc-runtime.yml',
+                '.github/actions/review-app-token/action.yml']
+        pins = frozenset(bump)
+        self.assertEqual(impact.classify(bump, pins), {'checks': True, 'nix': False, 'profiles': [impact.SMOKE_PROFILE]})
+        self.assertFalse(vm.required(bump, pins=pins))
+        # A real edit to an unreviewed composite action is not a pin update.
+        self.assertEqual(impact.classify(bump)['profiles'], sorted(impact.PROFILES))
+        for path in ('.github/workflows/native-production-validation.yml', '.github/workflows/qualification.yml',
+                     '.github/workflows/update-bootc-runtime.yml'):
+            with self.subTest(path=path):
+                self.assertEqual(impact.classify([path]), {'checks': True, 'nix': False, 'profiles': []})
+                self.assertFalse(vm.required([path]))
+        # Guest harness actions need a guest for real edits, not for pin updates.
+        for path in ('.github/actions/setup-cosign/action.yml', '.github/actions/setup-vm-tools/action.yml'):
+            with self.subTest(path=path):
+                self.assertTrue(vm.required([path]))
+                self.assertFalse(vm.required([path], pins=frozenset({path})))
+        # Pins never excuse a real image or guest input in the same change.
+        for extra in ('recipes/finite-dev.yml', 'files/system/etc/changed.conf', 'scripts/bluebuild/vm-functional.sh'):
+            with self.subTest(extra=extra):
+                self.assertTrue(vm.required([*bump, extra], pins=pins))
+                self.assertIn('finite-dev', impact.classify([*bump, extra], pins)['profiles'])
+        # Only Actions files can ever be excused as pin updates.
+        shipped = ['files/system/etc/changed.conf']
+        self.assertEqual(impact.classify(shipped, frozenset(shipped))['profiles'], sorted(impact.PROFILES))
+        self.assertTrue(vm.required(shipped, pins=frozenset(shipped)))
+
+    def test_pin_only_comparison_reads_the_assembled_checkout(self):
+        old, new = 'a' * 40, 'b' * 40
+        text = ('jobs:\n  build:\n    steps:\n      - uses: actions/checkout@%s # v7.0.1\n'
+                '      - name: Monitor\n        uses: step-security/harden-runner@%s # v2.22.0\n        with:\n          egress-policy: audit\n')
+        before = text % (old, old)
+        self.assertTrue(impact.pin_only(before, text % (old, new)))
+        self.assertTrue(impact.pin_only(before, (text % (new, new)).replace('v2.22.0', 'v2.23.0')))
+        self.assertFalse(impact.pin_only(before, before))
+        for changed in (before.replace('audit', 'block'), before.replace('actions/checkout', 'other/checkout'),
+                        before + '      - run: id\n', before.replace(old + ' # v7.0.1', 'main'),
+                        before.replace('# v7.0.1', '# v7.0.1\n        run: id'),
+                        before.replace('uses: actions/checkout@' + old, 'uses: actions/checkout@' + new + '\n      - run: id #')):
+            with self.subTest(changed=changed):
+                self.assertFalse(impact.pin_only(before, changed))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            def git(*args):
+                return subprocess.check_output(['git', *args], cwd=directory, stderr=subprocess.DEVNULL, text=True).strip()
+            git('init')
+            git('config', 'user.name', 'CI fixture')
+            git('config', 'user.email', 'ci@example.invalid')
+            paths = ['.github/workflows/image.yml', '.github/actions/setup-cosign/action.yml']
+            def commit(values):
+                for path, value in zip(paths, values):
+                    (directory / path).parent.mkdir(parents=True, exist_ok=True)
+                    (directory / path).write_text(value)
+                git('add', '.github')
+                git('commit', '-m', 'fixture')
+                return git('rev-parse', 'HEAD')
+            base = commit([before, before])
+            head = commit([text % (new, new), before.replace('audit', 'block')])
+            current = os.getcwd()
+            os.chdir(directory)
+            try:
+                self.assertEqual(impact.pin_only_paths([*paths, 'missing.yml', '.github/workflows/added.yml'], base, head),
+                                 frozenset({'.github/workflows/image.yml'}))
+                event = {'merge_group': {'base_sha': base, 'head_sha': head}}
+                with unittest.mock.patch.dict(os.environ, {'GITHUB_SHA': head}):
+                    self.assertEqual(impact.event_pins('merge_group', event, paths), frozenset({paths[0]}))
+                with unittest.mock.patch.dict(os.environ, {'GITHUB_SHA': 'unknown'}):
+                    self.assertEqual(impact.event_pins('merge_group', event, paths), frozenset())
+                self.assertEqual(impact.event_pins('schedule', {}, paths), frozenset())
+            finally:
+                os.chdir(current)
+            output = directory / 'output'
+            (directory / 'event').write_text(json.dumps(event))
+            for script, expected in (('impact.py', 'profiles=["finite"]'), ('vm-selection.py', 'vm=true')):
+                output.write_text('')
+                subprocess.run([sys.executable, str(ROOT / 'scripts/ci' / script)], cwd=directory, check=True, capture_output=True,
+                               env={**os.environ, 'GITHUB_EVENT_NAME': 'merge_group', 'GITHUB_SHA': head,
+                                    'GITHUB_EVENT_PATH': str(directory / 'event'), 'GITHUB_OUTPUT': str(output),
+                                    'GITHUB_STEP_SUMMARY': str(directory / 'summary')})
+                self.assertIn(expected, output.read_text().splitlines())
+            pinned = commit([text % (new, new), text % (new, new)])
+            (directory / 'event').write_text(json.dumps({'merge_group': {'base_sha': base, 'head_sha': pinned}}))
+            for script, expected in (('impact.py', 'profiles=["finite"]'), ('vm-selection.py', 'vm=false')):
+                output.write_text('')
+                subprocess.run([sys.executable, str(ROOT / 'scripts/ci' / script)], cwd=directory, check=True, capture_output=True,
+                               env={**os.environ, 'GITHUB_EVENT_NAME': 'merge_group', 'GITHUB_SHA': pinned,
+                                    'GITHUB_EVENT_PATH': str(directory / 'event'), 'GITHUB_OUTPUT': str(output),
+                                    'GITHUB_STEP_SUMMARY': str(directory / 'summary')})
+                self.assertIn(expected, output.read_text().splitlines())
 
     def test_documentation_and_mixed_changes(self):
         self.assertEqual(impact.classify(['README.md', 'docs/installation.md']), {'checks': False, 'nix': False, 'profiles': []})
         for path in ['files/system/usr/share/finite/finite-logo.png',
-                     '.github/workflows/image.yml',
                      'files/scripts/kernel-module-prune.py', 'new-image-input', 'docs-like/file',
                      'automation/security/vulnerability-policy.json', 'sources/bluefin.pub', 'sources/bluefin-trust.json']:
             with self.subTest(path=path):
@@ -144,7 +251,8 @@ class Selection(unittest.TestCase):
                          {'checks': True, 'nix': False, 'profiles': []})
         for path, profiles in [('files/system/usr/libexec/finite/guest-check.py', sorted(impact.PROFILES)),
                                ('scripts/ci/new-cost-helper.py', sorted(impact.PROFILES)),
-                               ('.github/workflows/new-cost-report.yml', sorted(impact.PROFILES)),
+                               ('.github/workflows/new-cost-report.yml', []),
+                               ('.github/workflows/image.yml', [impact.SMOKE_PROFILE]),
                                ('recipes/finite-dev.yml', ['finite-dev'])]:
             with self.subTest(path=path):
                 self.assertEqual(impact.classify([*paths, path]),

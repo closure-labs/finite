@@ -6,7 +6,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from impact import changed_paths, revisions
+from impact import actions_file, changed_paths, event_pins, revisions
 
 PREFIXES = ('files/system/usr/lib/systemd/', 'files/system/usr/lib/tmpfiles.d/',
             'files/system/usr/lib/udev/', 'files/system/usr/lib/NetworkManager/',
@@ -16,8 +16,7 @@ PREFIXES = ('files/system/usr/lib/systemd/', 'files/system/usr/lib/tmpfiles.d/',
             'recipes/', 'files/scripts/', 'modules/nix/', 'lib/image-payload', 'lib/native-nix-backport', 'patches/nix/', 'sources/bluefin')
 FILES = {'.github/actions/setup-cosign/action.yml', '.github/actions/setup-cosign/download/.curlrc', 'flake.lock', 'sources/determinate-nix.json', 'scripts/ci/nix-resources.py',
          'sources/bluebuild-installer.json', 'sources/installer-security.json',
-         '.github/workflows/build.yml', '.github/workflows/image.yml',
-         '.github/workflows/qualification.yml', 'scripts/ci/vm-selection.py',
+         'scripts/ci/vm-selection.py',
          'lib/vm-tools.nix', 'scripts/ci/vm_tools.py', 'scripts/ci/vm-host.py', '.github/actions/setup-vm-tools/action.yml',
          'scripts/ci/local_vm.py'}
 
@@ -32,9 +31,13 @@ HOST_CONTROLLER_ONLY = frozenset({
 })
 
 
-def required(paths, *, lock_metadata_only=False):
+# Workflow files are deliberately absent from FILES: build.yml and image.yml
+# take one premerge image build (impact.PREMERGE_BUILD_PATH), qualification.yml
+# only runs on main, and the queue guest uses local-vm.sh instead. `pins` names
+# composite actions whose whole diff is immutable pin updates.
+def required(paths, *, lock_metadata_only=False, pins=frozenset()):
     return paths is None or any((path in FILES or path.startswith(PREFIXES))
-                               and path not in HOST_CONTROLLER_ONLY
+                               and path not in HOST_CONTROLLER_ONLY and not (path in pins and actions_file(path))
                                and not (path == 'flake.lock' and lock_metadata_only) for path in paths)
 
 
@@ -86,7 +89,8 @@ def main():
             paths = changed_paths(event, metadata)
             metadata_only = ('flake.lock' in (paths or [])
                              and lock_metadata_only(event, metadata, os.environ['GITHUB_SHA']))
-            selected = required(paths, lock_metadata_only=metadata_only)
+            selected = required(paths, lock_metadata_only=metadata_only,
+                                pins=event_pins(event, metadata, paths))
         except (KeyError, TypeError, ValueError, OSError, subprocess.SubprocessError) as error:
             print(f'::warning::Premerge comparison unavailable; requiring both VM profiles ({type(error).__name__}).')
             selected = True

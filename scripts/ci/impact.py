@@ -69,7 +69,7 @@ QUALIFICATION_ONLY = {
     'scripts/bluebuild/security-run.sh', 'scripts/bluebuild/audit-published.sh',
     'scripts/bluebuild/publication.py',
     '.github/workflows/publication.yml', '.github/workflows/image-security.yml',
-    '.github/workflows/build.yml', 'scripts/ci/release-selection.py',
+    'scripts/ci/release-selection.py',
     'scripts/ci/remediation-preflight.py', 'scripts/ci/applicability-evidence.py',
     'scripts/ci/native-evidence-summary.py',
     'scripts/ci/diagnose-built-candidate.sh', 'scripts/ci/rpm-file-evidence.py',
@@ -118,16 +118,49 @@ HOST_SCANNER_ONLY = frozenset({
 })
 QUALIFICATION_ONLY |= HOST_SCANNER_ONLY
 QUALIFICATION_ONLY |= IMAGE_QUALIFICATION_ONLY
+# The only workflows that assemble an image before merge. A change confined to
+# them is exercised by one image build; main still fully qualifies both
+# profiles on a real guest before any channel moves.
+PREMERGE_BUILD_PATH = frozenset({'.github/workflows/build.yml', '.github/workflows/image.yml'})
+SMOKE_PROFILE = 'finite'
 
 
-def classify(paths):
+# Same shapes as dependency_update.py, kept local: this stdlib selector is a
+# declared input of several narrow checks and must not import worker modules.
+WORKFLOW = re.compile(r'\.github/workflows/[A-Za-z0-9_.-]+\.ya?ml')
+ACTION = re.compile(r'\.github/actions/(?:[A-Za-z0-9_.-]+/)+action\.ya?ml')
+USES_PIN = re.compile(r'^([ \t]*(?:-[ \t]+)?uses:[ \t]+[A-Za-z0-9_-]+/[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*)@[0-9a-f]{40}'
+                      r'(?:[ \t]+# v[0-9]+(?:\.[0-9]+){0,2})?[ \t]*$', re.MULTILINE)
+
+
+def actions_file(path):
+    return bool(WORKFLOW.fullmatch(path) or ACTION.fullmatch(path))
+
+
+def pin_only(before, after):
+    """Byte-level test that two Actions documents differ only in immutable pins.
+
+    This steers premerge work selection for any author and grants no review
+    authority: dependency_update.classify() remains the only dependency
+    exception and still authenticates each pin against its published tag.
+    """
+    def normalized(source):
+        return USES_PIN.sub(lambda match: match[1] + '@<pin>', source)
+    return before != after and normalized(before) == normalized(after)
+
+
+def classify(paths, pins=frozenset()):
+    """Select work from paths; `pins` names Actions files whose diff is pin-only."""
     checks, nix = not paths, False
     profiles = set(PROFILES) if not paths else set()
     for path in paths:
         if path in {'README.md', 'CHANGELOG.md', 'LICENSE', 'LICENSE.md', '.great_cto/tasks.md'} or path.startswith('docs/'):
             continue
         checks = True
-        if path in QUALIFICATION_ONLY:
+        if path in PREMERGE_BUILD_PATH:
+            profiles.add(SMOKE_PROFILE)
+            continue
+        if path in QUALIFICATION_ONLY or path in pins and actions_file(path):
             continue
         if path.startswith('automation/security/') or path in {'sources/bluefin-trust.json', 'sources/bluefin.pub'}:
             profiles.update(PROFILES)
@@ -155,6 +188,10 @@ def classify(paths):
             nix = True
         elif path in {f'recipes/{profile}.yml' for profile in PROFILES}:
             profiles.add(Path(path).stem)
+        elif WORKFLOW.fullmatch(path):
+            # No other workflow runs before merge without build.yml calling it,
+            # and that call is itself a build.yml change. Source checks lint it.
+            continue
         else:
             profiles.update(PROFILES)
     return {'checks': checks, 'nix': nix, 'profiles': sorted(profiles)}
@@ -190,10 +227,37 @@ def changed_paths(event_name, event):
     return [os.fsdecode(path) for path in result.stdout.split(b'\0') if path]
 
 
+def pin_only_paths(paths, base, head):
+    """Changed workflow/composite files whose base..head diff is only pins."""
+    def read(revision, path):
+        return subprocess.run(['git', 'show', f'{revision}:{path}'], check=True, stdout=subprocess.PIPE,
+                              stderr=subprocess.DEVNULL, timeout=30).stdout.decode('utf-8')
+    selected = set()
+    for path in paths or ():
+        if not actions_file(path):
+            continue
+        try:
+            if pin_only(read(base, path), read(head, path)):
+                selected.add(path)
+        except (OSError, UnicodeError, subprocess.SubprocessError):
+            continue  # Added, deleted or unreadable files keep the conservative route.
+    return frozenset(selected)
+
+
+def event_pins(event_name, event, paths):
+    comparison = revisions(event_name, event)
+    head = os.environ.get('GITHUB_SHA', '')
+    if comparison is None or not re.fullmatch(r'[0-9a-f]{40,64}', head):
+        return frozenset()
+    # GITHUB_SHA is the assembled checkout that the image jobs actually run.
+    return pin_only_paths(paths, comparison[0], head)
+
+
 def main():
     try:
-        paths = changed_paths(os.environ['GITHUB_EVENT_NAME'], json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text()))
-        plan = classify(paths or [])
+        event_name, event = os.environ['GITHUB_EVENT_NAME'], json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())
+        paths = changed_paths(event_name, event)
+        plan = classify(paths or [], event_pins(event_name, event, paths))
     except (KeyError, ValueError, OSError, subprocess.CalledProcessError) as error:
         print(f'::warning::Change detection unavailable; running full validation ({type(error).__name__}).')
         plan = classify([])
