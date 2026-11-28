@@ -34,6 +34,14 @@ embedded immutable manifest is
 [Exact ISO](https://github.com/closure-labs/finite/actions/runs/46106726545/artifacts/15251057372)
 [Production seal and capped VM evidence](https://github.com/closure-labs/finite/actions/runs/46106726545/artifacts/15250722490)
 
+The verified media and handoff are mirrored in
+`Nextcloud/finite-backup/finite-native-production-46106726545/`. The stored
+ISO and installer metadata passed the original `SHA256SUMS`. The Nextcloud
+client recorded matching remote checksums for all 16 files, including the
+9,105,897,472-byte ISO. The directory holds the reviewed public MOK, the
+qualification receipts and the rescue preflight inputs from the qualified
+revision. Read `START-HERE.md` before moving the kit to rescue storage.
+
 The 2026-11-28 read-only preparation confirmed the live p1, p7 and p8 bounds,
 types and partition UUIDs match the saved recovery GPT. The documented Python
 preflight generated the proposed table in a private workspace with p9 starting
@@ -44,14 +52,14 @@ The selected encrypted recovery archive matched its previously verified
 restore, including credential modes, numeric ownership and password-store
 decryption. The matching SHA-1 in the Nextcloud sync journal confirms the
 remote copy. The separately encrypted production signing escrow also matched
-its journal record. The configuration archive does not include documents or
-other unselected home data. Verify an independent backup of that data before
-resizing the shared filesystem.
+its journal record. The configuration archive covers its selected inventory.
+Verify an independent backup of documents and other home data before resizing
+the shared filesystem.
 
 The preflight found the prior OSTree systemd-boot trial running with the
 original `/root`, `/home` and persistent `/nix`, and an OSTree deployment
 staged. Secure Boot and SELinux enforcing were confirmed. The public production
-certificate matched its reviewed pin, and the enrolled MOKs did not contain it.
+certificate matched its reviewed pin. Production MOK enrollment remains open.
 Establish the intended legacy default with no staged deployment and verify its
 explicit `/root` selector before booting rescue media. The read-only check
 observed `rootflags=subvol=root` on the trial, while this procedure requires
