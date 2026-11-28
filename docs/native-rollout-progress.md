@@ -567,6 +567,39 @@ when copied from the extracted layout. The run emitted no final registry seal
 receipt or ISO. The next run must verify those from the registry in the capped
 VM job.
 
+[PR #437](https://github.com/closure-labs/finite/pull/437) merged the
+rootless upload at `886956acbdd9d71c2d0c5adcf7a3f566efab92fe` after both
+OSTree merge-queue boot checks passed. Its first production dispatch,
+[run 46104916921](https://github.com/closure-labs/finite/actions/runs/46104916921),
+prepared the shared Nix payload. The root job then stopped at the current-main
+preflight. [PR #439](https://github.com/closure-labs/finite/pull/439) had
+advanced `main` with the Harden Runner policy and tests, a change outside the
+guard's documentation-only allowance. The run stopped before the root build,
+registry upload, signing or VM. The new source
+`37c939112f4acb3ab2089556f3e8a44d873bca65` contains #437 with the same upload
+workflow and extractor. [Run 46106726545](https://github.com/closure-labs/finite/actions/runs/46106726545)
+was dispatched from that source with the same capped VM contract.
+
+Run `46106726545`, attempt 1, passed the exact stable production image and ISO
+qualification. The read-only consumer independently pulled and imported
+`ghcr.io/closure-labs/finite@sha256:ee927ce84d689f6ff92497f668a9177a477e8fd7b3a6a0f1a1d72176b704c169`.
+The normal installer ran from the resulting ISO in an offline VM with 2 vCPUs,
+3072 MiB of RAM and a 3072 MiB host reserve. The installed system booted using
+the installer-generated recovery key, with Secure Boot, SELinux enforcing,
+LUKS and the EFI updater verified. The guest used `systemd-boot 262.1-1.fc45`
+and kernel `7.2.11-300.fc45.x86_64`. Its signed UKI SHA-256 was
+`9e5631b61d55c314f598c22ba5ab000dd39179d6db2bd0bcf8f89f4f3c0c242d`.
+The guest's strict composefs digest matched the independently imported root.
+
+The retained ISO SHA-256 is
+`9316ba473cfd214efb26b2f49468f3d228fbbcefb789dc983f95bdf909048b40`.
+The seal receipt, independent import, installer metadata, ISO checksums and raw
+VirtIO guest receipt agree. A direct registry read also matched the immutable
+manifest digest. The ISO artifact expires on 2026-12-05 at 05:53 UTC.
+[Exact ISO](https://github.com/closure-labs/finite/actions/runs/46106726545/artifacts/15251057372)
+[VM evidence](https://github.com/closure-labs/finite/actions/runs/46106726545/artifacts/15250722490)
+[Protected seal](https://github.com/closure-labs/finite/actions/runs/46106726545/artifacts/15250165809)
+
 ## Next execution sequence
 
 1. Extend the full-profile checks to cover rejection and rescue recovery on

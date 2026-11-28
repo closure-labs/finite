@@ -63,9 +63,9 @@ trust only after a tested replacement/rescue path is available.
 `provision-boot-signer.py` refuses existing production identities/environments.
 An interrupted provisioning requires inspecting its private state and encrypted
 escrow before any retry. The production certificate is currently marked
-`qualified: false`: the sealing and journaled EFI-update implementations exist,
-but production-key CI sealing, encrypted installation, loader-version changes
-and coexistence qualification remain required.
+`qualified: false` in the signer policy. The exact stable production image and
+ISO have passed fresh encrypted installation in the capped VM. Production
+lifecycle, hardware coexistence and the release gates remain open.
 
 ## Protected sealing boundary
 
@@ -89,8 +89,11 @@ and verified the signed UKI against a fresh canonical import. The subsequent
 registry copy hit `chown .../blobs/sha256: operation not permitted` opening the
 outer OCI tar. The keyless upload now extracts the content-addressed blobs as
 the runner user and passes the resulting OCI layout to Skopeo. This leaves the
-image manifest, layer bytes and layer metadata intact. The exact-media VM
-still needs a successful registry copy and matching production seal receipt.
+image manifest, layer bytes and layer metadata intact. The revised handoff,
+registry copy and exact ISO passed in
+[run 46106726545](https://github.com/closure-labs/finite/actions/runs/46106726545).
+The [rollout evidence](native-rollout-progress.md#reviewed-importer-lifecycle-and-production-signing)
+records the exact digest, ISO checksum and capped VM receipt.
 
 The host toolchain and source archive are prepared before credentials are
 resolved. `seal-native.py` strips the key from its environment before any child
