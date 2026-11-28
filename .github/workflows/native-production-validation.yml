@@ -194,11 +194,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Read verified OCI blobs as the runner user. The archive's outer
+          # tar ownership is unrelated to ownership inside image layers.
+          layout=$(python3 scripts/bluebuild/native_oci.py \
+            "$RUNNER_TEMP/native-sealed.oci.tar" "$RUNNER_TEMP/native-sealed-layout")
           python3 scripts/bluebuild/qualification-preflight.py --revision "$GITHUB_SHA"
           current=$(skopeo inspect --authfile "$RUNNER_TEMP/native-auth.json" --format '{{.Digest}}' "docker://ghcr.io/closure-labs/finite:candidate-$PROFILE")
           [[ $current == "$SOURCE_DIGEST" ]]
           skopeo --tmpdir "$RUNNER_TEMP" copy --preserve-digests --authfile "$RUNNER_TEMP/native-auth.json" \
-            "oci-archive:$RUNNER_TEMP/native-sealed.oci.tar" "docker://ghcr.io/closure-labs/finite:candidate-$PROFILE"
+            "$layout" "docker://ghcr.io/closure-labs/finite:candidate-$PROFILE"
+          rm -rf -- "$RUNNER_TEMP/native-sealed-layout"
       - name: Verify assembled native image
         run: bash scripts/bluebuild/inspect-built.sh "$PROFILE" "$PROFILE" true
       - name: Bind sealed image evidence

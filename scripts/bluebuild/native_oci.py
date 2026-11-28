@@ -3,6 +3,7 @@
 Sealing edits OCI metadata directly instead of hashing a builder's mounted
 filesystem view. This module never executes code from an image.
 """
+import argparse
 from dataclasses import dataclass
 import hashlib
 import io
@@ -215,3 +216,14 @@ def append(source, output, files, existing_directories=()):
             return manifest_desc['digest']
     finally:
         image.close()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Expose a verified OCI archive as a rootless layout')
+    parser.add_argument('source', type=Path)
+    parser.add_argument('directory', type=Path)
+    args = parser.parse_args()
+    try:
+        print(extract_layout(args.source, args.directory))
+    except (OSError, ValueError, KeyError, tarfile.TarError) as error:
+        parser.exit(1, f'OCI layout extraction failed: {error}\n')
