@@ -11,17 +11,13 @@
       "patterns_allowed": [
         "DeterminateSystems/determinate-nix-action@*",
         "DeterminateSystems/nix-installer-action@*",
-        "DopplerHQ/secrets-fetch-action@*",
         "actions/checkout@*",
-        "blue-build/github-action@*",
         "docker/setup-buildx-action@*",
-        "docker/setup-qemu-action@*",
         "github/codeql-action/*@*",
         "hastd/free-disk-space@*",
         "nix-community/cache-nix-action@*",
         "peter-evans/create-pull-request@*",
         "sigstore/cosign-installer@*",
-        "slsa-framework/slsa-verifier/actions/installer@*",
         "step-security/harden-runner@*"
       ]
     },
