@@ -197,6 +197,27 @@ dependency changes, boot/installer changes and unavailable or malformed lock
 comparisons retain VM validation for both profiles. Unknown lock versions also
 retain validation.
 
+Workflow changes are selected by what they can affect before merge:
+
+- `build.yml` and `image.yml` are the only workflows that assemble an image
+  before merge. A change confined to them builds the `finite` image once and
+  boots no guest.
+- Every other workflow file runs the source checks only. It cannot run before
+  merge unless `build.yml` calls it, and that call is a `build.yml` change.
+  `qualification.yml` runs only on `main`, so a premerge guest never exercised
+  it.
+- A workflow or composite action whose whole diff is immutable action pins and
+  their version comments is treated as a pin update: it selects no image and no
+  guest by itself. This is how an Actions version bump avoids the full path.
+  Any other edit to a composite action keeps the conservative route.
+- Mixed changes take the union. A pin update never excuses a recipe, system
+  file or guest-harness change in the same pull request.
+
+This relies on the publication path: `main` builds, scans, signs and qualifies
+both profiles on a Secure Boot guest before any channel tag moves. A workflow
+defect that only a guest would reveal therefore stalls publication on `main`
+and never reaches an installed system.
+
 Hosted checks evaluate the aggregate derivation in one process, then build that
 exact derivation in a separate process. This releases the Home Manager evaluation
 heap before builders start. Each phase retries only recognized transport failures;

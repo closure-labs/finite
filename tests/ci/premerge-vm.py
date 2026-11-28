@@ -107,13 +107,18 @@ class Premerge(unittest.TestCase):
     def test_boot_installer_selinux_and_harness_changes_require_vm(self):
         for path in ('files/system/usr/lib/systemd/system/example.service', 'files/installer/install_finite_fstab',
                      'files/system/usr/lib/tmpfiles.d/finite-gdm.conf', 'scripts/bluebuild/check-vm-gdm-labels.sh',
-                     'scripts/bluebuild/vm-acceptance.sh', 'tests/nix/nix-systemd.sh', '.github/workflows/image.yml',
+                     'scripts/bluebuild/vm-acceptance.sh', 'tests/nix/nix-systemd.sh',
                      'lib/vm-tools.nix', 'scripts/ci/vm_tools.py', '.github/actions/setup-vm-tools/action.yml',
                      'sources/bluefin.json', 'files/system/usr/share/selinux/finite.te', 'flake.lock'):
             self.assertTrue(selection.required([path]), path)
         self.assertTrue(selection.required(None))
         self.assertFalse(selection.required(['docs/installation.md', 'README.md']))
         self.assertFalse(selection.required(['scripts/ci/decision-health.py']))
+        # Workflow files need no guest: build/image take one premerge image
+        # build, and qualification.yml runs only on main.
+        self.assertFalse(selection.required(['.github/workflows/build.yml', '.github/workflows/image.yml',
+                                             '.github/workflows/qualification.yml']))
+        self.assertTrue(selection.required(['.github/workflows/image.yml', 'scripts/bluebuild/vm-functional.sh']))
 
     def test_local_receipts_require_premerge_context_and_exact_checkout(self):
         env = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': 'closure-labs/finite',
