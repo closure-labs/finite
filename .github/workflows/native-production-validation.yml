@@ -111,7 +111,7 @@ jobs:
       BUILD_IDENTITY: ${{ needs.root.outputs.identity }}
       ROOT_EVIDENCE: ${{ needs.root.outputs.evidence }}
     steps:
-      - uses: step-security/harden-runner@dc2769abcc0fcfbadfc1df54081c1608579ef6b2 # v2
+      - uses: step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c # v2
         with:
           egress-policy: audit
       - name: Validate the protected workflow and root evidence
