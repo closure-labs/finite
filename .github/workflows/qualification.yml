@@ -191,6 +191,16 @@ jobs:
             .bluebuild/iso-*/SHA256SUMS
           include-hidden-files: true
           retention-days: 7
+      - name: Retain sanitized diagnostics for failed initialization
+        if: always() && steps.acceptance.outputs.functional_passed == 'false'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: qualification-init-log-${{ inputs.profile }}-${{ matrix.phase }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .bluebuild/vm*/**/home-init.log.gz
+          include-hidden-files: true
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 7
       - name: Preserve pristine qualified candidate ISO for the pilot
         if: >-
           success() && steps.acceptance.outputs.functional_passed == 'true' &&
