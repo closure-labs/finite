@@ -18,9 +18,51 @@ and SELinux stayed enabled and enforcing. The native boot also passed full
 preflight and enforced fs-verity. [Rehearsal evidence](https://github.com/closure-labs/finite/actions/runs/45992389140/artifacts/15205435307)
 
 The fixture used a disposable signing key, synthetic LUKS passphrases and
-OVMF with Fedora shim and GRUB. Production signing, interactive MOK enrollment,
-the workstation's rEFInd and firmware path, its data and optional FIDO2 unlock
-need their own checks. [Rollout record](native-rollout-progress.md)
+OVMF with Fedora shim and GRUB. Interactive MOK enrollment, the workstation's
+rEFInd and firmware path, its data and optional FIDO2 unlock need their own
+checks. [Rollout record](native-rollout-progress.md)
+
+## Exact media and workstation readiness
+
+[Production run 46106726545](https://github.com/closure-labs/finite/actions/runs/46106726545)
+passed fresh encrypted install and first boot on the 2-vCPU, 3072 MiB VM. Use
+only the corresponding `finite-native-installer-finite-native.iso` when
+following this checkout's preparation record. Its SHA-256 is
+`9316ba473cfd214efb26b2f49468f3d228fbbcefb789dc983f95bdf909048b40` and its
+embedded immutable manifest is
+`sha256:ee927ce84d689f6ff92497f668a9177a477e8fd7b3a6a0f1a1d72176b704c169`.
+[Exact ISO](https://github.com/closure-labs/finite/actions/runs/46106726545/artifacts/15251057372)
+[Production seal and capped VM evidence](https://github.com/closure-labs/finite/actions/runs/46106726545/artifacts/15250722490)
+
+The 2026-11-28 read-only preparation confirmed the live p1, p7 and p8 bounds,
+types and partition UUIDs match the saved recovery GPT. The documented Python
+preflight generated the proposed table in a private workspace with p9 starting
+at sector `991825920`. Generate it again from the fresh rescue capture and
+run the documented dry run there before any partition changes.
+
+The selected encrypted recovery archive matched its previously verified
+restore, including credential modes, numeric ownership and password-store
+decryption. The matching SHA-1 in the Nextcloud sync journal confirms the
+remote copy. The separately encrypted production signing escrow also matched
+its journal record. The configuration archive does not include documents or
+other unselected home data. Verify an independent backup of that data before
+resizing the shared filesystem.
+
+The preflight found the prior OSTree systemd-boot trial running with the
+original `/root`, `/home` and persistent `/nix`, and an OSTree deployment
+staged. Secure Boot and SELinux enforcing were confirmed. The public production
+certificate matched its reviewed pin, and the enrolled MOKs did not contain it.
+Establish the intended legacy default with no staged deployment and verify its
+explicit `/root` selector before booting rescue media. The read-only check
+observed `rootflags=subvol=root` on the trial, while this procedure requires
+`rootflags=subvol=/root` on the fallback entry. Leave MOK enrollment and
+reboots for the attended preflight.
+
+The image passed UKI signing and seal verification. The `cosign verify`
+release-signature check for that exact manifest returned `no signatures found`
+on 2026-11-28. Resolve the release-signature gate before starting physical
+migration. Confirm the exact media's rescue console with the whole-disk
+installer masked before touching the internal disk.
 
 ## Prepare on the existing installation
 
