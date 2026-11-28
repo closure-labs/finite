@@ -291,6 +291,9 @@ class BoundedGuestLogs(unittest.TestCase):
             sudo = root / 'bin/sudo'
             sudo.write_text('#!/bin/sh\ntest "$1" = -n && shift\nexec "$@"\n')
             sudo.chmod(0o755)
+            journal = root / 'bin/journalctl'
+            journal.write_text('#!/bin/sh\nhead -c 16384 /dev/zero\nprintf "brew fixture error\\n"\nexit 1\n')
+            journal.chmod(0o755)
             env = {**os.environ, 'PATH': str(root / 'bin') + ':' + os.environ['PATH']}
             result = subprocess.run(['bash', '-c', 'set -euo pipefail; ' + host +
                                      '\nstate=/absent; artifact=/absent; host_disk_snapshot fixture'],
@@ -302,6 +305,13 @@ class BoundedGuestLogs(unittest.TestCase):
                                     env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 19, result.stderr)
             self.assertIn('verdict:19', result.stdout)
+            self.assertIn('brew fixture error', result.stdout)
+            self.assertLessEqual(result.stdout.count('\0'), 2 * 8192)
+            success = subprocess.run(['bash', '-c', 'set -euo pipefail; ' + guest_functions +
+                                      '\nguest_finish() { echo "verdict:$1"; }; trap guest_exit EXIT; exit 0'],
+                                     env=env, capture_output=True, text=True)
+            self.assertEqual(success.returncode, 0, success.stderr)
+            self.assertNotIn('brew fixture error', success.stdout)
 
     def test_more_than_512_mib_progress_is_complete_with_bounded_memory(self):
         import hashlib

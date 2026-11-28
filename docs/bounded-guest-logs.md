@@ -13,9 +13,13 @@ and warning messages are decoded for display; raw activity records stay in the
 full log. Oversized lines are retained in the log but omitted from console and
 marker parsing. Unknown or malformed records never constitute success.
 
-The sanitized full initializer log is retained as `home-init.log.gz` in the
-existing VM artifact, with `home-init-log.json` describing whether capture
-completed and the observed initialization status. The storage budget is 256 MiB
+The small VM evidence includes `home-init-log.json`, which describes whether
+capture completed and records the initialization status. A failed functional
+qualification retains its sanitized full `home-init.log.gz` in a separate
+diagnostic artifact. A guest initialization failure also captures up to 8 KiB
+from Bluefin's `brew-preinstall.service` user journal while the guest is still
+running. The journal command has an eight-second limit and preserves the
+original initializer exit status. The storage budget is 256 MiB
 of **compressed** bytes, not uncompressed Nix progress. Independent gzip members
 are written from at most 64 KiB input chunks; neither an uncompressed disk copy
 nor the full stream is held in memory. The receipt records compressed bytes,
