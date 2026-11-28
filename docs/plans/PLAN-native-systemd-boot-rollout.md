@@ -32,7 +32,7 @@ All builds and VM runs use the agreed limits: nix `--max-jobs 1 --cores 2`, `nic
 ## Phase 0: Doppler removal (independent; first)
 1. **Browser, github.com/closure-labs/finite settings.** Read-only checks found the environment has no secrets or variables.
    - Delete the `doppler-pilot` environment. This is permanent.
-   - Under Actions → General → allowed actions, remove `DopplerHQ/secrets-fetch-action@451892f16195f9ac360e1a5bcbf0b5fd0e957534`.
+   - Under Actions → General → allowed actions, remove `DopplerHQ/secrets-fetch-action@*`.
    - Look at org-level Actions secrets and variables for anything Doppler-related; `gh` gets a 403 there. I'll report what's there and delete nothing without asking.
    - Anything on Doppler's side (the OIDC service account) is outside GitHub, so I'll flag it for you.
 2. **CI change**, on a new branch `doppler-removal` from `main` once #425 has merged:

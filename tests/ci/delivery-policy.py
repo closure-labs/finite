@@ -51,22 +51,27 @@ class DeliveryPolicy(unittest.TestCase):
                     self.assertRegex(action, r'@[0-9a-f]{40}$')
                     self.assertTrue(action_allowed(action, selected), action)
 
-    def test_selected_third_party_updates_remain_exact_pins(self):
-        selected = json.loads((ROOT / 'automation/github/repository-security.json').read_text())['actions']['selected_actions']
-        pins = {
-            'step-security/harden-runner': ('46b06cea07f9e64621fdf066ba77ac6915163d43',
-                                            '1d88384fd173af6ecb012dfd0264a306b711241a'),
-            'sigstore/cosign-installer': ('6f9f17788090df1f26f669e9d70d6ae9567deba6',
-                                         '756fe2d284c7292c4e9b62c8a28f1e5629c59532'),
-        }
-        for action, refs in pins.items():
-            for ref in refs:
-                with self.subTest(action=action, ref=ref):
-                    self.assertTrue(action_allowed(action + '@' + ref, selected))
-                    self.assertFalse(action_allowed('untrusted/' + action.split('/')[1] + '@' + ref, selected))
-            for ref in ('a' * 40, 'v2', 'main', refs[-1][:12]):
-                with self.subTest(action=action, rejected_ref=ref):
-                    self.assertFalse(action_allowed(action + '@' + ref, selected))
+    def test_selected_patterns_name_one_repository_and_still_require_full_sha(self):
+        policy = json.loads((ROOT / 'automation/github/repository-security.json').read_text())['actions']
+        selected = policy['selected_actions']
+        # The allowlist names repositories; the exact commit is enforced by
+        # required SHA pinning, the published-tag check and exact-head approval.
+        self.assertIs(policy['sha_pinning_required'], True)
+        self.assertEqual(selected['patterns_allowed'], sorted(set(selected['patterns_allowed'])))
+        sha = 'a' * 40
+        for pattern in selected['patterns_allowed']:
+            with self.subTest(pattern=pattern):
+                # Owner and repository are literal; only a subpath or the ref may vary.
+                self.assertRegex(pattern, r'^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+(/[A-Za-z0-9._*/-]+)?@\*$')
+                action = pattern.removesuffix('@*').replace('*', 'init')
+                owner, _, rest = action.partition('/')
+                self.assertTrue(action_allowed(action + '@' + sha, selected))
+                for ref in ('v2', 'main', sha[:12], sha + 'a'):
+                    self.assertFalse(action_allowed(action + '@' + ref, selected), ref)
+                if owner not in ('actions', 'github'):
+                    self.assertFalse(action_allowed('untrusted/' + rest + '@' + sha, selected))
+                    self.assertFalse(action_allowed(owner + '-evil/' + rest + '@' + sha, selected))
+                    self.assertFalse(action_allowed(action + '-evil@' + sha, selected))
 
     def test_github_owned_actions_require_exact_owner(self):
         selected = {'github_owned_allowed': True, 'patterns_allowed': []}
