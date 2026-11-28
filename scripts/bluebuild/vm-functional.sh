@@ -49,6 +49,11 @@ guest_disk_snapshot() {
 guest_exit() {
   local status=$?
   trap - EXIT
+  if (( status != 0 )); then
+    echo 'Recent Bluefin Homebrew preinstall journal from this guest:'
+    timeout 8s journalctl --user --boot --unit=brew-preinstall.service \
+      --lines=60 --no-pager --output=cat 2>&1 | tail -c 8192 || true
+  fi
   guest_disk_snapshot after-initialize
   guest_finish "$status"
   exit "$status"
