@@ -26,6 +26,54 @@ same PR where possible and review its new head. Lock files are not included:
 FINite's paired `flake.lock`/`devenv.lock` and qualified Foundation input need
 their own typed source/provenance contract before native Nix ownership changes.
 
+## An action bump is one PR
+
+GitHub's allowed-actions setting names repositories, not commits. Each
+third-party action has one `owner/repo@*` pattern in
+`actions.selected_actions.patterns_allowed` of
+[`automation/github/repository-security.json`](../automation/github/repository-security.json).
+A Dependabot bump of an already-allowed action therefore starts its workflows
+without a second PR or a settings edit. Dependabot opens two grouped PRs,
+`github-owned` (`actions/*`, `github/*`) and `third-party` (everything else).
+
+The exact commit is still enforced, by three independent controls:
+
+- GitHub's `sha_pinning_required` setting and `tests/ci/delivery-policy.py`
+  require every `uses:` reference to be a full 40-hex commit.
+- The trusted worker verifies each new commit against the upstream published
+  tag, as described above.
+- A Super Admin approves the exact PR head.
+
+Verified-publisher actions stay disallowed (`verified_allowed: false`).
+
+An administrator must keep the live setting (Settings → Actions → General →
+"Allow closure-labs, and select non-closure-labs, actions and reusable
+workflows") equal to the patterns in that JSON file. The repository security
+audit reports any difference as drift on
+`actions.selected_actions.patterns_allowed`. Adopting a new action is the only
+change that needs a pattern: add it to the JSON file and both
+`tests/fixtures/repository-security` snapshots in the PR that introduces the
+action, then add it to the live setting.
+
+One pattern covers an action that no file under `.github` references:
+`DeterminateSystems/nix-installer-action@*`. The pinned
+`DeterminateSystems/determinate-nix-action` used by
+`.github/actions/setup-nix` is a composite action that calls it internally,
+and the allowed-actions setting also applies to actions called inside
+composite actions. Do not remove it as unused. Before removing any pattern,
+check the nested `uses:` steps of the actions that remain.
+
+## Never use "Update branch" on a Dependabot PR
+
+"Update branch" adds a merge commit authored by the person who clicked it. The
+PR is then no longer Dependabot-only, so the dependency exception stops
+applying, and Dependabot refuses `@dependabot rebase` because the branch has
+foreign commits. The `main` ruleset does not require branches to be up to date
+(it is non-strict) and the merge queue tests the merged result, so updating the
+branch is never needed. If a Dependabot PR is stale or conflicted, comment
+`@dependabot rebase`; if someone already pushed to it, comment
+`@dependabot recreate`.
+
 ## Human merge approval remains mandatory
 
 The existing App authority check requires an active human member of the pinned

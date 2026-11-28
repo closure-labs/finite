@@ -13,6 +13,16 @@ updates:
     cooldown:
       default-days: 7
     groups:
-      github-actions:
+      # GitHub-owned actions are allowed by owner; third-party actions must also
+      # match a repository pattern in automation/github/repository-security.json.
+      # Separate groups keep a blocked third-party bump from holding the rest.
+      github-owned:
+        patterns:
+          - "actions/*"
+          - "github/*"
+      third-party:
         patterns:
           - "*"
+        exclude-patterns:
+          - "actions/*"
+          - "github/*"

@@ -50,10 +50,13 @@ mutate_and_reject() {
 	[[ $status -eq 1 ]]
 	jq -e --arg path "$expected_path" '.status == "drift" and any(.drift[]; startswith($path))' <<<"$result" >/dev/null
 }
-# The accepted fixture is independent; omission of a required exact pin is drift.
-mutate_and_reject '.actions.selected_actions.patterns_allowed -= ["step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c"]' 'actions.selected_actions.patterns_allowed'
-mutate_and_reject '.actions.selected_actions.patterns_allowed -= ["step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a"]' 'actions.selected_actions.patterns_allowed'
-mutate_and_reject '.actions.selected_actions.patterns_allowed -= ["sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532"]' 'actions.selected_actions.patterns_allowed'
+# The accepted fixture is independent; a missing, narrowed or widened pattern is drift.
+mutate_and_reject '.actions.selected_actions.patterns_allowed -= ["step-security/harden-runner@*"]' 'actions.selected_actions.patterns_allowed'
+mutate_and_reject '.actions.selected_actions.patterns_allowed -= ["sigstore/cosign-installer@*"]' 'actions.selected_actions.patterns_allowed'
+mutate_and_reject '.actions.selected_actions.patterns_allowed |= map(if . == "step-security/harden-runner@*" then "step-security/harden-runner@aebdcf6156ab6691adf63218240e476564a1ed4c" else . end)' 'actions.selected_actions.patterns_allowed'
+mutate_and_reject '.actions.selected_actions.patterns_allowed |= map(if . == "step-security/harden-runner@*" then "step-security/*" else . end)' 'actions.selected_actions.patterns_allowed'
+mutate_and_reject '.actions.selected_actions.verified_allowed = true' 'actions.selected_actions.verified_allowed'
+mutate_and_reject '.actions.sha_pinning_required = false' 'actions.sha_pinning_required'
 mutate_and_reject 'del(.environments["boot-signing"])' 'environments.boot-signing'
 mutate_and_reject '.environments["boot-signing"].can_admins_bypass = true' 'environments.boot-signing.can_admins_bypass'
 mutate_and_reject '.environments["boot-signing"].deployment_branches[0].name = "*"' 'environments.boot-signing.deployment_branches'
